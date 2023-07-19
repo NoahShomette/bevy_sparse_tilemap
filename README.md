@@ -1,4 +1,5 @@
-﻿A Tilemap crate for the Bevy game engine with a focus on logic and size.
+﻿# `bevy_sparse_tilemap`
+A Tilemap crate for the Bevy game engine with a focus on logic and size.
 
 ## Features
 - Sparse-set style Tilemaps
@@ -8,7 +9,7 @@
   - Because of the above feature, maps can be ludicrously large and have very good performance (Up to and above 13,000x13,000).
 - Purely focused on the tilemap logic - rendering is left to the user
 
-## What about bevy_ecs_tilemap?
+## What about `bevy_ecs_tilemap`?
 
 `bevy_ecs_tilemap` is a fabulous crate that will probably cover most of your needs in an easier to use plugin.
 
