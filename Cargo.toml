@@ -1,0 +1,38 @@
+[package]
+name = "bevy_sparse_tilemap"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+authors = ["Noah Shomette <git@noahshomette.me>"]
+repository = "https://github.com/NoahShomette/bevy_sparse_tilemap"
+
+[features]
+default = []
+bevy_fast_tilemap = ["dep:bevy_fast_tilemap"]
+
+[badges]
+maintenance = { status = "actively-developed" }
+
+# Enable a small amount of optimization in debug mode
+[profile.dev]
+opt-level = 1
+
+# Enable high optimizations for dependencies (incl. Bevy), but not for our code:
+[profile.dev.package."*"]
+opt-level = 3
+
+[dependencies]
+bevy = { version = "0.10", default-features = false, features = [] }
+grid = "0.10.0"
+
+# Optional feature based dependencies
+# Rendering with bevy_fast_tilemap
+bevy_fast_tilemap = { version = "0.4.2", optional = true }
+
+
+[dev-dependencies]
+bevy_fast_tilemap = { version = "0.4.2" }
+bevy = { version = "0.10" }
+rand = {version = "0.8.5"}
+bevy-inspector-egui = "0.18.0"
