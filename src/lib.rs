@@ -12,7 +12,6 @@ pub use tiles::TilePos;
 
 pub struct SparseTilemapPlugin;
 
-impl Plugin for SparseTilemapPlugin{
-    fn build(&self, app: &mut App) {
-    }
+impl Plugin for SparseTilemapPlugin {
+    fn build(&self, app: &mut App) {}
 }
