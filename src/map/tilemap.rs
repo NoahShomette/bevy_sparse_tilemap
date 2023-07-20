@@ -25,10 +25,9 @@ pub struct Tilemap {
 }
 
 impl Tilemap {
-    /// Creates a new [`Tilemap`] using the given vector of vectors of the given T.
+    /// Spawns a new [`Tilemap`] and returns its [`Entity`] using the given vector of vectors of the given T.
     ///
-    ///
-    pub fn new_builder<T>(
+    pub fn spawn_tilemap<T>(
         tilemap_tile_data: Vec<Vec<T>>,
         max_chunk_size: UVec2,
         commands: &mut Commands,

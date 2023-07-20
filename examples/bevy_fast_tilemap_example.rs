@@ -4,41 +4,11 @@ use bevy::math::{uvec2, vec2, vec3};
 use bevy::prelude::*;
 use bevy::window::PresentMode;
 use bevy::DefaultPlugins;
-use std::time::Duration;
-
-use bevy_fast_tilemap::map::MapLoading;
 use bevy_fast_tilemap::{FastTileMapPlugin, Map, MapBundle, MeshManagedByMap};
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy_sparse_tilemap::{Chunk, Tilemap};
 use rand::Rng;
-
-fn startup(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut images: ResMut<Assets<Image>>,
-) {
-    commands.spawn(Camera2dBundle::default());
-
-    for _ in 0..125000 {
-        commands.spawn_empty();
-    }
-
-    //commands.spawn(TileMap::<(u8, (u8, u8))>::init_default(500, 500));
-
-    // Create map with (10 * 128) ^ 2 tiles or 1,638,400 tiles.
-    let map = Map::builder(
-        // Map size (tiles)
-        uvec2(500, 500),
-        // Tile atlas
-        asset_server.load("tiles_16.png"),
-        // Tile size (pixels)
-        vec2(16., 16.),
-    )
-    .build(&mut images);
-
-    commands
-        .spawn(MapBundle::new(map))
-        // Have the map manage our mesh so it always has the right size
-        .insert(MeshManagedByMap);
-}
+use std::thread::spawn;
 
 fn main() {
     App::new()
@@ -54,10 +24,123 @@ fn main() {
         .add_plugin(LogDiagnosticsPlugin::default())
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
         .add_plugin(FastTileMapPlugin::default())
+        .add_plugin(WorldInspectorPlugin::default())
         .add_startup_system(startup)
         .add_system(mouse_controls_camera)
-        .add_system(change_map)
+        .add_system(spawn_or_update_fast_tilemaps)
         .run();
+}
+
+#[derive(Default, Copy, Clone, Reflect, FromReflect)]
+struct TileData(u8, u8);
+
+#[derive(Component, Default, Copy, Clone, Reflect, FromReflect)]
+pub struct FastTileMap;
+
+fn startup(mut commands: Commands) {
+    commands.spawn(Camera2dBundle::default());
+    let map_x = 13000;
+    let map_y = 13000;
+
+    let entity = Tilemap::spawn_tilemap(
+        generate_random_tile_data(UVec2::new(map_x, map_y)),
+        UVec2::new(4000, 4000),
+        &mut commands,
+    );
+
+    commands.entity(entity).insert(SpatialBundle {
+        transform: Transform {
+            translation: Vec3::new(0.0, 0.0, 1.0),
+            ..default()
+        },
+        ..default()
+    });
+}
+
+fn spawn_or_update_fast_tilemaps(
+    chunk_query: Query<(Entity, &Chunk<TileData>, Option<&Children>), Changed<Chunk<TileData>>>,
+    fast_tile_map_query: Query<&mut Map, With<FastTileMap>>,
+    asset_server: Res<AssetServer>,
+    mut images: ResMut<Assets<Image>>,
+    mut commands: Commands,
+) {
+    let mut rng = rand::thread_rng();
+    'main_loop: for (entity, chunk, children) in chunk_query.iter() {
+        /*
+        if let Some(children) = children {
+            for child in children.iter() {
+                if let Ok(map) = fast_tile_map_query.get(*child) {
+                    let mut m = match map.get_mut(&mut *images) {
+                        Err(e) => {
+                            // Map texture is not available
+                            warn!("no map: {:?}", e);
+                            continue;
+                        }
+                        Ok(x) => x,
+                    };
+
+                    for y in 0..chunk.tiles.size().1 {
+                        for x in 0..chunk.tiles.size().0 {
+                            let i = rng.gen_range(1..12);
+                            m.set(x as u32, y as u32, i);
+                        }
+                    }
+                    continue 'main_loop;
+                }
+            }
+        }
+        
+         */
+
+        // Create map with the given dimensions of our chunk
+        let map = Map::builder(
+            // Map size (tiles)
+            uvec2(chunk.tiles.size().0 as u32, chunk.tiles.size().1 as u32),
+            // Tile atlas
+            asset_server.load("tiles_16.png"),
+            // Tile size (pixels)
+            vec2(16., 16.),
+        )
+        .build_and_set(&mut images, |pos| rng.gen_range(0..15));
+        println!("{:?}", map.map_texture.id());
+        commands
+            .entity(entity)
+            .insert(SpatialBundle {
+                transform: Transform {
+                    translation: Vec3::new(
+                        chunk.chunk_pos.x as f32 * chunk.tiles.size().0 as f32 * 16.0,
+                        chunk.chunk_pos.y as f32 * chunk.tiles.size().1 as f32 * 16.0,
+                        1.0,
+                    ),
+                    ..default()
+                },
+                ..default()
+            })
+            .with_children(|parent| {
+                parent
+                    .spawn(MapBundle::new(map))
+                    // Have the map manage our mesh so it always has the right size
+
+                    .insert(FastTileMap);
+            });
+    }
+}
+
+fn generate_random_tile_data(size_to_generate: UVec2) -> Vec<Vec<TileData>> {
+    let mut rng = rand::thread_rng();
+
+    let mut vec: Vec<Vec<TileData>> = vec![];
+    for _ in 0..size_to_generate.y as usize {
+        let mut x_vec: Vec<TileData> = vec![];
+        for _ in 0..size_to_generate.x as usize {
+            let zero = rng.gen_range(1..12);
+            let one = rng.gen_range(1..12);
+
+            x_vec.push(TileData(zero, one));
+        }
+        vec.push(x_vec);
+    }
+    vec
 }
 
 /// Use RMB for panning
@@ -98,43 +181,3 @@ fn mouse_controls_camera(
         }
     }
 }
-
-#[derive(Resource, Default)]
-pub struct ChangeTimer(Timer);
-
-/// Update random patches of tile indices in the map
-fn change_map(
-    mut images: ResMut<Assets<Image>>,
-    maps: Query<&Map, Without<MapLoading>>,
-    mut change_timer: Local<ChangeTimer>,
-    time: Res<Time>,
-) {
-    let mut rng = rand::thread_rng();
-    change_timer.0.tick(time.delta());
-    if change_timer.0.finished() {
-        for map in maps.iter() {
-            // Get the indexer into the map texture
-            let mut m = match map.get_mut(&mut *images) {
-                Err(e) => {
-                    // Map texture is not available
-                    warn!("no map: {:?}", e);
-                    continue;
-                }
-                Ok(x) => x,
-            };
-
-            let k = rng.gen_range(5..50);
-            let x_min = rng.gen_range(0..m.size().x - k);
-            let y_min = rng.gen_range(0..m.size().y - k);
-
-            for y in y_min..y_min + k {
-                for x in x_min..x_min + k {
-                    let i = rng.gen_range(1..12);
-                    m.set(x, y, i);
-                }
-            }
-        }
-        change_timer.0.set_duration(Duration::from_secs_f32(15.0));
-        change_timer.0.set_mode(TimerMode::Repeating);
-    }
-} // fn change_map

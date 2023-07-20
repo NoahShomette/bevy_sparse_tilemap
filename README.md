@@ -1,8 +1,8 @@
 ﻿# `bevy_sparse_tilemap`
-A Tilemap crate for the Bevy game engine with a focus on logic and size.
+A Tilemap crate for the Bevy game engine with a focus on logic and map size.
 
 ## Features
-- Sparse-set style Tilemaps
+- Sparse-set style tilemaps
   - Only the minimum amount of data is stored for each tile. Furthermore tiles that don't need it don't get their own Entity
   - Built in API to handle spawning, despawning, and accessing tiles optional entities
 - Massive tilemap sizes.
@@ -14,7 +14,7 @@ A Tilemap crate for the Bevy game engine with a focus on logic and size.
 `bevy_ecs_tilemap` is a fabulous crate that will probably cover most of your needs in an easier to use plugin.
 
 You should use `bevy_ecs_tilemap` if:
-- You don't need very large maps (sub 500x500 in my experience)
+- You don't need very large maps (sub 200x200 in my experience)
 - You want every tile to be its own Entity (This crate tries to avoid unnecessary entities and uses a Voxel like approach)
 - You want a more mature and more feature rich plugin
 - You want tilemap rendering handled for you

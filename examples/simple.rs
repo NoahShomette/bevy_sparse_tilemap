@@ -30,7 +30,7 @@ fn main() {
 struct TileData(u8, u8);
 
 fn spawn_map(mut commands: Commands) {
-    let tilemap_entity = Tilemap::new_builder(
+    let tilemap_entity = Tilemap::spawn_tilemap(
         generate_random_tile_data(UVec2::new(13000, 13000)),
         UVec2::new(250, 250),
         &mut commands,

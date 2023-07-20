@@ -1,10 +1,13 @@
 //! Core Tile concept
 
 use crate::map::{ChunkPos, ChunkTilePos};
-use bevy::prelude::{FromReflect, Reflect, UVec2};
+use bevy::prelude::{Component, FromReflect, Reflect, ReflectComponent, UVec2};
 
 /// The position of a tile in a [`Tilemap`]
-#[derive(Default, Eq, Hash, PartialEq, Ord, PartialOrd, Copy, Clone, Reflect, FromReflect)]
+#[derive(
+    Default, Eq, Hash, PartialEq, Ord, PartialOrd, Copy, Clone, Component, Reflect, FromReflect,
+)]
+#[reflect(Component)]
 pub struct TilePos {
     pub x: u32,
     pub y: u32,
