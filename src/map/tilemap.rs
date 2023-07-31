@@ -8,9 +8,8 @@
 use crate::map::chunk::Chunks;
 use crate::{Chunk, ChunkPos, TilePos};
 use bevy::math::UVec2;
-use bevy::prelude::{
-    BuildChildren, Commands, Component, Entity, FromReflect, Reflect, ReflectComponent,
-};
+use bevy::prelude::{BuildChildren, Commands, Component, Entity, Reflect};
+use std::marker::PhantomData;
 
 /// The data structure containing the minimum tilemap data needed for each tile as well as manages
 /// chunk access and setup
@@ -19,12 +18,19 @@ use bevy::prelude::{
 /// data that is not the same for every single tile of that type should be stored as a component
 /// on that tiles entity which is managed through the [`Chunk`]
 #[derive(Component, Clone, Debug, Eq, PartialEq)]
-pub struct Tilemap {
+pub struct Tilemap<TilemapMarker>
+where
+    TilemapMarker: Send + Sync + 'static,
+{
     /// Struct containing [`Entity`] mappings to the [`Chunk`](super::chunk::Chunk)s that hold tile data
     chunks: Chunks,
+    _marker: PhantomData<TilemapMarker>,
 }
 
-impl Tilemap {
+impl<TilemapMarker> Tilemap<TilemapMarker>
+where
+    TilemapMarker: Send + Sync + 'static,
+{
     /// Spawns a new [`Tilemap`] and returns its [`Entity`] using the given vector of vectors of the given T.
     ///
     pub fn spawn_tilemap<T>(
@@ -42,14 +48,32 @@ impl Tilemap {
         let x_chunk_amount = (map_x / max_chunk_size.x as f32).ceil() as u32;
         let y_chunk_amount = (map_y / max_chunk_size.y as f32).ceil() as u32;
 
+        //TODO: We need to convert our tilemap_tile_data into a series of vecs of vecs for each chunk with only that chunks data in it
+        
         for y in 0..y_chunk_amount {
             let mut x_vec: Vec<Entity> = vec![];
             for x in 0..x_chunk_amount {
+                let amount_of_x_tiles_done = x * max_chunk_size.x;
+                let amount_of_y_tiles_done = y * max_chunk_size.y;
+                let mut vec:Vec<Vec<T>> = vec![];
+                for (index, row) in tilemap_tile_data.iter().enumerate() {
+                    let mut row_vec: Vec<T> = vec![];
+                    for (index, tile) in row.iter().enumerate() {
+                        if index < amount_of_x_tiles_done as usize {
+                            continue
+                        }
+                        row_vec.push(*tile);
+                    }
+                    vec.push(row_vec);
+                    if index < amount_of_y_tiles_done as usize {
+                        continue
+                    }
+                }                
+                
                 let entity = commands
-                    .spawn(Chunk::<T>::new_default(
+                    .spawn(Chunk::<T>::new_from_vecs(
                         ChunkPos::new(x, y),
-                        50,
-                        50,
+                        vec,
                     ))
                     .id();
                 x_vec.push(entity);
@@ -69,24 +93,27 @@ impl Tilemap {
         );
 
         let tilemap_entity = commands
-            .spawn(Tilemap::new(chunks))
+            .spawn(Tilemap::<TilemapMarker>::new(chunks))
             .push_children(flattened_chunk_entities.as_slice())
             .id();
         tilemap_entity
     }
 
     /// Creates a new [`Tilemap`] out of the given chunks struct
-    pub fn new(chunks: Chunks) -> Tilemap {
-        Self { chunks }
+    pub fn new(chunks: Chunks) -> Tilemap<TilemapMarker> {
+        Self {
+            chunks,
+            _marker: Default::default(),
+        }
     }
 
     /// Gets the chunk entity that has the tile_info for the given TilePos
-    pub fn get_chunk_for_tile_pos(&mut self, tile_pos: TilePos) -> Option<Entity> {
+    pub fn get_chunk_for_tile_pos(&self, tile_pos: TilePos) -> Option<Entity> {
         self.chunks.get_chunk(tile_pos)
     }
 
     /// Returns the max size that a chunk can be
-    pub fn get_chunks_max_size(&mut self) -> UVec2 {
+    pub fn get_chunks_max_size(&self) -> UVec2 {
         self.chunks.max_chunk_size()
     }
 }

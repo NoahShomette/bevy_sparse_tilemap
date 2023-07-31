@@ -2,12 +2,11 @@ use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::input::mouse::{MouseMotion, MouseWheel};
 use bevy::math::{uvec2, vec2, vec3};
 use bevy::prelude::*;
-use bevy::render::render_resource::ShaderType;
 use bevy::window::PresentMode;
 use bevy::DefaultPlugins;
 use bevy_fast_tilemap::{FastTileMapPlugin, Map, MapBundle};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use bevy_sparse_tilemap::{Chunk, Tilemap};
+use bevy_sparse_tilemap::{Chunk, Tilemap, MapLayer};
 use rand::Rng;
 
 fn main() {
@@ -31,11 +30,13 @@ fn main() {
         .run();
 }
 
-#[derive(bevy_sparse_tilemap_derive::MapLayer)]
-enum MapLayers {
+#[derive(MapLayer)]
+pub enum MapLayers {
     Main,
     Secondary,
 }
+
+pub struct MapMarker;
 
 #[derive(Default, Copy, Clone, Reflect, FromReflect)]
 struct TileData(u8, u8);
@@ -48,7 +49,7 @@ fn startup(mut commands: Commands) {
     let map_x = 13000;
     let map_y = 13000;
 
-    let entity = Tilemap::spawn_tilemap(
+    let entity = Tilemap::<MapMarker>::spawn_tilemap(
         generate_random_tile_data(UVec2::new(map_x, map_y)),
         UVec2::new(4000, 4000),
         &mut commands,
@@ -84,8 +85,8 @@ fn spawn_or_update_fast_tilemaps(
                         Ok(x) => x,
                     };
 
-                    for y in 0..chunk.tiles.size().1 {
-                        for x in 0..chunk.tiles.size().0 {
+                    for y in 0..chunk.get_chunk_dimensions().y {
+                        for x in 0..chunk.get_chunk_dimensions().x  {
                             let i = rng.gen_range(1..12);
                             m.set(x as u32, y as u32, i);
                         }
@@ -99,8 +100,8 @@ fn spawn_or_update_fast_tilemaps(
         let map = Map::builder(
             // Map size (tiles)
             uvec2(
-                chunk.data.get_mut(MapLayers::Main.to_bits()).unwrap().0 as u32,
-                chunk.tiles.size().1 as u32,
+                chunk.get_chunk_dimensions().x,
+                chunk.get_chunk_dimensions().y,
             ),
             // Tile atlas
             asset_server.load("tiles_16.png"),
@@ -114,8 +115,8 @@ fn spawn_or_update_fast_tilemaps(
             .insert(SpatialBundle {
                 transform: Transform {
                     translation: Vec3::new(
-                        chunk.chunk_pos.x as f32 * chunk.tiles.size().0 as f32 * 16.0,
-                        chunk.chunk_pos.y as f32 * chunk.tiles.size().1 as f32 * 16.0,
+                        chunk.chunk_pos.x as f32 * chunk.get_chunk_dimensions().x as f32 * 16.0,
+                        chunk.chunk_pos.y as f32 * chunk.get_chunk_dimensions().y as f32 * 16.0,
                         1.0,
                     ),
                     ..default()

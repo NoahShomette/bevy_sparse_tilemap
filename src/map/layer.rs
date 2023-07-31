@@ -1,4 +1,5 @@
 ﻿use crate::ChunkTilePos;
+use bevy::math::UVec2;
 use bevy::prelude::Entity;
 use bevy::utils::HashMap;
 use grid::Grid;
@@ -18,9 +19,19 @@ impl<T> LayerChunkData<T>
 where
     T: Clone + Copy + Sized + Default + Send + Sync,
 {
-    pub fn new_sparse_layer(sparse_data: HashMap<ChunkTilePos, T>) -> LayerChunkData<T> {
+    pub fn new_sparse_layer_empty(chunk_dimensions: UVec2) -> LayerChunkData<T> {
         LayerChunkData {
-            layer_type_data: LayerTypeData::Sparse(sparse_data),
+            layer_type_data: LayerTypeData::Sparse(HashMap::new(), chunk_dimensions),
+            tile_entities: Default::default(),
+        }
+    }
+
+    pub fn new_sparse_layer_from_data(
+        sparse_data: HashMap<ChunkTilePos, T>,
+        chunk_dimensions: UVec2,
+    ) -> LayerChunkData<T> {
+        LayerChunkData {
+            layer_type_data: LayerTypeData::Sparse(sparse_data, chunk_dimensions),
             tile_entities: Default::default(),
         }
     }
@@ -56,6 +67,10 @@ impl<T> LayerChunkData<T>
 where
     T: Clone + Copy + Sized + Default + Send + Sync,
 {
+    pub fn get_chunk_dimensions(&self) -> UVec2 {
+        self.layer_type_data.get_dimensions()
+    }
+
     pub fn get_tile_data_mut(&mut self, chunk_tile_pos: ChunkTilePos) -> Option<&mut T> {
         self.layer_type_data.get_tile_data_mut(chunk_tile_pos)
     }
@@ -88,7 +103,7 @@ pub enum LayerTypeData<T>
 where
     T: Clone + Copy + Sized + Default + Send + Sync,
 {
-    Sparse(HashMap<ChunkTilePos, T>),
+    Sparse(HashMap<ChunkTilePos, T>, UVec2),
     Dense(Grid<T>),
 }
 
@@ -154,14 +169,21 @@ impl<T> LayerTypeData<T>
 where
     T: Clone + Copy + Sized + Default + Send + Sync,
 {
+    pub fn get_dimensions(&self) -> UVec2 {
+        match self {
+            LayerTypeData::Sparse(_, dimensions) => *dimensions,
+            LayerTypeData::Dense(grid) => UVec2::new(grid.size().1 as u32, grid.size().0 as u32),
+        }
+    }
+
     pub fn set_tile_data(&mut self, chunk_tile_pos: ChunkTilePos, tile_data: T) {
         match self {
-            LayerTypeData::Sparse(layer_data) => {
+            LayerTypeData::Sparse(layer_data, ..) => {
                 layer_data.insert(chunk_tile_pos, tile_data);
             }
             LayerTypeData::Dense(layer_data) => {
                 if let Some(mut tile) =
-                    layer_data.get_mut(chunk_tile_pos.x as usize, chunk_tile_pos.y as usize)
+                    layer_data.get_mut(chunk_tile_pos.y as usize, chunk_tile_pos.x as usize)
                 {
                     *tile = tile_data
                 };
@@ -171,18 +193,18 @@ where
 
     pub fn get_tile_data_mut(&mut self, chunk_tile_pos: ChunkTilePos) -> Option<&mut T> {
         return match self {
-            LayerTypeData::Sparse(layer_data) => layer_data.get_mut(&chunk_tile_pos),
+            LayerTypeData::Sparse(layer_data, ..) => layer_data.get_mut(&chunk_tile_pos),
             LayerTypeData::Dense(layer_data) => {
-                layer_data.get_mut(chunk_tile_pos.x as usize, chunk_tile_pos.y as usize)
+                layer_data.get_mut(chunk_tile_pos.y as usize, chunk_tile_pos.x as usize)
             }
         };
     }
 
     pub fn get_tile_data(&self, chunk_tile_pos: ChunkTilePos) -> Option<&T> {
         return match self {
-            LayerTypeData::Sparse(layer_data) => layer_data.get(&chunk_tile_pos),
+            LayerTypeData::Sparse(layer_data, ..) => layer_data.get(&chunk_tile_pos),
             LayerTypeData::Dense(layer_data) => {
-                layer_data.get(chunk_tile_pos.x as usize, chunk_tile_pos.y as usize)
+                layer_data.get(chunk_tile_pos.y as usize, chunk_tile_pos.x as usize)
             }
         };
     }

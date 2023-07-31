@@ -28,7 +28,7 @@ opt-level = 3
 
 [dependencies]
 bevy = { version = "0.10", default-features = false, features = [] }
-bevy_sparse_tilemap_derive = {path = "crates/bevy_sparse_tilemap_derive"}
+bevy_sparse_tilemap_derive = {path = "crates/bevy_sparse_tilemap_derive", version = "0.1.0"}
 grid = "0.10.0"
 
 # Optional feature based dependencies

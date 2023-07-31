@@ -29,8 +29,10 @@ fn main() {
 #[derive(Default, Copy, Clone, Reflect, FromReflect)]
 struct TileData(u8, u8);
 
+pub struct MapMarker;
+
 fn spawn_map(mut commands: Commands) {
-    let tilemap_entity = Tilemap::spawn_tilemap(
+    let tilemap_entity = Tilemap::<MapMarker>::spawn_tilemap(
         generate_random_tile_data(UVec2::new(13000, 13000)),
         UVec2::new(250, 250),
         &mut commands,

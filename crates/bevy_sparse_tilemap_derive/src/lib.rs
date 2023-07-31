@@ -33,8 +33,6 @@ pub fn derive_map_layer(input: TokenStream) -> TokenStream {
     };
 
     let expanded = quote! {
-        use crate::map::layer::MapLayer;
-
         impl MapLayer for #enum_ident {
             fn all_bits() -> u32 {
                 #all_bits

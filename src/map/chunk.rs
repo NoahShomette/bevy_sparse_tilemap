@@ -1,9 +1,8 @@
-use crate::map::layer::{LayerChunkData, LayerTypeData, MapLayer};
+use crate::map::layer::{LayerChunkData, MapLayer};
 use crate::TilePos;
-use bevy::prelude::{Commands, Component, Entity, FromReflect, Reflect, ReflectComponent, UVec2};
+use bevy::prelude::{Component, Condition, Entity, FromReflect, Reflect, ReflectComponent, UVec2};
 use bevy::utils::hashbrown::HashMap;
-use grid::{grid, Grid};
-use std::hash::Hash;
+use grid::Grid;
 
 /// The chunks of a tilemap
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -60,7 +59,7 @@ impl Chunks {
 
     /// Gets the tile info from a chunk based on a Tilemap TilePos. The chunks coords is
     /// grabbed and then taken from this
-    pub fn get_chunk(&mut self, tile_pos: TilePos) -> Option<Entity> {
+    pub fn get_chunk(&self, tile_pos: TilePos) -> Option<Entity> {
         let chunk_pos_x: usize = (tile_pos.x / self.max_chunk_size.x) as usize;
         let chunk_pos_y: usize = (tile_pos.y / self.max_chunk_size.y) as usize;
         self.chunks.get(chunk_pos_y, chunk_pos_x).cloned()
@@ -86,8 +85,9 @@ pub struct Chunk<T>
 where
     T: Clone + Copy + Sized + Default + Send + Sync,
 {
+    /// The position of the Chunk in the map
     pub chunk_pos: ChunkPos,
-    /// Chunk tile data
+    /// Chunk tile data mapped to layers
     pub data: HashMap<u32, LayerChunkData<T>>,
 }
 
@@ -108,6 +108,9 @@ where
     T: Clone + Copy + Sized + Default + Send + Sync,
 {
     /// Creates a new chunk with every tile containing the same given tile_data
+    ///
+    /// # Note
+    /// Automatically creates a new dense layer set to the first layer of a [`MapLayer`]
     pub fn new_uniform(
         chunk_pos: ChunkPos,
         chunk_size_x: usize,
@@ -116,7 +119,7 @@ where
     ) -> Chunk<T> {
         let mut hashmap: HashMap<u32, LayerChunkData<T>> = HashMap::new();
         hashmap.insert(
-            1u32 << 0,
+            1u32,
             LayerChunkData::new_dense_uniform_layer(chunk_size_x, chunk_size_y, tile_data),
         );
         Self {
@@ -126,10 +129,13 @@ where
     }
 
     /// Creates a new chunk with every tile containing the default for T
+    ///
+    /// # Note
+    /// Automatically creates a new dense layer set to the first layer of a [`MapLayer`]
     pub fn new_default(chunk_pos: ChunkPos, chunk_size_x: usize, chunk_size_y: usize) -> Chunk<T> {
         let mut hashmap: HashMap<u32, LayerChunkData<T>> = HashMap::new();
         hashmap.insert(
-            1u32 << 0,
+            1u32,
             LayerChunkData::new_dense_default_layer(chunk_size_x, chunk_size_y),
         );
         Self {
@@ -142,15 +148,97 @@ where
     ///
     /// # Panics
     /// - Panics if every row is not the same length
+    ///
+    /// # Note
+    /// Automatically creates a new dense layer set to the first layer of a [`MapLayer`]
     pub fn new_from_vecs(chunk_pos: ChunkPos, tile_data: Vec<Vec<T>>) -> Chunk<T> {
         let mut hashmap: HashMap<u32, LayerChunkData<T>> = HashMap::new();
-        hashmap.insert(
-            1u32 << 0,
-            LayerChunkData::new_dense_from_vecs_layer(tile_data),
-        );
+        hashmap.insert(1u32, LayerChunkData::new_dense_from_vecs_layer(tile_data));
         Self {
             chunk_pos,
             data: hashmap,
+        }
+    }
+
+    /// Adds a new sparse layer to the chunk with the optional data.
+    ///
+    /// # Note
+    /// - Overwrites the layer if it already exists
+    pub fn add_sparse_layer(
+        &mut self,
+        map_layer: impl MapLayer,
+        optional_tile_data: Option<HashMap<ChunkTilePos, T>>,
+    ) {
+        match optional_tile_data {
+            None => {
+                self.data.insert(
+                    map_layer.to_bits(),
+                    LayerChunkData::new_sparse_layer_empty(self.get_chunk_dimensions()),
+                );
+            }
+            Some(data) => {
+                self.data.insert(
+                    map_layer.to_bits(),
+                    LayerChunkData::new_sparse_layer_from_data(data, self.get_chunk_dimensions()),
+                );
+            }
+        };
+    }
+
+    /// Adds a new dense layer to the chunk and fills the layer with the default for T.
+    ///
+    /// # Note
+    /// - Overwrites the layer if it already exists
+    pub fn add_dense_layer_default(&mut self, map_layer: impl MapLayer) {
+        self.data.insert(
+            map_layer.to_bits(),
+            LayerChunkData::new_dense_default_layer(
+                self.get_chunk_dimensions().x as usize,
+                self.get_chunk_dimensions().y as usize,
+            ),
+        );
+    }
+
+    /// Adds a new dense layer to the chunk and fills the layer with given tile_data.
+    ///
+    /// # Note
+    /// - Overwrites the layer if it already exists
+    pub fn add_dense_layer_uniform(&mut self, map_layer: impl MapLayer, tile_data: T) {
+        self.data.insert(
+            map_layer.to_bits(),
+            LayerChunkData::new_dense_uniform_layer(
+                self.get_chunk_dimensions().x as usize,
+                self.get_chunk_dimensions().y as usize,
+                tile_data,
+            ),
+        );
+    }
+
+    /// Adds a new dense layer to the chunk and fills the layer with given tile_data.
+    ///
+    /// # Note
+    /// - Overwrites the layer if it already exists
+    pub fn add_dense_layer_from_vecs(&mut self, map_layer: impl MapLayer, tile_data: Vec<Vec<T>>) {
+        self.data.insert(
+            map_layer.to_bits(),
+            LayerChunkData::new_dense_from_vecs_layer(tile_data),
+        );
+    }
+}
+
+impl<T> Chunk<T>
+where
+    T: Clone + Copy + Sized + Default + Send + Sync,
+{
+    /// Returns the dimensions for the given [`MapLayer`] in the [`Chunk`].
+    ///
+    /// # Panics
+    /// - If the [`MapLayer`] does not exist in the chunk
+    pub fn get_chunk_dimensions(&self) -> UVec2 {
+        if let Some(tiles) = self.data.get(&1u32) {
+            return tiles.get_chunk_dimensions();
+        } else {
+            panic!("MapLayer does not exist in chunk")
         }
     }
 
@@ -158,6 +246,7 @@ where
     ///
     /// # Panics
     /// - If the [`ChunkTilePos`] does not exist in the [`Chunk`]
+    /// - If the [`MapLayer`] does not exist in the chunk
     pub fn set_tile_data(
         &mut self,
         map_layer: impl MapLayer,
@@ -166,10 +255,15 @@ where
     ) {
         if let Some(tiles) = self.data.get_mut(&map_layer.to_bits()) {
             tiles.set_tile_data(chunk_tile_pos, tile_data);
-        };
+        } else {
+            panic!("MapLayer does not exist in chunk")
+        }
     }
 
     /// Returns a clone of the TileData at the given [`ChunkTilePos`] if it exists
+    ///
+    /// # Panics
+    /// - If the [`MapLayer`] does not exist in the chunk
     pub fn get_tile_data(
         &self,
         map_layer: impl MapLayer,
@@ -177,7 +271,8 @@ where
     ) -> Option<T> {
         self.data
             .get(&map_layer.to_bits())
-            .and_then(|tiles| tiles.get_tile_data(chunk_tile_pos))
+            .expect("MapLayer does not exist in chunk")
+            .get_tile_data(chunk_tile_pos)
             .cloned()
     }
 
@@ -211,7 +306,8 @@ mod tests {
     use crate::map::chunk::Chunk;
     use crate::map::ChunkPos;
     use crate::TilePos;
-    use bevy_sparse_tilemap_derive::MapLayer;
+    use crate::{ChunkTilePos, MapLayer};
+    use bevy::utils::HashMap;
 
     #[derive(Clone, Copy, Default, PartialEq, Eq, Debug)]
     struct TileData(u8);
@@ -296,7 +392,9 @@ mod tests {
         ];
         let chunk = Chunk::new_from_vecs(ChunkPos::new(0, 0), vecs);
         assert_eq!(
-            chunk.get_tile_data(TilePos { x: 3, y: 2 }).unwrap(),
+            chunk
+                .get_tile_data(MapLayers::Main, TilePos { x: 3, y: 2 })
+                .unwrap(),
             (11, 4)
         );
     }
@@ -309,10 +407,45 @@ mod tests {
             vec![(8, 4), (9, 6), (10, 1), (11, 4)],
         ];
         let mut chunk = Chunk::new_from_vecs(ChunkPos::new(0, 0), vecs);
-        chunk.set_tile_data(TilePos::new(0, 0), (50, 60));
+        chunk.set_tile_data(MapLayers::Main, TilePos::new(0, 0), (50, 60));
         assert_eq!(
-            chunk.get_tile_data(TilePos { x: 0, y: 0 }).unwrap(),
+            chunk
+                .get_tile_data(MapLayers::Main, TilePos { x: 0, y: 0 })
+                .unwrap(),
             (50, 60)
+        );
+    }
+
+    #[test]
+    fn test_adding_sparse_layer() {
+        let mut hashmap: HashMap<ChunkTilePos, (u32, u32)> = HashMap::new();
+        hashmap.insert(ChunkTilePos::new(0, 0), (50, 60));
+        let mut chunk = Chunk::new_uniform(ChunkPos::new(0, 0), 30, 30, (0u32, 0u32));
+        chunk.add_sparse_layer(MapLayers::Secondary, Some(hashmap));
+        assert_eq!(
+            chunk
+                .get_tile_data(MapLayers::Secondary, ChunkTilePos { x: 0, y: 0 })
+                .unwrap(),
+            (50, 60)
+        );
+    }
+
+    #[test]
+    fn test_adding_dense_layer() {
+        let mut chunk = Chunk::new_uniform(ChunkPos::new(0, 0), 30, 30, (0u32, 0u32));
+
+        let vecs = vec![
+            vec![(0, 0), (1, 2), (2, 0), (3, 0)],
+            vec![(4, 1), (5, 6), (6, 7), (7, 8)],
+            vec![(8, 4), (9, 6), (10, 1), (11, 4)],
+        ];
+        
+        chunk.add_dense_layer_from_vecs(MapLayers::Secondary, vecs);
+        assert_eq!(
+            chunk
+                .get_tile_data(MapLayers::Secondary, ChunkTilePos { x: 3, y: 2 })
+                .unwrap(),
+            (11, 4)
         );
     }
 }
