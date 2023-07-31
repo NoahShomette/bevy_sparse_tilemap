@@ -50,7 +50,6 @@ impl Tilemap {
                         ChunkPos::new(x, y),
                         50,
                         50,
-                        UVec2::new(max_chunk_size.x, max_chunk_size.y),
                     ))
                     .id();
                 x_vec.push(entity);

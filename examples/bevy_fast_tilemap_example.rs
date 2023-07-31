@@ -2,13 +2,13 @@ use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::input::mouse::{MouseMotion, MouseWheel};
 use bevy::math::{uvec2, vec2, vec3};
 use bevy::prelude::*;
+use bevy::render::render_resource::ShaderType;
 use bevy::window::PresentMode;
 use bevy::DefaultPlugins;
-use bevy_fast_tilemap::{FastTileMapPlugin, Map, MapBundle, MeshManagedByMap};
+use bevy_fast_tilemap::{FastTileMapPlugin, Map, MapBundle};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_sparse_tilemap::{Chunk, Tilemap};
 use rand::Rng;
-use std::thread::spawn;
 
 fn main() {
     App::new()
@@ -29,6 +29,12 @@ fn main() {
         .add_system(mouse_controls_camera)
         .add_system(spawn_or_update_fast_tilemaps)
         .run();
+}
+
+#[derive(bevy_sparse_tilemap_derive::MapLayer)]
+enum MapLayers {
+    Main,
+    Secondary,
 }
 
 #[derive(Default, Copy, Clone, Reflect, FromReflect)]
@@ -66,7 +72,6 @@ fn spawn_or_update_fast_tilemaps(
 ) {
     let mut rng = rand::thread_rng();
     'main_loop: for (entity, chunk, children) in chunk_query.iter() {
-        /*
         if let Some(children) = children {
             for child in children.iter() {
                 if let Ok(map) = fast_tile_map_query.get(*child) {
@@ -89,13 +94,14 @@ fn spawn_or_update_fast_tilemaps(
                 }
             }
         }
-        
-         */
 
         // Create map with the given dimensions of our chunk
         let map = Map::builder(
             // Map size (tiles)
-            uvec2(chunk.tiles.size().0 as u32, chunk.tiles.size().1 as u32),
+            uvec2(
+                chunk.data.get_mut(MapLayers::Main.to_bits()).unwrap().0 as u32,
+                chunk.tiles.size().1 as u32,
+            ),
             // Tile atlas
             asset_server.load("tiles_16.png"),
             // Tile size (pixels)
@@ -120,7 +126,6 @@ fn spawn_or_update_fast_tilemaps(
                 parent
                     .spawn(MapBundle::new(map))
                     // Have the map manage our mesh so it always has the right size
-
                     .insert(FastTileMap);
             });
     }
