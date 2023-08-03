@@ -1,6 +1,11 @@
+pub mod chunk_pos;
+pub mod chunk_tile_pos;
+
+use crate::map::chunk::chunk_pos::ChunkPos;
+use crate::map::chunk::chunk_tile_pos::ChunkTilePos;
 use crate::map::layer::{LayerChunkData, MapLayer};
 use crate::TilePos;
-use bevy::prelude::{Component, Condition, Entity, FromReflect, Reflect, ReflectComponent, UVec2};
+use bevy::prelude::{Component, Entity, FromReflect, Reflect, ReflectComponent, UVec2};
 use bevy::utils::hashbrown::HashMap;
 use grid::Grid;
 
@@ -15,25 +20,25 @@ pub struct Chunks {
 
 impl Chunks {
     /// Creates a new [`Grid<Entity>`] out of a vector of vectors of [`Entity`]
-    pub fn new_chunk_entity_grid(tile_data: Vec<Vec<Entity>>) -> Grid<Entity> {
-        let mut given_tile_count = 0u64;
+    pub fn new_chunk_entity_grid(chunk_entities: Vec<Vec<Entity>>) -> Grid<Entity> {
+        let mut counted_chunks = 0u64;
 
-        for tile_data in tile_data.iter() {
-            given_tile_count += tile_data.len() as u64;
+        for chunk_row in chunk_entities.iter() {
+            counted_chunks += chunk_row.len() as u64;
         }
 
         assert_eq!(
-            (tile_data[0].len() * tile_data.len()) as u64,
-            given_tile_count
+            (chunk_entities[0].len() * chunk_entities.len()) as u64,
+            counted_chunks
         );
 
         let mut grid: Grid<Entity> =
-            Grid::init(tile_data.len(), tile_data[0].len(), Entity::PLACEHOLDER);
+            Grid::init(chunk_entities.len(), chunk_entities[0].len(), Entity::PLACEHOLDER);
         let mut current_x = 0usize;
         let mut current_y = 0usize;
-        let row_length = tile_data[0].len();
+        let row_length = chunk_entities[0].len();
         grid.fill_with(|| {
-            let tile = tile_data[current_y][current_x];
+            let tile = chunk_entities[current_y][current_x];
             current_x += 1;
             if current_x == row_length {
                 current_x = 0;
@@ -65,16 +70,6 @@ impl Chunks {
         self.chunks.get(chunk_pos_y, chunk_pos_x).cloned()
     }
 }
-
-/// The x and y position of a [`Chunk`] in the [`Tilemap`]
-///
-/// A [`TilePos`] can be converted into a [`ChunkPos`] using [`TilePos::into_chunk_pos`]
-pub type ChunkPos = TilePos;
-
-/// A tile position inside a [`Chunk`]
-///
-/// A [`TilePos`] can be converted into a [`ChunkTilePos`] using [`TilePos::into_chunk_tile_pos`]
-pub type ChunkTilePos = TilePos;
 
 /// A Chunk of a [`Tilemap`](super::Tilemap)
 ///
@@ -151,9 +146,33 @@ where
     ///
     /// # Note
     /// Automatically creates a new dense layer set to the first layer of a [`MapLayer`]
-    pub fn new_from_vecs(chunk_pos: ChunkPos, tile_data: Vec<Vec<T>>) -> Chunk<T> {
+    pub fn new_dense_from_vecs(chunk_pos: ChunkPos, tile_data: &Vec<Vec<T>>) -> Chunk<T> {
         let mut hashmap: HashMap<u32, LayerChunkData<T>> = HashMap::new();
         hashmap.insert(1u32, LayerChunkData::new_dense_from_vecs_layer(tile_data));
+        Self {
+            chunk_pos,
+            data: hashmap,
+        }
+    }
+
+    /// Creates a new chunk with a Sparse layer
+    pub fn new_sparse(
+        chunk_pos: ChunkPos,
+        chunk_size: UVec2,
+        optional_tile_data: Option<HashMap<ChunkTilePos, T>>,
+    ) -> Chunk<T> {
+        let mut hashmap: HashMap<u32, LayerChunkData<T>> = HashMap::new();
+        match optional_tile_data {
+            Some(data) => {
+                hashmap.insert(
+                    1u32,
+                    LayerChunkData::new_sparse_layer_from_data(data, chunk_size),
+                );
+            }
+            _ => {
+                hashmap.insert(1u32, LayerChunkData::new_sparse_layer_empty(chunk_size));
+            }
+        };
         Self {
             chunk_pos,
             data: hashmap,
@@ -221,7 +240,7 @@ where
     pub fn add_dense_layer_from_vecs(&mut self, map_layer: impl MapLayer, tile_data: Vec<Vec<T>>) {
         self.data.insert(
             map_layer.to_bits(),
-            LayerChunkData::new_dense_from_vecs_layer(tile_data),
+            LayerChunkData::new_dense_from_vecs_layer(&tile_data),
         );
     }
 }
@@ -284,10 +303,16 @@ where
 /// Settings for the chunks in a [`Chunks`] object
 pub struct ChunkSettings {
     /// The max size that a chunk can be
-    max_chunk_size: UVec2,
+    pub max_chunk_size: UVec2,
 }
 
 impl ChunkSettings {
+    pub fn new(x: u32, y: u32) -> ChunkSettings {
+        Self {
+            max_chunk_size: UVec2::new(x, y),
+        }
+    }
+
     pub fn max_chunk_size(&self) -> UVec2 {
         self.max_chunk_size
     }
@@ -303,16 +328,18 @@ impl ChunkSettings {
 
 #[cfg(test)]
 mod tests {
-    use crate::map::chunk::Chunk;
-    use crate::map::ChunkPos;
-    use crate::TilePos;
-    use crate::{ChunkTilePos, MapLayer};
+    use crate as bevy_sparse_tilemap;
+    use crate::{
+        map::chunk::chunk_pos::ChunkPos, map::chunk::chunk_tile_pos::ChunkTilePos,
+        map::chunk::Chunk,
+    };
     use bevy::utils::HashMap;
+    use bevy_sparse_tilemap_derive::DeriveMapLayer;
 
     #[derive(Clone, Copy, Default, PartialEq, Eq, Debug)]
     struct TileData(u8);
 
-    #[derive(MapLayer)]
+    #[derive(DeriveMapLayer)]
     enum MapLayers {
         Main,
         Secondary,
@@ -322,10 +349,10 @@ mod tests {
     fn test_new_from_vecs() {
         // Tests basic i32
         let vecs = vec![vec![0, 1, 2, 3], vec![4, 5, 6, 7], vec![8, 9, 10, 11]];
-        let chunk = Chunk::new_from_vecs(ChunkPos::new(0, 0), vecs);
+        let chunk = Chunk::new_dense_from_vecs(ChunkPos::new(0, 0), &vecs);
         assert_eq!(
             chunk
-                .get_tile_data(MapLayers::Main, TilePos { x: 0, y: 0 })
+                .get_tile_data(MapLayers::Main, ChunkTilePos::new(0, 0))
                 .unwrap(),
             0
         );
@@ -336,16 +363,16 @@ mod tests {
             vec![TileData(4), TileData(5), TileData(6), TileData(7)],
             vec![TileData(8), TileData(9), TileData(10), TileData(11)],
         ];
-        let chunk = Chunk::new_from_vecs(ChunkPos::new(0, 0), vecs);
+        let chunk = Chunk::new_dense_from_vecs(ChunkPos::new(0, 0), &vecs);
         assert_eq!(
             chunk
-                .get_tile_data(MapLayers::Main, TilePos { x: 0, y: 0 })
+                .get_tile_data(MapLayers::Main, ChunkTilePos::new(0, 0))
                 .unwrap(),
             TileData(0)
         );
         assert_eq!(
             chunk
-                .get_tile_data(MapLayers::Main, TilePos { x: 3, y: 2 })
+                .get_tile_data(MapLayers::Main, ChunkTilePos::new(3, 2))
                 .unwrap(),
             TileData(11)
         );
@@ -356,16 +383,16 @@ mod tests {
             vec![(4, 1), (5, 6), (6, 7), (7, 8)],
             vec![(8, 4), (9, 6), (10, 1), (11, 4)],
         ];
-        let chunk = Chunk::new_from_vecs(ChunkPos::new(0, 0), vecs);
+        let chunk = Chunk::new_dense_from_vecs(ChunkPos::new(0, 0), &vecs);
         assert_eq!(
             chunk
-                .get_tile_data(MapLayers::Main, TilePos { x: 0, y: 0 })
+                .get_tile_data(MapLayers::Main, ChunkTilePos::new(0, 0))
                 .unwrap(),
             (0, 0)
         );
         assert_eq!(
             chunk
-                .get_tile_data(MapLayers::Main, TilePos { x: 2, y: 2 })
+                .get_tile_data(MapLayers::Main, ChunkTilePos::new(2, 2))
                 .unwrap(),
             (10, 1)
         );
@@ -380,7 +407,7 @@ mod tests {
             vec![(4), (5), (6), (7)],
             vec![(8), (9), (10), (11)],
         ];
-        let _ = Chunk::new_from_vecs(ChunkPos::new(0, 0), vecs);
+        let _ = Chunk::new_dense_from_vecs(ChunkPos::new(0, 0), &vecs);
     }
 
     #[test]
@@ -390,10 +417,10 @@ mod tests {
             vec![(4, 1), (5, 6), (6, 7), (7, 8)],
             vec![(8, 4), (9, 6), (10, 1), (11, 4)],
         ];
-        let chunk = Chunk::new_from_vecs(ChunkPos::new(0, 0), vecs);
+        let chunk = Chunk::new_dense_from_vecs(ChunkPos::new(0, 0), &vecs);
         assert_eq!(
             chunk
-                .get_tile_data(MapLayers::Main, TilePos { x: 3, y: 2 })
+                .get_tile_data(MapLayers::Main, ChunkTilePos::new(3, 2))
                 .unwrap(),
             (11, 4)
         );
@@ -406,11 +433,11 @@ mod tests {
             vec![(4, 1), (5, 6), (6, 7), (7, 8)],
             vec![(8, 4), (9, 6), (10, 1), (11, 4)],
         ];
-        let mut chunk = Chunk::new_from_vecs(ChunkPos::new(0, 0), vecs);
-        chunk.set_tile_data(MapLayers::Main, TilePos::new(0, 0), (50, 60));
+        let mut chunk = Chunk::new_dense_from_vecs(ChunkPos::new(0, 0), &vecs);
+        chunk.set_tile_data(MapLayers::Main, ChunkTilePos::new(0, 0), (50, 60));
         assert_eq!(
             chunk
-                .get_tile_data(MapLayers::Main, TilePos { x: 0, y: 0 })
+                .get_tile_data(MapLayers::Main, ChunkTilePos::new(0, 0))
                 .unwrap(),
             (50, 60)
         );
@@ -424,7 +451,7 @@ mod tests {
         chunk.add_sparse_layer(MapLayers::Secondary, Some(hashmap));
         assert_eq!(
             chunk
-                .get_tile_data(MapLayers::Secondary, ChunkTilePos { x: 0, y: 0 })
+                .get_tile_data(MapLayers::Secondary, ChunkTilePos::new(0, 0))
                 .unwrap(),
             (50, 60)
         );
@@ -439,11 +466,11 @@ mod tests {
             vec![(4, 1), (5, 6), (6, 7), (7, 8)],
             vec![(8, 4), (9, 6), (10, 1), (11, 4)],
         ];
-        
+
         chunk.add_dense_layer_from_vecs(MapLayers::Secondary, vecs);
         assert_eq!(
             chunk
-                .get_tile_data(MapLayers::Secondary, ChunkTilePos { x: 3, y: 2 })
+                .get_tile_data(MapLayers::Secondary, ChunkTilePos::new(3, 2))
                 .unwrap(),
             (11, 4)
         );

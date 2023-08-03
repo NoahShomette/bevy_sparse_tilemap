@@ -4,7 +4,7 @@ use syn::{parse_macro_input, Data, DeriveInput};
 
 // Macro taken from Bevy_xpbd
 // https://github.com/Jondolf/bevy_xpbd/blob/main/crates/bevy_xpbd_derive/src/lib.rs
-#[proc_macro_derive(MapLayer)]
+#[proc_macro_derive(DeriveMapLayer)]
 pub fn derive_map_layer(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let enum_ident = input.ident;
@@ -33,6 +33,7 @@ pub fn derive_map_layer(input: TokenStream) -> TokenStream {
     };
 
     let expanded = quote! {
+        use bevy_sparse_tilemap::map::layer::MapLayer;
         impl MapLayer for #enum_ident {
             fn all_bits() -> u32 {
                 #all_bits

@@ -5,7 +5,6 @@ use bevy::reflect::FromReflect;
 use bevy::window::PresentMode;
 use bevy::DefaultPlugins;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use bevy_sparse_tilemap::Tilemap;
 use rand::Rng;
 
 fn main() {
@@ -32,11 +31,7 @@ struct TileData(u8, u8);
 pub struct MapMarker;
 
 fn spawn_map(mut commands: Commands) {
-    let tilemap_entity = Tilemap::<MapMarker>::spawn_tilemap(
-        generate_random_tile_data(UVec2::new(13000, 13000)),
-        UVec2::new(250, 250),
-        &mut commands,
-    );
+
 }
 
 fn generate_random_tile_data(size_to_generate: UVec2) -> Vec<Vec<TileData>> {

@@ -1,11 +1,24 @@
 //! Core Tile concept
 
-use crate::map::{ChunkPos, ChunkTilePos};
+use crate::map::chunk::chunk_pos::ChunkPos;
+use crate::map::chunk::chunk_tile_pos::ChunkTilePos;
 use bevy::prelude::{Component, FromReflect, Reflect, ReflectComponent, UVec2};
+use std::fmt::{Display, Formatter, Write};
 
 /// The position of a tile in a [`Tilemap`]
 #[derive(
-    Default, Eq, Hash, PartialEq, Ord, PartialOrd, Copy, Clone, Component, Reflect, FromReflect,
+    Default,
+    Eq,
+    Hash,
+    PartialEq,
+    Ord,
+    PartialOrd,
+    Copy,
+    Clone,
+    Debug,
+    Component,
+    Reflect,
+    FromReflect,
 )]
 #[reflect(Component)]
 pub struct TilePos {
@@ -21,21 +34,17 @@ impl TilePos {
 
     /// Converts a [`Tilemap`] tiles [`TilePos`] into a [`ChunkPos`]
     pub fn into_chunk_pos(self, max_chunk_size: UVec2) -> ChunkPos {
-        ChunkPos {
-            x: self.x / max_chunk_size.x,
-            y: self.y / max_chunk_size.y,
-        }
+        ChunkPos::new(self.x / max_chunk_size.x, self.y / max_chunk_size.y)
     }
 
     /// Converts a [`Tilemap`] tiles [`TilePos`] into a [`ChunkTilePos`]
     pub fn into_chunk_tile_pos(self, max_chunk_size: UVec2) -> ChunkTilePos {
         let chunk_pos_x = self.x / max_chunk_size.x;
         let chunk_pos_y = self.y / max_chunk_size.y;
-
-        ChunkTilePos {
-            x: self.x - (chunk_pos_x * max_chunk_size.x),
-            y: self.y - (chunk_pos_y * max_chunk_size.y),
-        }
+        ChunkTilePos::new(
+            self.x - (chunk_pos_x * max_chunk_size.x),
+            self.y - (chunk_pos_y * max_chunk_size.y),
+        )
     }
 }
 
@@ -51,5 +60,11 @@ impl From<UVec2> for TilePos {
 impl Into<(usize, usize)> for TilePos {
     fn into(self) -> (usize, usize) {
         (self.x as usize, self.y as usize)
+    }
+}
+
+impl Display for TilePos {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&*format!("x:{}, y:{}", self.x, self.y))
     }
 }

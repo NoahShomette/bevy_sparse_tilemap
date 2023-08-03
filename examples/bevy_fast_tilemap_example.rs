@@ -6,8 +6,9 @@ use bevy::window::PresentMode;
 use bevy::DefaultPlugins;
 use bevy_fast_tilemap::{FastTileMapPlugin, Map, MapBundle};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use bevy_sparse_tilemap::{Chunk, Tilemap, MapLayer};
 use rand::Rng;
+use bevy_sparse_tilemap::map::chunk::Chunk;
+use bevy_sparse_tilemap_derive::DeriveMapLayer;
 
 fn main() {
     App::new()
@@ -30,7 +31,7 @@ fn main() {
         .run();
 }
 
-#[derive(MapLayer)]
+#[derive(DeriveMapLayer)]
 pub enum MapLayers {
     Main,
     Secondary,
@@ -48,20 +49,7 @@ fn startup(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
     let map_x = 13000;
     let map_y = 13000;
-
-    let entity = Tilemap::<MapMarker>::spawn_tilemap(
-        generate_random_tile_data(UVec2::new(map_x, map_y)),
-        UVec2::new(4000, 4000),
-        &mut commands,
-    );
-
-    commands.entity(entity).insert(SpatialBundle {
-        transform: Transform {
-            translation: Vec3::new(0.0, 0.0, 1.0),
-            ..default()
-        },
-        ..default()
-    });
+    
 }
 
 fn spawn_or_update_fast_tilemaps(
@@ -115,8 +103,8 @@ fn spawn_or_update_fast_tilemaps(
             .insert(SpatialBundle {
                 transform: Transform {
                     translation: Vec3::new(
-                        chunk.chunk_pos.x as f32 * chunk.get_chunk_dimensions().x as f32 * 16.0,
-                        chunk.chunk_pos.y as f32 * chunk.get_chunk_dimensions().y as f32 * 16.0,
+                        chunk.chunk_pos.x() as f32 * chunk.get_chunk_dimensions().x as f32 * 16.0,
+                        chunk.chunk_pos.y() as f32 * chunk.get_chunk_dimensions().y as f32 * 16.0,
                         1.0,
                     ),
                     ..default()
