@@ -13,7 +13,7 @@ struct TilemapBuilderInfo<TilemapMarker, TileData, MapLayer>
 where
     TilemapMarker: Send + Sync + 'static,
     TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
-    MapLayer: crate::map::layer::MapLayer + Clone + Copy + Send + Sync + Default + 'static,
+    MapLayer: crate::map::MapLayer + Clone + Copy + Send + Sync + Default + 'static,
 {
     main_layer: TilemapLayer<TileData>,
     layer_info: HashMap<u32, TilemapLayer<TileData>>,
@@ -30,7 +30,7 @@ impl<TilemapMarker, TileData, MapLayer> Default
 where
     TilemapMarker: Send + Sync + 'static,
     TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
-    MapLayer: crate::map::layer::MapLayer + Clone + Copy + Send + Sync + Default + 'static,
+    MapLayer: crate::map::MapLayer + Clone + Copy + Send + Sync + Default + 'static,
 {
     fn default() -> Self {
         Self {
@@ -55,7 +55,7 @@ struct TilemapBuilderInfoInstance<TilemapMarker, TileData, MapLayer>
 where
     TilemapMarker: Send + Sync + 'static,
     TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
-    MapLayer: crate::map::layer::MapLayer + Clone + Copy + Send + Sync + Default + 'static,
+    MapLayer: crate::map::MapLayer + Clone + Copy + Send + Sync + Default + 'static,
 {
     tilemap_builder_info: TilemapBuilderInfo<TilemapMarker, TileData, MapLayer>,
     tm_phantom: PhantomData<TilemapMarker>,
@@ -68,7 +68,7 @@ impl<TilemapMarker, TileData, MapLayer> Default
 where
     TilemapMarker: Send + Sync + 'static,
     TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
-    MapLayer: crate::map::layer::MapLayer + Clone + Copy + Send + Sync + Default + 'static,
+    MapLayer: crate::map::MapLayer + Clone + Copy + Send + Sync + Default + 'static,
 {
     fn default() -> Self {
         Self {
@@ -85,7 +85,7 @@ pub struct TilemapBuilder<'w, 's, TilemapMarker, TileData, MapLayer>
 where
     TilemapMarker: Send + Sync + 'static,
     TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
-    MapLayer: crate::map::layer::MapLayer + Clone + Copy + Send + Sync + Default + 'static,
+    MapLayer: crate::map::MapLayer + Clone + Copy + Send + Sync + Default + 'static,
 {
     tm_phantom: PhantomData<TilemapMarker>,
     td_phantom: PhantomData<TileData>,
@@ -99,7 +99,7 @@ impl<'w, 's, TilemapMarker, TileData, MapLayer>
 where
     TilemapMarker: Send + Sync + 'static,
     TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
-    MapLayer: crate::map::layer::MapLayer + Clone + Copy + Send + Sync + Default + 'static,
+    MapLayer: crate::map::MapLayer + Clone + Copy + Send + Sync + Default + 'static,
 {
     /// Function for internal use to take the settings from TilemapBuilder and spawn the actual
     /// tilemap returning the TilemapEntity

@@ -11,7 +11,7 @@ pub struct TilemapManager<'w, 's, TilemapMarker, TileData, MapLayer>
 where
     TilemapMarker: Send + Sync + 'static,
     TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
-    MapLayer: crate::map::layer::MapLayer + Clone + Copy + Send + Sync + Default + 'static,
+    MapLayer: crate::map::MapLayer + Clone + Copy + Send + Sync + Default + 'static,
 {
     tilemap_query: Query<
         'w,
@@ -40,7 +40,7 @@ impl<'w, 's, TilemapMarker, TileData, MapLayer>
 where
     TilemapMarker: Send + Sync + 'static,
     TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
-    MapLayer: crate::map::layer::MapLayer + Clone + Copy + Send + Sync + Default + 'static,
+    MapLayer: crate::map::MapLayer + Clone + Copy + Send + Sync + Default + 'static,
 {
     pub fn layer(&self) -> &MapLayer {
         &self.layer_index.0
@@ -85,12 +85,12 @@ mod tests {
     use bevy::math::UVec2;
     use bevy::prelude::World;
     use bevy::utils::hashbrown::HashMap;
-    use bevy_sparse_tilemap_derive::DeriveMapLayer;
+    use bevy_sparse_tilemap_derive::MapLayer;
 
     #[derive(Clone, Copy, Default, PartialEq, Eq, Debug)]
     struct TileData(u8);
 
-    #[derive(DeriveMapLayer, Default, Debug, PartialEq, Eq, Clone, Copy)]
+    #[derive(MapLayer, Default, Debug, PartialEq, Eq, Clone, Copy)]
     enum MapLayers {
         #[default]
         Main,

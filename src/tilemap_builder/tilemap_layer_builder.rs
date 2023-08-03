@@ -1,4 +1,7 @@
-﻿use crate::map::chunk::chunk_pos::ChunkPos;
+﻿//! This module is specifically for making Tilemaps and helps to give ways to make Tilemap global layers
+//! and then convert those into chunks
+
+use crate::map::chunk::chunk_pos::ChunkPos;
 use crate::map::chunk::Chunk;
 use crate::TilePos;
 use bevy::math::{vec2, UVec2};
@@ -250,7 +253,7 @@ mod tests {
     use crate::TilePos;
     use bevy::math::UVec2;
     use bevy::utils::HashMap;
-    use bevy_sparse_tilemap_derive::DeriveMapLayer;
+    use bevy_sparse_tilemap_derive::MapLayer;
 
     #[derive(Clone, Copy, Default, PartialEq, Eq, Debug)]
     struct TileData(u8);
@@ -378,7 +381,7 @@ mod tests {
         assert_eq!(one_one[3][2], (7, 8));
     }
 
-    #[derive(DeriveMapLayer)]
+    #[derive(MapLayer)]
     enum MapLayers {
         Main,
         Secondary,

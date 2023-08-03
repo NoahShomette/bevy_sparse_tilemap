@@ -8,7 +8,7 @@ use bevy_fast_tilemap::{FastTileMapPlugin, Map, MapBundle};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use rand::Rng;
 use bevy_sparse_tilemap::map::chunk::Chunk;
-use bevy_sparse_tilemap_derive::DeriveMapLayer;
+use bevy_sparse_tilemap_derive::{MapLayer};
 
 fn main() {
     App::new()
@@ -31,7 +31,7 @@ fn main() {
         .run();
 }
 
-#[derive(DeriveMapLayer)]
+#[derive(MapLayer)]
 pub enum MapLayers {
     Main,
     Secondary,
