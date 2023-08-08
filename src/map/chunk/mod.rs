@@ -1,15 +1,15 @@
+pub mod chunk_layer;
 pub mod chunk_pos;
 pub mod chunk_tile_pos;
-pub mod chunk_layer;
 
 use crate::map::chunk::chunk_layer::ChunkLayerData;
 use crate::map::chunk::chunk_pos::ChunkPos;
 use crate::map::chunk::chunk_tile_pos::ChunkTilePos;
+use crate::map::MapLayer;
 use crate::TilePos;
 use bevy::prelude::{Component, Entity, FromReflect, Reflect, ReflectComponent, UVec2};
 use bevy::utils::hashbrown::HashMap;
 use grid::Grid;
-use crate::map::MapLayer;
 
 /// The chunks of a tilemap
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -34,8 +34,11 @@ impl Chunks {
             counted_chunks
         );
 
-        let mut grid: Grid<Entity> =
-            Grid::init(chunk_entities.len(), chunk_entities[0].len(), Entity::PLACEHOLDER);
+        let mut grid: Grid<Entity> = Grid::init(
+            chunk_entities.len(),
+            chunk_entities[0].len(),
+            Entity::PLACEHOLDER,
+        );
         let mut current_x = 0usize;
         let mut current_y = 0usize;
         let row_length = chunk_entities[0].len();
@@ -64,9 +67,15 @@ impl Chunks {
         self.max_chunk_size
     }
 
-    /// Gets the tile info from a chunk based on a Tilemap TilePos. The chunks coords is
-    /// grabbed and then taken from this
-    pub fn get_chunk(&self, tile_pos: TilePos) -> Option<Entity> {
+    /// Gets the chunk entity for the given [`ChunkPos`] if it exists
+    pub fn get_chunk(&self, chunk_pos: ChunkPos) -> Option<Entity> {
+        self.chunks
+            .get(chunk_pos.y() as usize, chunk_pos.x() as usize)
+            .cloned()
+    }
+
+    /// Gets the chunk entity for the given [`TilePos`] if it exists
+    pub fn get_chunk_from_tile_pos(&self, tile_pos: TilePos) -> Option<Entity> {
         let chunk_pos_x: usize = (tile_pos.x / self.max_chunk_size.x) as usize;
         let chunk_pos_y: usize = (tile_pos.y / self.max_chunk_size.y) as usize;
         self.chunks.get(chunk_pos_y, chunk_pos_x).cloned()
@@ -297,8 +306,28 @@ where
             .cloned()
     }
 
-    pub fn get_tile_entity(&self, chunk_tile_pos: ChunkTilePos) -> Option<Entity> {
-        self.get_tile_entity(chunk_tile_pos)
+    pub fn get_tile_entity(
+        &self,
+        map_layer: impl MapLayer,
+        chunk_tile_pos: ChunkTilePos,
+    ) -> Option<Entity> {
+        self.data
+            .get(&map_layer.to_bits())
+            .expect("MapLayer does not exist in chunk")
+            .get_tile_entity(chunk_tile_pos)
+    }
+
+    /// Sets the [`Entity`] for the given [`ChunkTilePos`] to the given Entity.
+    pub fn set_tile_entity(
+        &mut self,
+        map_layer: impl MapLayer,
+        chunk_tile_pos: ChunkTilePos,
+        entity: Entity,
+    ) {
+        self.data
+            .get_mut(&map_layer.to_bits())
+            .expect("MapLayer does not exist in chunk")
+            .set_tile_entity(chunk_tile_pos, entity);
     }
 }
 

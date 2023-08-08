@@ -5,10 +5,10 @@
 //!
 //!
 
-use crate::map::chunk::{Chunk, Chunks};
+use crate::map::chunk::{Chunks};
 use crate::{TilePos};
 use bevy::math::UVec2;
-use bevy::prelude::{BuildChildren, Commands, Component, Entity, Reflect};
+use bevy::prelude::{Component, Entity};
 use std::marker::PhantomData;
 use crate::map::chunk::chunk_pos::ChunkPos;
 
@@ -17,7 +17,7 @@ use crate::map::chunk::chunk_pos::ChunkPos;
 ///
 /// Each tile should only contain the bare minimum data needed for you to figure out what it is. Any
 /// data that is not the same for every single tile of that type should be stored as a component
-/// on that tiles entity which is managed through the [`Chunk`]
+/// on that tiles entity which is managed through the [`Chunk`](super::chunk::Chunk)
 #[derive(Component, Clone, Debug, Eq, PartialEq)]
 pub struct Tilemap<TilemapMarker>
 where
@@ -43,7 +43,12 @@ where
 
     /// Gets the chunk entity that has the tile_info for the given TilePos
     pub fn get_chunk_for_tile_pos(&self, tile_pos: TilePos) -> Option<Entity> {
-        self.chunks.get_chunk(tile_pos)
+        self.chunks.get_chunk_from_tile_pos(tile_pos)
+    }
+
+    /// Gets the chunk entity that has the tile_info for the given TilePos
+    pub fn get_chunk(&self, chunk_pos: ChunkPos) -> Option<Entity> {
+        self.chunks.get_chunk(chunk_pos)
     }
 
     /// Returns the max size that a chunk can be

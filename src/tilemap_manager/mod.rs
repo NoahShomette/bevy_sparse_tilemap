@@ -1,6 +1,7 @@
 ﻿use bevy::prelude::Resource;
 
-mod tilemap_manager;
+pub mod tilemap_manager;
+pub mod errors;
 
 
 #[derive(Resource, Default)]

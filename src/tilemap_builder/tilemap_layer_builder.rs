@@ -333,9 +333,7 @@ mod tests {
             vec![(0, 7), (1, 7), (2, 7), (3, 7),(4, 7), (5, 7), (6, 7), (7, 7)],
             vec![(0, 8), (1, 8), (2, 8), (3, 8),(4, 8), (5, 8), (6, 8), (7, 8)]
         ];
-
-        let map_x = vecs[0].len() as f32;
-        let map_y = vecs.len() as f32;
+        
         let max_chunk_size_x = 5;
         let max_chunk_size_y = 5;
 

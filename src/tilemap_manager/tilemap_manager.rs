@@ -1,8 +1,10 @@
+use crate::map::chunk::chunk_pos::ChunkPos;
 use crate::map::chunk::Chunk;
 use crate::map::tilemap::Tilemap;
+use crate::tilemap_manager::errors::TilemapManagerError;
 use crate::tilemap_manager::LayerIndex;
 use bevy::ecs::system::SystemParam;
-use bevy::prelude::{Children, Commands, Entity, Local, Query, Resource, UVec2};
+use bevy::prelude::{Children, Commands, DespawnRecursiveExt, Entity, Local, Query};
 
 use crate::TilePos;
 
@@ -42,32 +44,107 @@ where
     TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayer: crate::map::MapLayer + Clone + Copy + Send + Sync + Default + 'static,
 {
-    pub fn layer(&self) -> &MapLayer {
-        &self.layer_index.0
+    /// Returns the currently set [`MapLayer`]
+    pub fn layer(&self) -> MapLayer {
+        self.layer_index.0
     }
 
+    /// Sets the [`MapLayer`] that all future operations will be conducted upon.
+    ///
+    /// # Note
+    ///
+    /// The selected layer will persist across system runs
     pub fn on_layer(&mut self, map_layer: MapLayer) {
         *self.layer_index = LayerIndex(map_layer)
     }
 
-    pub fn get_tile_data(&self, tile_pos: TilePos) -> Option<TileData> {
+    /// Gets the tile data for the given [`TilePos`] if it exists.
+    pub fn get_tile_data(&self, tile_pos: TilePos) -> Result<TileData, TilemapManagerError> {
         let (_, tilemap, _) = self.tilemap_query.single();
-        let (_, chunk, _) = self
-            .chunk_query
-            .get(tilemap.get_chunk_for_tile_pos(tile_pos)?)
-            .ok()?;
-        chunk.get_tile_data(
-            self.layer_index.0,
-            tile_pos.into_chunk_tile_pos(tilemap.get_chunks_max_size()),
-        )
+        let (_, chunk, _) = self.chunk_query.get(
+            tilemap
+                .get_chunk_for_tile_pos(tile_pos)
+                .ok_or(TilemapManagerError::InvalidChunkPos)?,
+        )?;
+        chunk
+            .get_tile_data(
+                self.layer_index.0,
+                tile_pos.into_chunk_tile_pos(tilemap.get_chunks_max_size()),
+            )
+            .ok_or(TilemapManagerError::TileDataDoesNotExist)
     }
 
-    pub fn get_chunk(&self, tile_pos: TilePos) -> Option<&Chunk<TileData>> {
+    /// Gets the [`Entity`] for the given [`TilePos`] if it exists.
+    pub fn get_tile_entity(&self, tile_pos: TilePos) -> Result<Entity, TilemapManagerError> {
         let (_, tilemap, _) = self.tilemap_query.single();
-        let (_, chunk, _) = self
-            .chunk_query
-            .get(tilemap.get_chunk_for_tile_pos(tile_pos)?)
-            .ok()?;
+        let (_, chunk, _) = self.chunk_query.get(
+            tilemap
+                .get_chunk_for_tile_pos(tile_pos)
+                .ok_or(TilemapManagerError::InvalidChunkPos)?,
+        )?;
+        chunk
+            .get_tile_entity(
+                self.layer_index.0,
+                tile_pos.into_chunk_tile_pos(tilemap.get_chunks_max_size()),
+            )
+            .ok_or(TilemapManagerError::TileEntityDoesNotExist)
+    }
+
+    /// Gets the [`Entity`] for the given [`TilePos`] if it exists or spawns one and returns that if it
+    /// doesn't.
+    pub fn get_or_spawn_tile_entity(
+        &mut self,
+        tile_pos: TilePos,
+    ) -> Result<Entity, TilemapManagerError> {
+        let (_, tilemap, _) = self.tilemap_query.single();
+        let (_, mut chunk, _) = self.chunk_query.get_mut(
+            tilemap
+                .get_chunk_for_tile_pos(tile_pos)
+                .ok_or(TilemapManagerError::InvalidChunkPos)?,
+        )?;
+
+        let entity = chunk
+            .get_tile_entity(
+                self.layer_index.0,
+                tile_pos.into_chunk_tile_pos(tilemap.get_chunks_max_size()),
+            )
+            .unwrap_or_else(|| {
+                let entity = self.commands.spawn_empty().id();
+                chunk.set_tile_entity(
+                    self.layer_index.0,
+                    tile_pos.into_chunk_tile_pos(tilemap.get_chunks_max_size()),
+                    entity,
+                );
+                entity
+            });
+
+        Ok(entity)
+    }
+
+    /// Gets the [`Entity`] for the given [`TilePos`] if it exists or spawns one and returns that if it
+    /// doesn't.
+    pub fn despawn_tile_entity(&mut self, tile_pos: TilePos) -> Result<(), TilemapManagerError> {
+        let (_, tilemap, _) = self.tilemap_query.single();
+        let (_, chunk, _) = self.chunk_query.get(
+            tilemap
+                .get_chunk_for_tile_pos(tile_pos)
+                .ok_or(TilemapManagerError::InvalidChunkPos)?,
+        )?;
+
+        if let Some(entity) = chunk.get_tile_entity(
+            self.layer_index.0,
+            tile_pos.into_chunk_tile_pos(tilemap.get_chunks_max_size()),
+        ) {
+            self.commands.entity(entity).despawn_recursive();
+        };
+
+        Ok(())
+    }
+
+    /// Returns the [`Chunk`] data for the given [`ChunkPos`] if it exists
+    pub fn get_chunk(&self, chunk_pos: ChunkPos) -> Option<&Chunk<TileData>> {
+        let (_, tilemap, _) = self.tilemap_query.single();
+        let (_, chunk, _) = self.chunk_query.get(tilemap.get_chunk(chunk_pos)?).ok()?;
         Some(chunk)
     }
 }
@@ -108,9 +185,9 @@ mod tests {
             TilemapManager<MainMap, (i32, i32), MapLayers>,
         )> = SystemState::new(&mut world);
         let (mut tilemap_builder, mut tilemap_manager) = system_state.get_mut(&mut world);
-        assert_eq!(tilemap_manager.layer(), &MapLayers::Main);
+        assert_eq!(tilemap_manager.layer(), MapLayers::Main);
         tilemap_manager.on_layer(MapLayers::Secondary);
-        assert_eq!(tilemap_manager.layer(), &MapLayers::Secondary);
+        assert_eq!(tilemap_manager.layer(), MapLayers::Secondary);
         tilemap_manager.on_layer(MapLayers::Main);
 
         #[rustfmt::skip]
@@ -167,19 +244,19 @@ mod tests {
         );
         // Testing bounds
         assert_eq!(
-            tilemap_manager.get_tile_data(TilePos::new(7, 9)).is_none(),
+            tilemap_manager.get_tile_data(TilePos::new(7, 9)).is_err(),
             true
         );
         assert_eq!(
-            tilemap_manager.get_tile_data(TilePos::new(8, 7)).is_none(),
+            tilemap_manager.get_tile_data(TilePos::new(8, 7)).is_err(),
             true
         );
         assert_eq!(
-            tilemap_manager.get_tile_data(TilePos::new(0, 9)).is_none(),
+            tilemap_manager.get_tile_data(TilePos::new(0, 9)).is_err(),
             true
         );
         assert_eq!(
-            tilemap_manager.get_tile_data(TilePos::new(8, 0)).is_none(),
+            tilemap_manager.get_tile_data(TilePos::new(8, 0)).is_err(),
             true
         );
     }
@@ -193,9 +270,9 @@ mod tests {
             TilemapManager<MainMap, (i32, i32), MapLayers>,
         )> = SystemState::new(&mut world);
         let (mut tilemap_builder, mut tilemap_manager) = system_state.get_mut(&mut world);
-        assert_eq!(tilemap_manager.layer(), &MapLayers::Main);
+        assert_eq!(tilemap_manager.layer(), MapLayers::Main);
         tilemap_manager.on_layer(MapLayers::Secondary);
-        assert_eq!(tilemap_manager.layer(), &MapLayers::Secondary);
+        assert_eq!(tilemap_manager.layer(), MapLayers::Secondary);
         tilemap_manager.on_layer(MapLayers::Main);
 
         let mut hashmap: HashMap<TilePos, (i32, i32)> = HashMap::new();
@@ -224,19 +301,19 @@ mod tests {
         );
         // Testing bounds
         assert_eq!(
-            tilemap_manager.get_tile_data(TilePos::new(7, 9)).is_none(),
+            tilemap_manager.get_tile_data(TilePos::new(7, 9)).is_err(),
             true
         );
         assert_eq!(
-            tilemap_manager.get_tile_data(TilePos::new(8, 7)).is_none(),
+            tilemap_manager.get_tile_data(TilePos::new(8, 7)).is_err(),
             true
         );
         assert_eq!(
-            tilemap_manager.get_tile_data(TilePos::new(0, 9)).is_none(),
+            tilemap_manager.get_tile_data(TilePos::new(0, 9)).is_err(),
             true
         );
         assert_eq!(
-            tilemap_manager.get_tile_data(TilePos::new(8, 0)).is_none(),
+            tilemap_manager.get_tile_data(TilePos::new(8, 0)).is_err(),
             true
         );
     }
