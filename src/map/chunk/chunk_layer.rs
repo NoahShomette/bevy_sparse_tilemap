@@ -192,7 +192,7 @@ where
                 layer_data.insert(chunk_tile_pos, tile_data);
             }
             ChunklayerTypes::Dense(layer_data) => {
-                if let Some(mut tile) =
+                if let Some(tile) =
                     layer_data.get_mut(chunk_tile_pos.y() as usize, chunk_tile_pos.x() as usize)
                 {
                     *tile = tile_data

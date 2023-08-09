@@ -10,10 +10,10 @@ use crate::{TilePos};
 use bevy::math::UVec2;
 use bevy::prelude::{Component, Entity};
 use std::marker::PhantomData;
-use crate::map::chunk::chunk_pos::ChunkPos;
+use crate::map::chunk::ChunkPos;
 
-/// The data structure containing the minimum tilemap data needed for each tile as well as manages
-/// chunk access and setup
+/// The data structure containing the entirety of the tilemaps data for each chunk and tile as well 
+/// as manages chunk access and setup
 ///
 /// Each tile should only contain the bare minimum data needed for you to figure out what it is. Any
 /// data that is not the same for every single tile of that type should be stored as a component

@@ -1,13 +1,14 @@
-pub mod chunk_layer;
-pub mod chunk_pos;
-pub mod chunk_tile_pos;
+mod chunk_layer;
+mod chunk_pos;
+mod chunk_tile_pos;
 
-use crate::map::chunk::chunk_layer::ChunkLayerData;
-use crate::map::chunk::chunk_pos::ChunkPos;
-use crate::map::chunk::chunk_tile_pos::ChunkTilePos;
+
+pub use crate::map::chunk::chunk_layer::ChunkLayerData;
+pub use crate::map::chunk::chunk_pos::ChunkPos;
+pub use crate::map::chunk::chunk_tile_pos::ChunkTilePos;
 use crate::map::MapLayer;
 use crate::TilePos;
-use bevy::prelude::{Component, Entity, FromReflect, Reflect, ReflectComponent, UVec2};
+use bevy::prelude::{Component, Entity, Reflect, ReflectComponent, UVec2};
 use bevy::utils::hashbrown::HashMap;
 use grid::Grid;
 
@@ -85,7 +86,7 @@ impl Chunks {
 /// A Chunk of a [`Tilemap`](super::Tilemap)
 ///
 /// Contains all tile data as well as a hashmap that contains mapping to currently spawned tile entities
-#[derive(Component, Reflect, FromReflect)]
+#[derive(Component, Reflect)]
 #[reflect(Component)]
 pub struct Chunk<T>
 where
@@ -196,19 +197,19 @@ where
     /// - Overwrites the layer if it already exists
     pub fn add_sparse_layer(
         &mut self,
-        map_layer: impl MapLayer,
+        map_layer: u32,
         optional_tile_data: Option<HashMap<ChunkTilePos, T>>,
     ) {
         match optional_tile_data {
             None => {
                 self.data.insert(
-                    map_layer.to_bits(),
+                    map_layer,
                     ChunkLayerData::new_sparse_layer_empty(self.get_chunk_dimensions()),
                 );
             }
             Some(data) => {
                 self.data.insert(
-                    map_layer.to_bits(),
+                    map_layer,
                     ChunkLayerData::new_sparse_layer_from_data(data, self.get_chunk_dimensions()),
                 );
             }
@@ -219,9 +220,9 @@ where
     ///
     /// # Note
     /// - Overwrites the layer if it already exists
-    pub fn add_dense_layer_default(&mut self, map_layer: impl MapLayer) {
+    pub fn add_dense_layer_default(&mut self, map_layer: u32) {
         self.data.insert(
-            map_layer.to_bits(),
+            map_layer,
             ChunkLayerData::new_dense_default_layer(
                 self.get_chunk_dimensions().x as usize,
                 self.get_chunk_dimensions().y as usize,
@@ -233,9 +234,9 @@ where
     ///
     /// # Note
     /// - Overwrites the layer if it already exists
-    pub fn add_dense_layer_uniform(&mut self, map_layer: impl MapLayer, tile_data: T) {
+    pub fn add_dense_layer_uniform(&mut self, map_layer: u32, tile_data: T) {
         self.data.insert(
-            map_layer.to_bits(),
+            map_layer,
             ChunkLayerData::new_dense_uniform_layer(
                 self.get_chunk_dimensions().x as usize,
                 self.get_chunk_dimensions().y as usize,
@@ -248,9 +249,9 @@ where
     ///
     /// # Note
     /// - Overwrites the layer if it already exists
-    pub fn add_dense_layer_from_vecs(&mut self, map_layer: impl MapLayer, tile_data: Vec<Vec<T>>) {
+    pub fn add_dense_layer_from_vecs(&mut self, map_layer: u32, tile_data: Vec<Vec<T>>) {
         self.data.insert(
-            map_layer.to_bits(),
+            map_layer,
             ChunkLayerData::new_dense_from_vecs_layer(&tile_data),
         );
     }
@@ -479,7 +480,7 @@ mod tests {
         let mut hashmap: HashMap<ChunkTilePos, (u32, u32)> = HashMap::new();
         hashmap.insert(ChunkTilePos::new(0, 0), (50, 60));
         let mut chunk = Chunk::new_uniform(ChunkPos::new(0, 0), 30, 30, (0u32, 0u32));
-        chunk.add_sparse_layer(MapLayers::Secondary, Some(hashmap));
+        chunk.add_sparse_layer(MapLayers::Secondary.to_bits(), Some(hashmap));
         assert_eq!(
             chunk
                 .get_tile_data(MapLayers::Secondary, ChunkTilePos::new(0, 0))
@@ -498,7 +499,7 @@ mod tests {
             vec![(8, 4), (9, 6), (10, 1), (11, 4)],
         ];
 
-        chunk.add_dense_layer_from_vecs(MapLayers::Secondary, vecs);
+        chunk.add_dense_layer_from_vecs(MapLayers::Secondary.to_bits(), vecs);
         assert_eq!(
             chunk
                 .get_tile_data(MapLayers::Secondary, ChunkTilePos::new(3, 2))

@@ -1,8 +1,9 @@
 ﻿//! Core Tilemap concept and
 
 pub mod chunk;
-pub mod tilemap;
+mod tilemap;
 
+pub use tilemap::Tilemap;
 
 /// A layer used for identifying and accessing multiple layers of a [`Tilemap`]
 ///
@@ -15,7 +16,8 @@ pub trait MapLayer: Sized {
     fn all_bits() -> u32;
 }
 
-impl<L: MapLayer> MapLayer for &L {
+impl<L: MapLayer> MapLayer for &L
+{
     fn to_bits(&self) -> u32 {
         L::to_bits(self)
     }
@@ -24,5 +26,3 @@ impl<L: MapLayer> MapLayer for &L {
         L::all_bits()
     }
 }
-
-

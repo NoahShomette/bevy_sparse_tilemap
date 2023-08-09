@@ -1,9 +1,9 @@
 //! Core Tile concept
 
-use crate::map::chunk::chunk_pos::ChunkPos;
-use crate::map::chunk::chunk_tile_pos::ChunkTilePos;
-use bevy::prelude::{Component, FromReflect, Reflect, ReflectComponent, UVec2};
-use std::fmt::{Display, Formatter, Write};
+use crate::map::chunk::ChunkPos;
+use crate::map::chunk::ChunkTilePos;
+use bevy::prelude::{Component, Reflect, ReflectComponent, UVec2};
+use std::fmt::{Display, Formatter};
 
 /// The position of a tile in a [`Tilemap`]
 #[derive(
@@ -18,7 +18,6 @@ use std::fmt::{Display, Formatter, Write};
     Debug,
     Component,
     Reflect,
-    FromReflect,
 )]
 #[reflect(Component)]
 pub struct TilePos {

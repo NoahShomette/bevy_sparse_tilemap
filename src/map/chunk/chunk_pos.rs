@@ -1,5 +1,5 @@
 ﻿use crate::TilePos;
-use bevy::prelude::{Component, FromReflect, Reflect, ReflectComponent, UVec2};
+use bevy::prelude::{Component, Reflect, ReflectComponent, UVec2};
 use std::fmt::{Display, Formatter};
 
 /// The position of a [`Chunk`] in the [`Tilemap`]
@@ -7,8 +7,7 @@ use std::fmt::{Display, Formatter};
 /// A [`TilePos`] can be converted into a [`ChunkPos`] using [`TilePos::into_chunk_pos`]
 /// The position of a tile in a [`Tilemap`]
 #[derive(
-    Default, Eq, Hash, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Component, Reflect, FromReflect,
-)]
+    Default, Eq, Hash, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Component, Reflect, )]
 #[reflect(Component)]
 pub struct ChunkPos(TilePos);
 

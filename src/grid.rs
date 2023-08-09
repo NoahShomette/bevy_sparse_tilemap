@@ -1,13 +1,11 @@
-﻿use bevy::app::App;
-use bevy::prelude::{Deref, DerefMut, Plugin, Reflect};
-use bevy::reflect::FromReflect;
+﻿use bevy::prelude::{Deref, DerefMut, Reflect};
 use grid::Grid;
 use std::fmt;
 use std::iter::StepBy;
 use std::ops::{Index, IndexMut};
 use std::slice::Iter;
 
-#[derive(Deref, DerefMut, Reflect, FromReflect)]
+#[derive(Deref, DerefMut, Reflect)]
 pub struct GridList<T>(pub Grid<T>);
 
 impl<T: Clone> Clone for GridList<T> {

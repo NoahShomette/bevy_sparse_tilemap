@@ -1,24 +1,28 @@
 ﻿//! This module is specifically for making Tilemaps and helps to give ways to make Tilemap global layers
 //! and then convert those into chunks
 
-use crate::map::chunk::chunk_pos::ChunkPos;
-use crate::map::chunk::Chunk;
+use crate::map::chunk::{Chunk, ChunkPos};
 use crate::TilePos;
 use bevy::math::{vec2, UVec2};
 use bevy::utils::hashbrown::HashMap;
 
-/// The type of layer data arrangement
+/// An enum that holds all the data for a tilemap layer. This layer is only used in the [`TilemapBuilder`]
 ///
-/// # Sparse
+/// Spawned tilemaps data is separated into [`Chunk`]s as [`ChunkLayerData`](crate::map::chunk::ChunkLayerData)
 ///
-/// **A layer where every tile is not filled**
+/// # Tilemaps can have two types of layers
 ///
+/// ### Sparse
+///
+/// *A layer where not every tile exists*
+///
+/// Consists of two parts:
 /// 0. A hashmap of TilePos -> TileData
 /// 1. A UVec2 representing the size of the Tilemap
 ///
-/// # Dense
+/// ### Dense
 ///
-/// **A layer where every tile has TileData**
+/// *A layer where every tile has TileData*
 #[derive(Clone, Debug)]
 pub enum TilemapLayer<T>
 where
@@ -45,7 +49,7 @@ where
     pub fn dimensions(&self) -> UVec2 {
         match self {
             TilemapLayer::Sparse(_, dimensions) => *dimensions,
-            TilemapLayer::Dense(data) => UVec2::new(data.len() as u32, data[0].len() as u32),
+            TilemapLayer::Dense(data) => UVec2::new(data[0].len() as u32, data.len() as u32),
         }
     }
 
@@ -105,7 +109,7 @@ where
             (tile_data[0].len() * tile_data.len()) as u64,
             given_tile_count
         );
-        
+
         let mut y_vec: Vec<Vec<T>> = Vec::with_capacity(tile_data.len());
         for y in 0..tile_data.len() {
             let mut x_vec = Vec::with_capacity(tile_data[0].len());
@@ -119,6 +123,44 @@ where
 
     /// Converts Self into
     pub fn break_layer_into_chunk_data() {}
+}
+
+/// Adds the given layer to the tilemap
+pub fn add_layer_to_chunks<TileData>(
+    map_layer: u32,
+    chunks: &mut Vec<Vec<Chunk<TileData>>>,
+    tilemap_layer: &TilemapLayer<TileData>,
+    max_chunk_size: UVec2,
+) where
+    TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
+{
+    match tilemap_layer {
+        TilemapLayer::Sparse(data, _) => {
+            for (tile_pos, tile_data) in data.iter() {
+                let chunk_pos = tile_pos.into_chunk_pos(max_chunk_size);
+                chunks[chunk_pos.y() as usize][chunk_pos.x() as usize]
+                    .data
+                    .get_mut(&1u32)
+                    .unwrap()
+                    .set_tile_data(
+                        tile_pos.into_chunk_tile_pos(max_chunk_size),
+                        tile_data.clone(),
+                    );
+            }
+        }
+        TilemapLayer::Dense(data) => {
+            for y in chunks.iter_mut() {
+                for chunk in y.iter_mut() {
+                    let vec = break_data_vecs_down_into_chunk_data(
+                        &data,
+                        chunk.chunk_pos,
+                        max_chunk_size,
+                    );
+                    chunk.add_dense_layer_from_vecs(map_layer, vec);
+                }
+            }
+        }
+    }
 }
 
 pub fn break_layer_into_chunks<TileData>(
@@ -157,7 +199,6 @@ where
         max_chunks_floats.x.ceil() as u32,
         max_chunks_floats.y.ceil() as u32,
     );
-    
 
     for y in 0..max_chunks.y {
         let mut chunks_rows: Vec<Chunk<TileData>> = vec![];
@@ -207,7 +248,8 @@ where
     for y in 0..y_chunk_amount {
         let mut chunks_rows: Vec<Chunk<TileData>> = vec![];
         for x in 0..x_chunk_amount {
-            let vec = break_data_vecs_down_into_chunk(&data, ChunkPos::new(x, y), max_chunk_size);
+            let vec =
+                break_data_vecs_down_into_chunk_data(&data, ChunkPos::new(x, y), max_chunk_size);
             let chunk = Chunk::<TileData>::new_dense_from_vecs(ChunkPos::new(x, y), &vec);
             chunks_rows.push(chunk);
         }
@@ -217,8 +259,8 @@ where
     chunks
 }
 
-/// Function that breaks a map tiledata of [`Vec<Vec<TileData>>`] into a [`Vec<Vec<TileData>>`] of a specific chunks data
-pub fn break_data_vecs_down_into_chunk<TileData>(
+/// Function that breaks a [`Vec<Vec<TileData>>`] down into a [`Vec<Vec<TileData>>`] of a specific chunks data
+pub fn break_data_vecs_down_into_chunk_data<TileData>(
     data: &Vec<Vec<TileData>>,
     chunk_pos: ChunkPos,
     max_chunk_size: UVec2,
@@ -316,8 +358,8 @@ mod tests {
     }
 
     /// TilemapLayer breakdown
-    use crate::map::chunk::chunk_pos::ChunkPos;
-    use crate::tilemap_builder::tilemap_layer_builder::break_data_vecs_down_into_chunk;
+    use crate::map::chunk::ChunkPos;
+    use crate::tilemap_builder::tilemap_layer_builder::break_data_vecs_down_into_chunk_data;
 
     #[test]
     fn test_vec_breakdown() {
@@ -333,11 +375,11 @@ mod tests {
             vec![(0, 7), (1, 7), (2, 7), (3, 7),(4, 7), (5, 7), (6, 7), (7, 7)],
             vec![(0, 8), (1, 8), (2, 8), (3, 8),(4, 8), (5, 8), (6, 8), (7, 8)]
         ];
-        
+
         let max_chunk_size_x = 5;
         let max_chunk_size_y = 5;
 
-        let zero_zero = break_data_vecs_down_into_chunk(
+        let zero_zero = break_data_vecs_down_into_chunk_data(
             &vecs,
             ChunkPos::new(0, 0),
             UVec2::new(max_chunk_size_x, max_chunk_size_y),
@@ -348,7 +390,7 @@ mod tests {
         assert_eq!(zero_zero[4][0], (0, 4));
         assert_eq!(zero_zero[4][4], (4, 4));
 
-        let one_zero = break_data_vecs_down_into_chunk(
+        let one_zero = break_data_vecs_down_into_chunk_data(
             &vecs,
             ChunkPos::new(1, 0),
             UVec2::new(max_chunk_size_x, max_chunk_size_y),
@@ -359,7 +401,7 @@ mod tests {
         assert_eq!(one_zero[4][0], (5, 4));
         assert_eq!(one_zero[4][2], (7, 4));
 
-        let zero_one = break_data_vecs_down_into_chunk(
+        let zero_one = break_data_vecs_down_into_chunk_data(
             &vecs,
             ChunkPos::new(0, 1),
             UVec2::new(max_chunk_size_x, max_chunk_size_y),
@@ -368,7 +410,7 @@ mod tests {
         assert_eq!(zero_one[0][4], (4, 5));
         assert_eq!(zero_one[3][0], (0, 8));
         assert_eq!(zero_one[3][4], (4, 8));
-        let one_one = break_data_vecs_down_into_chunk(
+        let one_one = break_data_vecs_down_into_chunk_data(
             &vecs,
             ChunkPos::new(1, 1),
             UVec2::new(max_chunk_size_x, max_chunk_size_y),
@@ -415,7 +457,10 @@ mod tests {
         );
         assert_eq!(
             chunks[3][3]
-                .get_tile_data(MapLayers::Main, TilePos::new(31, 31).into_chunk_tile_pos(mcs))
+                .get_tile_data(
+                    MapLayers::Main,
+                    TilePos::new(31, 31).into_chunk_tile_pos(mcs)
+                )
                 .unwrap(),
             (31, 31)
         );

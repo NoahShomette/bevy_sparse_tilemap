@@ -4,11 +4,14 @@ use bevy::math::{uvec2, vec2, vec3};
 use bevy::prelude::*;
 use bevy::window::PresentMode;
 use bevy::DefaultPlugins;
-use bevy_fast_tilemap::{FastTileMapPlugin, Map, MapBundle};
+use bevy_fast_tilemap::{Map, MapBundle, MeshManagedByMap};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy_sparse_tilemap::map::chunk::{Chunk, ChunkSettings};
+use bevy_sparse_tilemap::tilemap_builder::tilemap_layer_builder::TilemapLayer;
+use bevy_sparse_tilemap::tilemap_builder::TilemapBuilder;
+use bevy_sparse_tilemap::SparseTilemapPlugin;
+use bevy_sparse_tilemap_derive::MapLayer;
 use rand::Rng;
-use bevy_sparse_tilemap::map::chunk::Chunk;
-use bevy_sparse_tilemap_derive::{MapLayer};
 
 fn main() {
     App::new()
@@ -21,48 +24,73 @@ fn main() {
             }),
             ..default()
         }))
-        .add_plugin(LogDiagnosticsPlugin::default())
-        .add_plugin(FrameTimeDiagnosticsPlugin::default())
-        .add_plugin(FastTileMapPlugin::default())
-        .add_plugin(WorldInspectorPlugin::default())
-        .add_startup_system(startup)
-        .add_system(mouse_controls_camera)
-        .add_system(spawn_or_update_fast_tilemaps)
+        .add_plugins((
+            LogDiagnosticsPlugin::default(),
+            FrameTimeDiagnosticsPlugin::default(),
+            WorldInspectorPlugin::default(),
+        ))
+        .add_plugins(SparseTilemapPlugin)
+        .add_systems(Startup, startup)
+        .add_systems(
+            Update,
+            (mouse_controls_camera, spawn_or_update_fast_tilemaps),
+        )
         .run();
 }
 
-#[derive(MapLayer)]
+#[derive(MapLayer, Clone, Copy, Default)]
 pub enum MapLayers {
+    #[default]
     Main,
     Secondary,
 }
 
 pub struct MapMarker;
 
-#[derive(Default, Copy, Clone, Reflect, FromReflect)]
+#[derive(Default, Copy, Clone, Reflect)]
 struct TileData(u8, u8);
 
-#[derive(Component, Default, Copy, Clone, Reflect, FromReflect)]
+#[derive(Component, Default, Copy, Clone, Reflect)]
 pub struct FastTileMap;
 
-fn startup(mut commands: Commands) {
+#[derive(Component, Default, Copy, Clone, Reflect)]
+pub struct ChunkMapSpawned;
+
+fn startup(
+    mut tilemap_builder: TilemapBuilder<MapMarker, TileData, MapLayers>,
+    mut commands: Commands,
+) {
     commands.spawn(Camera2dBundle::default());
-    let map_x = 13000;
-    let map_y = 13000;
-    
+    let map_size = UVec2::new(500, 500);
+    tilemap_builder.new_tilemap_with_main_layer(
+        TilemapLayer::new_dense_from_vecs(generate_random_tile_data(map_size.clone())),
+        ChunkSettings {
+            max_chunk_size: UVec2::new(100, 100),
+        },
+    );
+    let tilemap = tilemap_builder.spawn_tilemap();
+    commands.entity(tilemap).insert(SpatialBundle::default());
 }
 
 fn spawn_or_update_fast_tilemaps(
-    chunk_query: Query<(Entity, &Chunk<TileData>, Option<&Children>), Changed<Chunk<TileData>>>,
+    chunk_query: Query<
+        (
+            Entity,
+            &Chunk<TileData>,
+            Option<&Children>,
+            Option<&ChunkMapSpawned>,
+        ),
+        Changed<Chunk<TileData>>,
+    >,
     fast_tile_map_query: Query<&mut Map, With<FastTileMap>>,
     asset_server: Res<AssetServer>,
     mut images: ResMut<Assets<Image>>,
     mut commands: Commands,
 ) {
     let mut rng = rand::thread_rng();
-    'main_loop: for (entity, chunk, children) in chunk_query.iter() {
-        if let Some(children) = children {
-            for child in children.iter() {
+    'main_loop: for (entity, chunk, children, map_spawned_option) in chunk_query.iter() {
+        if let Some(_) = map_spawned_option {
+            for child in children.unwrap().iter() {
                 if let Ok(map) = fast_tile_map_query.get(*child) {
                     let mut m = match map.get_mut(&mut *images) {
                         Err(e) => {
@@ -74,9 +102,9 @@ fn spawn_or_update_fast_tilemaps(
                     };
 
                     for y in 0..chunk.get_chunk_dimensions().y {
-                        for x in 0..chunk.get_chunk_dimensions().x  {
+                        for x in 0..chunk.get_chunk_dimensions().x {
                             let i = rng.gen_range(1..12);
-                            m.set(x as u32, y as u32, i);
+                            m.set(x, y, i);
                         }
                     }
                     continue 'main_loop;
@@ -96,25 +124,40 @@ fn spawn_or_update_fast_tilemaps(
             // Tile size (pixels)
             vec2(16., 16.),
         )
-        .build_and_set(&mut images, |pos| rng.gen_range(0..15));
-        println!("{:?}", map.map_texture.id());
+        .build_and_set(&mut images, |_| rng.gen_range(0..15));
+
         commands
             .entity(entity)
-            .insert(SpatialBundle {
-                transform: Transform {
-                    translation: Vec3::new(
-                        chunk.chunk_pos.x() as f32 * chunk.get_chunk_dimensions().x as f32 * 16.0,
-                        chunk.chunk_pos.y() as f32 * chunk.get_chunk_dimensions().y as f32 * 16.0,
-                        1.0,
-                    ),
+            .insert((
+                SpatialBundle {
+                    transform: Transform {
+                        translation: Vec3::new(
+                            chunk.chunk_pos.x() as f32
+                                * chunk.get_chunk_dimensions().x as f32
+                                * 16.0,
+                            chunk.chunk_pos.y() as f32
+                                * chunk.get_chunk_dimensions().y as f32
+                                * 16.0,
+                            1.0,
+                        ),
+                        ..default()
+                    },
                     ..default()
                 },
-                ..default()
-            })
+                ChunkMapSpawned,
+            ))
             .with_children(|parent| {
+                let mut map_bundle = MapBundle::new(map);
+                map_bundle.transform.translation = Vec3::new(
+                    chunk.chunk_pos.x() as f32 * chunk.get_chunk_dimensions().x as f32 * 16.0,
+                    chunk.chunk_pos.y() as f32 * chunk.get_chunk_dimensions().y as f32 * 16.0,
+                    1.0,
+                );
                 parent
-                    .spawn(MapBundle::new(map))
+                    .spawn(map_bundle)
+                    .insert(Transform::from_translation(Vec3::new(1.0, 1.0, 1.0)))
                     // Have the map manage our mesh so it always has the right size
+                    .insert(MeshManagedByMap)
                     .insert(FastTileMap);
             });
     }
@@ -165,7 +208,7 @@ fn mouse_controls_camera(
     }
 
     if wheel_y != 0. {
-        for (_, mut transform, _, mut _ortho) in camera_query.iter_mut() {
+        for (_, mut transform, _, _ortho) in camera_query.iter_mut() {
             let factor = f32::powf(2., -wheel_y / 2.);
             transform.scale *= vec3(factor, factor, 1.0);
             transform.scale = transform

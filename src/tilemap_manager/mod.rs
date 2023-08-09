@@ -1,9 +1,10 @@
 ﻿use bevy::prelude::Resource;
 
-pub mod tilemap_manager;
-pub mod errors;
+mod errors;
+mod tilemap_manager;
 
+pub use errors::TilemapManagerError;
+pub use tilemap_manager::TilemapManager;
 
 #[derive(Resource, Default)]
-struct LayerIndex<MapLayer>(MapLayer);
-
+pub(crate) struct LayerIndex<MapLayer>(pub(crate) MapLayer);

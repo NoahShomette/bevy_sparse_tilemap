@@ -12,6 +12,6 @@ pub struct BevyFastTilemapFeaturePlugin;
 
 impl Plugin for BevyFastTilemapFeaturePlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(FastTileMapPlugin);
+        app.add_plugins(FastTileMapPlugin);
     }
 }

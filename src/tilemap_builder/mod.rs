@@ -1,19 +1,22 @@
 ﻿pub mod tilemap_layer_builder;
 
 use crate::map::chunk::{ChunkSettings, Chunks};
-use crate::map::tilemap::Tilemap;
-use crate::tilemap_builder::tilemap_layer_builder::{break_layer_into_chunks, TilemapLayer};
+use crate::map::{MapLayer, Tilemap};
+use crate::tilemap_builder::tilemap_layer_builder::{
+    add_layer_to_chunks, break_layer_into_chunks, TilemapLayer,
+};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::{BuildChildren, Commands, Entity, Local, Resource, UVec2};
 use bevy::utils::HashMap;
 use std::marker::PhantomData;
 
-/// Info to build a Tilemap with
-struct TilemapBuilderInfo<TilemapMarker, TileData, MapLayer>
+/// Information to construct a Tilemap
+#[derive(Resource)]
+struct TilemapBuilderInfo<TilemapMarker, TileData, MapLayers>
 where
     TilemapMarker: Send + Sync + 'static,
     TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
-    MapLayer: crate::map::MapLayer + Clone + Copy + Send + Sync + Default + 'static,
+    MapLayers: MapLayer + Clone + Copy + Send + Sync + 'static,
 {
     main_layer: TilemapLayer<TileData>,
     layer_info: HashMap<u32, TilemapLayer<TileData>>,
@@ -22,15 +25,15 @@ where
     // All phantom data below
     tm_phantom: PhantomData<TilemapMarker>,
     td_phantom: PhantomData<TileData>,
-    ml_phantom: PhantomData<MapLayer>,
+    ml_phantom: PhantomData<MapLayers>,
 }
 
-impl<TilemapMarker, TileData, MapLayer> Default
-    for TilemapBuilderInfo<TilemapMarker, TileData, MapLayer>
+impl<TilemapMarker, TileData, MapLayers> Default
+    for TilemapBuilderInfo<TilemapMarker, TileData, MapLayers>
 where
     TilemapMarker: Send + Sync + 'static,
     TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
-    MapLayer: crate::map::MapLayer + Clone + Copy + Send + Sync + Default + 'static,
+    MapLayers: MapLayer + Clone + Copy + Send + Sync + 'static,
 {
     fn default() -> Self {
         Self {
@@ -47,70 +50,44 @@ where
     }
 }
 
-/// A private resource for use in [`TilemapBuilder`].
-///
-/// Holds the data and settings for the newly spawned tilemap
-#[derive(Resource)]
-struct TilemapBuilderInfoInstance<TilemapMarker, TileData, MapLayer>
-where
-    TilemapMarker: Send + Sync + 'static,
-    TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
-    MapLayer: crate::map::MapLayer + Clone + Copy + Send + Sync + Default + 'static,
-{
-    tilemap_builder_info: TilemapBuilderInfo<TilemapMarker, TileData, MapLayer>,
-    tm_phantom: PhantomData<TilemapMarker>,
-    td_phantom: PhantomData<TileData>,
-    ml_phantom: PhantomData<MapLayer>,
-}
-
-impl<TilemapMarker, TileData, MapLayer> Default
-    for TilemapBuilderInfoInstance<TilemapMarker, TileData, MapLayer>
-where
-    TilemapMarker: Send + Sync + 'static,
-    TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
-    MapLayer: crate::map::MapLayer + Clone + Copy + Send + Sync + Default + 'static,
-{
-    fn default() -> Self {
-        Self {
-            tilemap_builder_info: TilemapBuilderInfo::default(),
-            tm_phantom: PhantomData::default(),
-            td_phantom: PhantomData::default(),
-            ml_phantom: PhantomData::default(),
-        }
-    }
-}
-
+/// A custom [`SystemParam`] used to construct Tilemaps
 #[derive(SystemParam)]
-pub struct TilemapBuilder<'w, 's, TilemapMarker, TileData, MapLayer>
+pub struct TilemapBuilder<'w, 's, TilemapMarker, TileData, MapLayers>
 where
     TilemapMarker: Send + Sync + 'static,
     TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
-    MapLayer: crate::map::MapLayer + Clone + Copy + Send + Sync + Default + 'static,
+    MapLayers: MapLayer + Clone + Copy + Send + Sync + 'static,
 {
     tm_phantom: PhantomData<TilemapMarker>,
     td_phantom: PhantomData<TileData>,
-    ml_phantom: PhantomData<MapLayer>,
-    tilemap_info: Local<'s, TilemapBuilderInfoInstance<TilemapMarker, TileData, MapLayer>>,
+    ml_phantom: PhantomData<MapLayers>,
+    tilemap_info: Local<'s, TilemapBuilderInfo<TilemapMarker, TileData, MapLayers>>,
     commands: Commands<'w, 's>,
 }
 
-impl<'w, 's, TilemapMarker, TileData, MapLayer>
-    TilemapBuilder<'w, 's, TilemapMarker, TileData, MapLayer>
+impl<'w, 's, TilemapMarker, TileData, MapLayers>
+    TilemapBuilder<'w, 's, TilemapMarker, TileData, MapLayers>
 where
     TilemapMarker: Send + Sync + 'static,
     TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
-    MapLayer: crate::map::MapLayer + Clone + Copy + Send + Sync + Default + 'static,
+    MapLayers: MapLayer + Clone + Copy + Send + Sync + 'static,
 {
-    /// Function for internal use to take the settings from TilemapBuilder and spawn the actual
-    /// tilemap returning the TilemapEntity
+    /// Converts all the data from the [`SystemParam`] and spawns the
+    /// tilemap returning the Tilemaps [`Entity`]
     pub fn spawn_tilemap(&mut self) -> Entity {
         let mut chunks = break_layer_into_chunks(
-            &self.tilemap_info.tilemap_builder_info.main_layer,
-            self.tilemap_info
-                .tilemap_builder_info
-                .chunk_settings
-                .max_chunk_size,
+            &self.tilemap_info.main_layer,
+            self.tilemap_info.chunk_settings.max_chunk_size,
         );
+
+        for (id, layer) in self.tilemap_info.layer_info.iter() {
+            add_layer_to_chunks(
+                *id,
+                &mut chunks,
+                layer,
+                self.tilemap_info.chunk_settings.max_chunk_size,
+            )
+        }
 
         let mut chunk_entities: Vec<Vec<Entity>> = vec![];
 
@@ -118,7 +95,7 @@ where
 
         for y in 0..chunks.len() {
             let mut vec: Vec<Entity> = vec![];
-            for x in 0..map_x {
+            for _ in 0..map_x {
                 let entity = self.commands.spawn(chunks[y].remove(0)).id();
                 vec.push(entity);
             }
@@ -133,10 +110,7 @@ where
 
         let chunks = Chunks::new(
             Chunks::new_chunk_entity_grid(chunk_entities),
-            self.tilemap_info
-                .tilemap_builder_info
-                .chunk_settings
-                .max_chunk_size,
+            self.tilemap_info.chunk_settings.max_chunk_size,
         );
 
         let tilemap_entity = self
@@ -147,31 +121,64 @@ where
         tilemap_entity
     }
 
+    /// Sets the [`TilemapBuilder`] to the default with the addition of the given [`TilemapLayer`] as
+    /// the main layer.
     pub fn new_tilemap_with_main_layer(
         &mut self,
         layer_data: TilemapLayer<TileData>,
         chunk_settings: ChunkSettings,
     ) {
-        self.tilemap_info.tilemap_builder_info = TilemapBuilderInfo {
-            main_layer: layer_data,
-            layer_info: Default::default(),
-            chunk_settings,
-            map_size: Default::default(),
-            tm_phantom: Default::default(),
-            td_phantom: Default::default(),
-            ml_phantom: Default::default(),
-        }
+        let dimensions = layer_data.dimensions();
+        println!("{:?}", dimensions);
+        *self.tilemap_info =
+            TilemapBuilderInfo::<TilemapMarker, TileData, MapLayers> {
+                main_layer: layer_data,
+                layer_info: Default::default(),
+                chunk_settings,
+                map_size: dimensions,
+                tm_phantom: Default::default(),
+                td_phantom: Default::default(),
+                ml_phantom: Default::default(),
+            };
     }
 
-    pub fn add_layer(&mut self, layer_data: TilemapLayer<TileData>, map_layer: MapLayer) {
+    /// Adds the given [`TilemapLayer`] to the tilemap keyed to the given [`MapLayers`]
+    pub fn add_layer(&mut self, layer_data: TilemapLayer<TileData>, map_layer: MapLayers) {
         assert_eq!(
-            self.tilemap_info.tilemap_builder_info.map_size,
+            self.tilemap_info.map_size,
             layer_data.dimensions(),
             "New layers must be the same size as the map dimensions"
         );
         self.tilemap_info
-            .tilemap_builder_info
             .layer_info
             .insert(map_layer.to_bits(), layer_data);
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate as bevy_sparse_tilemap;
+
+    use crate::map::chunk::ChunkSettings;
+    use crate::tilemap_builder::tilemap_layer_builder::TilemapLayer;
+    use crate::tilemap_builder::TilemapBuilder;
+    use crate::tilemap_manager::TilemapManager;
+    use crate::TilePos;
+    use bevy::ecs::system::SystemState;
+    use bevy::math::UVec2;
+    use bevy::prelude::World;
+    use bevy::utils::hashbrown::HashMap;
+    use bevy_sparse_tilemap_derive::MapLayer;
+
+    #[derive(Clone, Copy, Default, PartialEq, Eq, Debug)]
+    struct TileData(u8);
+
+    #[derive(MapLayer, Default, Debug, PartialEq, Eq, Clone, Copy)]
+    enum MapLayers {
+        #[default]
+        Main,
+        Secondary,
+    }
+
+    pub struct MainMap;
 }

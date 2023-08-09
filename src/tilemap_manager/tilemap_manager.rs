@@ -1,19 +1,19 @@
-use crate::map::chunk::chunk_pos::ChunkPos;
-use crate::map::chunk::Chunk;
-use crate::map::tilemap::Tilemap;
-use crate::tilemap_manager::errors::TilemapManagerError;
+use crate::map::chunk::{Chunk, ChunkPos};
+use crate::map::{MapLayer, Tilemap};
 use crate::tilemap_manager::LayerIndex;
+use crate::tilemap_manager::TilemapManagerError;
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::{Children, Commands, DespawnRecursiveExt, Entity, Local, Query};
 
 use crate::TilePos;
 
+/// A [`SystemParam`] used to access and interact with a [`Tilemap`]
 #[derive(SystemParam)]
-pub struct TilemapManager<'w, 's, TilemapMarker, TileData, MapLayer>
+pub struct TilemapManager<'w, 's, TilemapMarker, TileData, MapLayers>
 where
     TilemapMarker: Send + Sync + 'static,
     TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
-    MapLayer: crate::map::MapLayer + Clone + Copy + Send + Sync + Default + 'static,
+    MapLayers: MapLayer + Default + Clone + Copy + Send + Sync  + 'static,
 {
     tilemap_query: Query<
         'w,
@@ -34,27 +34,27 @@ where
         ),
     >,
     commands: Commands<'w, 's>,
-    layer_index: Local<'s, LayerIndex<MapLayer>>,
+    layer_index: Local<'s, LayerIndex<MapLayers>>,
 }
 
-impl<'w, 's, TilemapMarker, TileData, MapLayer>
-    TilemapManager<'w, 's, TilemapMarker, TileData, MapLayer>
+impl<'w, 's, TilemapMarker, TileData, MapLayers>
+    TilemapManager<'w, 's, TilemapMarker, TileData, MapLayers>
 where
     TilemapMarker: Send + Sync + 'static,
     TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
-    MapLayer: crate::map::MapLayer + Clone + Copy + Send + Sync + Default + 'static,
+    MapLayers: MapLayer + Default + Clone + Copy + Send + Sync  + 'static,
 {
-    /// Returns the currently set [`MapLayer`]
-    pub fn layer(&self) -> MapLayer {
+    /// Returns the currently set [`MapLayers`]
+    pub fn layer(&self) -> MapLayers {
         self.layer_index.0
     }
 
-    /// Sets the [`MapLayer`] that all future operations will be conducted upon.
+    /// Sets the [`MapLayers`] that all future operations will be conducted upon.
     ///
     /// # Note
     ///
     /// The selected layer will persist across system runs
-    pub fn on_layer(&mut self, map_layer: MapLayer) {
+    pub fn on_layer(&mut self, map_layer: MapLayers) {
         *self.layer_index = LayerIndex(map_layer)
     }
 
@@ -72,6 +72,25 @@ where
                 tile_pos.into_chunk_tile_pos(tilemap.get_chunks_max_size()),
             )
             .ok_or(TilemapManagerError::TileDataDoesNotExist)
+    }
+
+    /// Sets the tile data for the given [`TilePos`] if it exists.
+    pub fn sets_tile_data(
+        &mut self,
+        tile_data: TileData,
+        tile_pos: TilePos,
+    ) -> Result<(), TilemapManagerError> {
+        let (_, tilemap, _) = self.tilemap_query.single();
+        let (_, mut chunk, _) = self.chunk_query.get_mut(
+            tilemap
+                .get_chunk_for_tile_pos(tile_pos)
+                .ok_or(TilemapManagerError::InvalidChunkPos)?,
+        )?;
+        Ok(chunk.set_tile_data(
+            self.layer_index.0,
+            tile_pos.into_chunk_tile_pos(tilemap.get_chunks_max_size()),
+            tile_data,
+        ))
     }
 
     /// Gets the [`Entity`] for the given [`TilePos`] if it exists.
@@ -142,10 +161,14 @@ where
     }
 
     /// Returns the [`Chunk`] data for the given [`ChunkPos`] if it exists
-    pub fn get_chunk(&self, chunk_pos: ChunkPos) -> Option<&Chunk<TileData>> {
+    pub fn get_chunk(&self, chunk_pos: ChunkPos) -> Result<&Chunk<TileData>, TilemapManagerError> {
         let (_, tilemap, _) = self.tilemap_query.single();
-        let (_, chunk, _) = self.chunk_query.get(tilemap.get_chunk(chunk_pos)?).ok()?;
-        Some(chunk)
+        let (_, chunk, _) = self.chunk_query.get(
+            tilemap
+                .get_chunk(chunk_pos)
+                .ok_or(TilemapManagerError::InvalidChunkPos)?,
+        )?;
+        Ok(chunk)
     }
 }
 
@@ -212,7 +235,7 @@ mod tests {
 
         system_state.apply(&mut world);
 
-        let (mut tilemap_builder, mut tilemap_manager) = system_state.get_mut(&mut world);
+        let (_, tilemap_manager) = system_state.get_mut(&mut world);
 
         assert_eq!(
             tilemap_manager.get_tile_data(TilePos::new(0, 0)).unwrap(),
@@ -289,7 +312,7 @@ mod tests {
 
         system_state.apply(&mut world);
 
-        let (tilemap_builder, tilemap_manager) = system_state.get_mut(&mut world);
+        let (_, tilemap_manager) = system_state.get_mut(&mut world);
 
         assert_eq!(
             tilemap_manager.get_tile_data(TilePos::new(0, 0)).unwrap(),
