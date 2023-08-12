@@ -26,9 +26,7 @@ pub struct Tilemap {
 impl Tilemap {
     /// Creates a new [`Tilemap`] out of the given chunks struct
     pub fn new(chunks: Chunks) -> Tilemap {
-        Self {
-            chunks,
-        }
+        Self { chunks }
     }
 
     /// Gets the chunk entity that has the tile_info for the given TilePos
@@ -44,5 +42,15 @@ impl Tilemap {
     /// Returns the max size that a chunk can be
     pub fn get_chunks_max_size(&self) -> UVec2 {
         self.chunks.max_chunk_size()
+    }
+
+    /// Returns an immutable reference to [`Chunks`]
+    pub fn chunks(&self) -> &Chunks {
+        &self.chunks
+    }
+
+    /// Returns a mutable reference to [`Chunks`]
+    pub fn chunks_mut(&mut self) -> &mut Chunks {
+        &mut self.chunks
     }
 }

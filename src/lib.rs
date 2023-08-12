@@ -41,7 +41,7 @@
 //! bevy_sparse_tilemap includes a handy [`TilemapManager`](tilemap_manager::TilemapManager) system
 //! param that has a bevy of helper functions to make accessing, editing, and interacting with tilemaps
 //! that much easier.
-//! 
+//!
 //! ```rust
 //! # use bevy::prelude::{Commands, Entity, Reflect, UVec2};
 //! # use bevy_sparse_tilemap::map::chunk::ChunkSettings;
@@ -80,6 +80,8 @@ pub mod tiles;
 
 use bevy::app::App;
 use bevy::prelude::Plugin;
+
+pub use bst_map_layer_derive::MapLayer;
 pub use tiles::TilePos;
 
 use crate::integrations::IntegrationsPlugin;

@@ -4,7 +4,9 @@
 use crate::map::chunk::{Chunk, ChunkPos};
 use crate::TilePos;
 use bevy::math::{vec2, UVec2};
+use bevy::prelude::{Bundle, Commands, Entity};
 use bevy::utils::hashbrown::HashMap;
+use std::cmp::max;
 
 /// An enum that holds all the data for a tilemap layer. This layer is only used in the [`TilemapBuilder`]
 ///
@@ -28,8 +30,8 @@ pub enum TilemapLayer<T>
 where
     T: Clone + Copy + Sized + Default + Send + Sync,
 {
-    Sparse(HashMap<TilePos, T>, UVec2),
-    Dense(Vec<Vec<T>>),
+    Sparse(HashMap<TilePos, T>, UVec2, HashMap<TilePos, Entity>),
+    Dense(Vec<Vec<T>>, HashMap<TilePos, Entity>),
 }
 
 impl<T> Default for TilemapLayer<T>
@@ -37,7 +39,7 @@ where
     T: Clone + Copy + Sized + Default + Send + Sync,
 {
     fn default() -> Self {
-        Self::Dense(vec![vec![]])
+        Self::Dense(vec![vec![]], HashMap::default())
     }
 }
 
@@ -48,8 +50,8 @@ where
     /// Returns the dimensions of the layer
     pub fn dimensions(&self) -> UVec2 {
         match self {
-            TilemapLayer::Sparse(_, dimensions) => *dimensions,
-            TilemapLayer::Dense(data) => UVec2::new(data[0].len() as u32, data.len() as u32),
+            TilemapLayer::Sparse(_, dimensions, ..) => *dimensions,
+            TilemapLayer::Dense(data, ..) => UVec2::new(data[0].len() as u32, data.len() as u32),
         }
     }
 
@@ -58,6 +60,7 @@ where
         Self::Sparse(
             HashMap::new(),
             UVec2::new(tile_map_size_x as u32, tile_map_size_y as u32),
+            HashMap::default(),
         )
     }
 
@@ -70,6 +73,7 @@ where
         Self::Sparse(
             hashmap,
             UVec2::new(tile_map_size_x as u32, tile_map_size_y as u32),
+            HashMap::default(),
         )
     }
 
@@ -82,7 +86,7 @@ where
             x_vec.fill(T::default());
             y_vec.push(x_vec);
         }
-        Self::Dense(y_vec)
+        Self::Dense(y_vec, HashMap::default())
     }
 
     /// Creates a new [`TilemapLayer::Dense`] with all the tiles having the same data as the given
@@ -94,7 +98,7 @@ where
             x_vec.fill(tile_data);
             y_vec.push(x_vec);
         }
-        Self::Dense(y_vec)
+        Self::Dense(y_vec, HashMap::default())
     }
 
     /// Creates a new [`TilemapLayer::Dense`] from the given vectors of vectors of T
@@ -118,11 +122,27 @@ where
             }
             y_vec.push(x_vec);
         }
-        Self::Dense(y_vec)
+        Self::Dense(y_vec, HashMap::default())
     }
 
-    /// Converts Self into
-    pub fn break_layer_into_chunk_data() {}
+    /// Spawns an entity at the given [`TilePos`] with the given [`Bundle`]
+    pub fn spawn_entity_at_tile_pos<B: Bundle>(
+        &mut self,
+        tile_pos: TilePos,
+        bundle: B,
+        commands: &mut Commands,
+    ) {
+        let entity = commands.spawn(bundle).id();
+
+        match self {
+            TilemapLayer::Sparse(_, _, entities) => {
+                entities.insert(tile_pos, entity);
+            }
+            TilemapLayer::Dense(_, entities) => {
+                entities.insert(tile_pos, entity);
+            }
+        }
+    }
 }
 
 /// Adds the given layer to the tilemap
@@ -135,20 +155,26 @@ pub fn add_layer_to_chunks<TileData>(
     TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
 {
     match tilemap_layer {
-        TilemapLayer::Sparse(data, _) => {
+        TilemapLayer::Sparse(data, .., entities) => {
+            for y in chunks.iter_mut() {
+                for chunk in y.iter_mut() {
+                    chunk.add_sparse_layer(map_layer, None);
+                }
+            }
             for (tile_pos, tile_data) in data.iter() {
                 let chunk_pos = tile_pos.into_chunk_pos(max_chunk_size);
                 chunks[chunk_pos.y() as usize][chunk_pos.x() as usize]
                     .data
-                    .get_mut(&1u32)
+                    .get_mut(&map_layer)
                     .unwrap()
                     .set_tile_data(
                         tile_pos.into_chunk_tile_pos(max_chunk_size),
                         tile_data.clone(),
                     );
             }
+            add_entities_to_layer(map_layer, chunks, entities, max_chunk_size);
         }
-        TilemapLayer::Dense(data) => {
+        TilemapLayer::Dense(data, entities) => {
             for y in chunks.iter_mut() {
                 for chunk in y.iter_mut() {
                     let vec = break_data_vecs_down_into_chunk_data(
@@ -159,6 +185,7 @@ pub fn add_layer_to_chunks<TileData>(
                     chunk.add_dense_layer_from_vecs(map_layer, vec);
                 }
             }
+            add_entities_to_layer(map_layer, chunks, entities, max_chunk_size);
         }
     }
 }
@@ -171,10 +198,16 @@ where
     TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
 {
     return match tilemap_layer {
-        TilemapLayer::Sparse(data, map_size) => {
-            break_hashmap_into_chunks(data, map_size.clone(), max_chunk_size)
+        TilemapLayer::Sparse(data, map_size, entities) => {
+            let mut chunks = break_hashmap_into_chunks(data, map_size.clone(), max_chunk_size);
+            add_entities_to_layer(1u32, &mut chunks, entities, max_chunk_size);
+            chunks
         }
-        TilemapLayer::Dense(data) => break_data_vecs_into_chunks(data, max_chunk_size),
+        TilemapLayer::Dense(data, entities) => {
+            let mut chunks = break_data_vecs_into_chunks(data, max_chunk_size);
+            add_entities_to_layer(1u32, &mut chunks, entities, max_chunk_size);
+            chunks
+        }
     };
 }
 
@@ -287,6 +320,24 @@ where
     vec
 }
 
+pub fn add_entities_to_layer<TileData>(
+    map_layer: u32,
+    chunks: &mut Vec<Vec<Chunk<TileData>>>,
+    entities: &HashMap<TilePos, Entity>,
+    max_chunk_size: UVec2,
+) where
+    TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
+{
+    for (tile_pos, entity) in entities.iter() {
+        let chunk_pos = tile_pos.into_chunk_pos(max_chunk_size);
+        chunks[chunk_pos.y() as usize][chunk_pos.x() as usize]
+            .data
+            .get_mut(&map_layer)
+            .unwrap()
+            .set_tile_entity(tile_pos.into_chunk_tile_pos(max_chunk_size), *entity);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate as bevy_sparse_tilemap;
@@ -306,7 +357,7 @@ mod tests {
         let vecs = vec![vec![0, 1, 2, 3], vec![4, 5, 6, 7], vec![8, 9, 10, 11]];
         let tilemap = TilemapLayer::new_dense_from_vecs(vecs);
 
-        let TilemapLayer::Dense(data) = tilemap else{
+        let TilemapLayer::Dense(data, ..) = tilemap else{
             panic!("Wrong type")
         };
         assert_eq!(data[0][0], 0);
@@ -318,7 +369,7 @@ mod tests {
             vec![TileData(8), TileData(9), TileData(10), TileData(11)],
         ];
         let tilemap = TilemapLayer::new_dense_from_vecs(vecs);
-        let TilemapLayer::Dense(data) = tilemap else{
+        let TilemapLayer::Dense(data, ..) = tilemap else{
             panic!("Wrong type")
         };
         assert_eq!(data[0][0], TileData(0));
@@ -330,7 +381,7 @@ mod tests {
             vec![(8, 4), (9, 6), (10, 1), (11, 4)],
         ];
         let tilemap = TilemapLayer::new_dense_from_vecs(vecs);
-        let TilemapLayer::Dense(data) = tilemap else{
+        let TilemapLayer::Dense(data, ..) = tilemap else{
             panic!("Wrong type")
         };
         assert_eq!(data[0][0], (0, 0));
@@ -346,7 +397,7 @@ mod tests {
 
         let tilemap = TilemapLayer::new_sparse_from_hashmap(32, 32, hashmap);
 
-        let TilemapLayer::Sparse(data, size) = tilemap else{
+        let TilemapLayer::Sparse(data, size, ..) = tilemap else{
             panic!("Wrong type")
         };
 

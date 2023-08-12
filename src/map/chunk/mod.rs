@@ -2,7 +2,6 @@ mod chunk_layer;
 mod chunk_pos;
 mod chunk_tile_pos;
 
-
 pub use crate::map::chunk::chunk_layer::ChunkLayerData;
 pub use crate::map::chunk::chunk_pos::ChunkPos;
 pub use crate::map::chunk::chunk_tile_pos::ChunkTilePos;
@@ -16,7 +15,7 @@ use grid::Grid;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Chunks {
     /// A grid of [`Entity`] references pointing to that chunks entity
-    chunks: Grid<Entity>,
+    chunk_entities: Grid<Entity>,
     /// The max size that a chunk can be
     max_chunk_size: UVec2,
 }
@@ -58,7 +57,7 @@ impl Chunks {
     /// Creates a new Chunks component
     pub fn new(chunk_entity_grid: Grid<Entity>, max_chunk_size: UVec2) -> Self {
         Self {
-            chunks: chunk_entity_grid,
+            chunk_entities: chunk_entity_grid,
             max_chunk_size,
         }
     }
@@ -70,7 +69,7 @@ impl Chunks {
 
     /// Gets the chunk entity for the given [`ChunkPos`] if it exists
     pub fn get_chunk(&self, chunk_pos: ChunkPos) -> Option<Entity> {
-        self.chunks
+        self.chunk_entities
             .get(chunk_pos.y() as usize, chunk_pos.x() as usize)
             .cloned()
     }
@@ -79,7 +78,15 @@ impl Chunks {
     pub fn get_chunk_from_tile_pos(&self, tile_pos: TilePos) -> Option<Entity> {
         let chunk_pos_x: usize = (tile_pos.x / self.max_chunk_size.x) as usize;
         let chunk_pos_y: usize = (tile_pos.y / self.max_chunk_size.y) as usize;
-        self.chunks.get(chunk_pos_y, chunk_pos_x).cloned()
+        self.chunk_entities.get(chunk_pos_y, chunk_pos_x).cloned()
+    }
+
+    /// Returns the x and y count of chunks
+    pub fn chunk_counts(&self) -> UVec2 {
+        UVec2::new(
+            self.chunk_entities.size().1 as u32,
+            self.chunk_entities.size().0 as u32,
+        )
     }
 }
 
@@ -261,7 +268,7 @@ impl<T> Chunk<T>
 where
     T: Clone + Copy + Sized + Default + Send + Sync,
 {
-    /// Returns the dimensions for the given [`MapLayer`] in the [`Chunk`].
+    /// Returns the actual dimensions for the given [`MapLayer`] in the [`Chunk`].
     ///
     /// # Panics
     /// - If the [`MapLayer`] does not exist in the chunk

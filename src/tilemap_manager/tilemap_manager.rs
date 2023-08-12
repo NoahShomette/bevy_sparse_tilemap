@@ -3,6 +3,7 @@ use crate::map::{MapLayer, Tilemap};
 use crate::tilemap_manager::TilemapManagerError;
 use crate::tilemap_manager::{LayerIndex, MapEntity};
 use bevy::ecs::system::SystemParam;
+use bevy::math::UVec2;
 use bevy::prelude::{Children, Commands, DespawnRecursiveExt, Entity, Local, Query};
 use std::ops::Deref;
 
@@ -67,6 +68,52 @@ where
     /// The selected layer will persist across system runs
     pub fn on_layer(&mut self, map_layer: MapLayers) {
         *self.layer_index = LayerIndex(map_layer)
+    }
+
+    /// Returns the [`Tilemap`]s dimensions.
+    pub fn dimensions(&self) -> Result<UVec2, TilemapManagerError> {
+        let (_, tilemap, _) = self.tilemap_query.get(
+            self.map_entity
+                .deref()
+                .0
+                .expect("TilemapManager must have a tilemap entity set"),
+        )?;
+
+        let chunks = tilemap.chunks().chunk_counts();
+        let average_chunk_size = self
+            .chunk_query
+            .get(
+                tilemap
+                    .get_chunk(ChunkPos::new(0, 0))
+                    .ok_or(TilemapManagerError::InvalidChunkPos)?,
+            )?
+            .1
+            .get_chunk_dimensions();
+
+        let max_x_chunk = self
+            .chunk_query
+            .get(
+                tilemap
+                    .get_chunk(ChunkPos::new(chunks.x- 1, 0))
+                    .ok_or(TilemapManagerError::InvalidChunkPos)?,
+            )?
+            .1
+            .get_chunk_dimensions();
+
+        let max_y_chunk = self
+            .chunk_query
+            .get(
+                tilemap
+                    .get_chunk(ChunkPos::new(0, chunks.y - 1))
+                    .ok_or(TilemapManagerError::InvalidChunkPos)?,
+            )?
+            .1
+            .get_chunk_dimensions();
+
+        Ok(UVec2::new(
+            (average_chunk_size.x * (chunks.x - 1)) + max_x_chunk.x,
+            (average_chunk_size.y * (chunks.y - 1)) + max_y_chunk.y,
+        ))
     }
 
     /// Gets the tile data for the given [`TilePos`] if it exists.
@@ -408,5 +455,42 @@ mod tests {
             tilemap_manager.get_tile_data(TilePos::new(8, 0)).is_err(),
             true
         );
+    }
+
+    #[test]
+    fn tilemap_manager_dimensions() {
+        let mut world = World::new();
+
+        let mut system_state: SystemState<(
+            TilemapBuilder<(i32, i32), MapLayers>,
+            TilemapManager<(i32, i32), MapLayers>,
+        )> = SystemState::new(&mut world);
+        let (mut tilemap_builder, _) = system_state.get_mut(&mut world);
+
+        #[rustfmt::skip]
+            let vecs = vec![
+            vec![(0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0)],
+            vec![(0, 1), (1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1), (7, 1)],
+            vec![(0, 2), (1, 2), (2, 2), (3, 2), (4, 2), (5, 2), (6, 2), (7, 2)],
+            vec![(0, 3), (1, 3), (2, 3), (3, 3), (4, 3), (5, 3), (6, 3), (7, 3)],
+            vec![(0, 4), (1, 4), (2, 4), (3, 4), (4, 4), (5, 4), (6, 4), (7, 4)],
+            vec![(0, 5), (1, 5), (2, 5), (3, 5), (4, 5), (5, 5), (6, 5), (7, 5)],
+            vec![(0, 6), (1, 6), (2, 6), (3, 6), (4, 6), (5, 6), (6, 6), (7, 6)],
+            vec![(0, 7), (1, 7), (2, 7), (3, 7), (4, 7), (5, 7), (6, 7), (7, 7)],
+            vec![(0, 8), (1, 8), (2, 8), (3, 8), (4, 8), (5, 8), (6, 8), (7, 8)]
+        ];
+        tilemap_builder.new_tilemap_with_main_layer(
+            TilemapLayer::new_dense_from_vecs(vecs),
+            ChunkSettings {
+                max_chunk_size: UVec2::new(5, 5),
+            },
+        );
+        let map_entity = tilemap_builder.spawn_tilemap();
+        system_state.apply(&mut world);
+        let (_, mut tilemap_manager) = system_state.get_mut(&mut world);
+        tilemap_manager.set_tilemap_entity(map_entity);
+        tilemap_manager.on_layer(MapLayers::Main);
+
+        assert_eq!(tilemap_manager.dimensions().unwrap(), UVec2::new(8, 9));
     }
 }
