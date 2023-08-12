@@ -2,6 +2,11 @@
 name = "bevy_sparse_tilemap_derive"
 version = "0.1.0"
 edition = "2021"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+authors = ["Noah Shomette <git@noahshomette.me>"]
+repository = "https://github.com/NoahShomette/bevy_sparse_tilemap"
+homepage = "https://github.com/NoahShomette/bevy_sparse_tilemap"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
