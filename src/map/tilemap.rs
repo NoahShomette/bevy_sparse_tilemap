@@ -5,39 +5,29 @@
 //!
 //!
 
-use crate::map::chunk::{Chunks};
-use crate::{TilePos};
+use crate::map::chunk::ChunkPos;
+use crate::map::chunk::Chunks;
+use crate::TilePos;
 use bevy::math::UVec2;
 use bevy::prelude::{Component, Entity};
-use std::marker::PhantomData;
-use crate::map::chunk::ChunkPos;
 
-/// The data structure containing the entirety of the tilemaps data for each chunk and tile as well 
+/// The data structure containing the entirety of the tilemaps data for each chunk and tile as well
 /// as manages chunk access and setup
 ///
 /// Each tile should only contain the bare minimum data needed for you to figure out what it is. Any
 /// data that is not the same for every single tile of that type should be stored as a component
 /// on that tiles entity which is managed through the [`Chunk`](super::chunk::Chunk)
 #[derive(Component, Clone, Debug, Eq, PartialEq)]
-pub struct Tilemap<TilemapMarker>
-where
-    TilemapMarker: Send + Sync + 'static,
-{
+pub struct Tilemap {
     /// Struct containing [`Entity`] mappings to the [`Chunk`](super::chunk::Chunk)s that hold tile data
     chunks: Chunks,
-    _marker: PhantomData<TilemapMarker>,
 }
 
-impl<TilemapMarker> Tilemap<TilemapMarker>
-where
-    TilemapMarker: Send + Sync + 'static,
-{
-
+impl Tilemap {
     /// Creates a new [`Tilemap`] out of the given chunks struct
-    pub fn new(chunks: Chunks) -> Tilemap<TilemapMarker> {
+    pub fn new(chunks: Chunks) -> Tilemap {
         Self {
             chunks,
-            _marker: Default::default(),
         }
     }
 

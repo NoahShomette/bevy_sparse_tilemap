@@ -12,9 +12,8 @@ use std::marker::PhantomData;
 
 /// Information to construct a Tilemap
 #[derive(Resource)]
-struct TilemapBuilderInfo<TilemapMarker, TileData, MapLayers>
+struct TilemapBuilderInfo<TileData, MapLayers>
 where
-    TilemapMarker: Send + Sync + 'static,
     TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayers: MapLayer + Clone + Copy + Send + Sync + 'static,
 {
@@ -23,15 +22,12 @@ where
     chunk_settings: ChunkSettings,
     map_size: UVec2,
     // All phantom data below
-    tm_phantom: PhantomData<TilemapMarker>,
     td_phantom: PhantomData<TileData>,
     ml_phantom: PhantomData<MapLayers>,
 }
 
-impl<TilemapMarker, TileData, MapLayers> Default
-    for TilemapBuilderInfo<TilemapMarker, TileData, MapLayers>
+impl<TileData, MapLayers> Default for TilemapBuilderInfo<TileData, MapLayers>
 where
-    TilemapMarker: Send + Sync + 'static,
     TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayers: MapLayer + Clone + Copy + Send + Sync + 'static,
 {
@@ -43,7 +39,6 @@ where
                 max_chunk_size: UVec2::new(50, 50),
             },
             map_size: Default::default(),
-            tm_phantom: PhantomData::default(),
             td_phantom: PhantomData::default(),
             ml_phantom: PhantomData::default(),
         }
@@ -52,28 +47,25 @@ where
 
 /// A custom [`SystemParam`] used to construct Tilemaps
 #[derive(SystemParam)]
-pub struct TilemapBuilder<'w, 's, TilemapMarker, TileData, MapLayers>
+pub struct TilemapBuilder<'w, 's, TileData, MapLayers>
 where
-    TilemapMarker: Send + Sync + 'static,
     TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayers: MapLayer + Clone + Copy + Send + Sync + 'static,
 {
-    tm_phantom: PhantomData<TilemapMarker>,
     td_phantom: PhantomData<TileData>,
     ml_phantom: PhantomData<MapLayers>,
-    tilemap_info: Local<'s, TilemapBuilderInfo<TilemapMarker, TileData, MapLayers>>,
+    tilemap_info: Local<'s, TilemapBuilderInfo<TileData, MapLayers>>,
     commands: Commands<'w, 's>,
 }
 
-impl<'w, 's, TilemapMarker, TileData, MapLayers>
-    TilemapBuilder<'w, 's, TilemapMarker, TileData, MapLayers>
+impl<'w, 's, TileData, MapLayers> TilemapBuilder<'w, 's, TileData, MapLayers>
 where
-    TilemapMarker: Send + Sync + 'static,
     TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayers: MapLayer + Clone + Copy + Send + Sync + 'static,
 {
     /// Converts all the data from the [`SystemParam`] and spawns the
     /// tilemap returning the Tilemaps [`Entity`]
+    #[must_use]
     pub fn spawn_tilemap(&mut self) -> Entity {
         let mut chunks = break_layer_into_chunks(
             &self.tilemap_info.main_layer,
@@ -115,7 +107,7 @@ where
 
         let tilemap_entity = self
             .commands
-            .spawn(Tilemap::<TilemapMarker>::new(chunks))
+            .spawn(Tilemap::new(chunks))
             .push_children(flattened_chunk_entities.as_slice())
             .id();
         tilemap_entity
@@ -130,16 +122,14 @@ where
     ) {
         let dimensions = layer_data.dimensions();
         println!("{:?}", dimensions);
-        *self.tilemap_info =
-            TilemapBuilderInfo::<TilemapMarker, TileData, MapLayers> {
-                main_layer: layer_data,
-                layer_info: Default::default(),
-                chunk_settings,
-                map_size: dimensions,
-                tm_phantom: Default::default(),
-                td_phantom: Default::default(),
-                ml_phantom: Default::default(),
-            };
+        *self.tilemap_info = TilemapBuilderInfo::<TileData, MapLayers> {
+            main_layer: layer_data,
+            layer_info: Default::default(),
+            chunk_settings,
+            map_size: dimensions,
+            td_phantom: Default::default(),
+            ml_phantom: Default::default(),
+        };
     }
 
     /// Adds the given [`TilemapLayer`] to the tilemap keyed to the given [`MapLayers`]

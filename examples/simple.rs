@@ -1,6 +1,6 @@
 ﻿use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::math::UVec2;
-use bevy::prelude::{default, App, PluginGroup, Reflect, Startup, Window, WindowPlugin};
+use bevy::prelude::{default, App, PluginGroup, Reflect, Startup, Window, WindowPlugin, Resource, Entity, Commands};
 use bevy::window::PresentMode;
 use bevy::DefaultPlugins;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
@@ -43,9 +43,11 @@ pub enum MapLayers {
 #[derive(Default, Copy, Clone, Reflect)]
 struct TileData(u8, u8);
 
-pub struct MapMarker;
+// Resource to hold our map entity so we can use it in systems
+#[derive(Resource)]
+pub struct MapEntity(Entity);
 
-fn spawn_map(mut tilemap_builder: TilemapBuilder<MapMarker, TileData, MapLayers>) {
+fn spawn_map(mut tilemap_builder: TilemapBuilder<TileData, MapLayers>, mut commands: Commands) {
     let map_size = UVec2::new(500, 500);
     tilemap_builder.new_tilemap_with_main_layer(
         TilemapLayer::new_dense_from_vecs(generate_random_tile_data(map_size.clone())),
@@ -69,7 +71,9 @@ fn spawn_map(mut tilemap_builder: TilemapBuilder<MapMarker, TileData, MapLayers>
         TilemapLayer::new_sparse_empty(map_size.x as usize, map_size.y as usize),
         MapLayers::SparseThree,
     );
-    tilemap_builder.spawn_tilemap();
+    let tilemap = tilemap_builder.spawn_tilemap();
+    commands.insert_resource(MapEntity(tilemap));
+
 }
 
 fn generate_random_tile_data(size_to_generate: UVec2) -> Vec<Vec<TileData>> {

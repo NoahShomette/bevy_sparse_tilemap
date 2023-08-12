@@ -45,7 +45,9 @@ pub enum MapLayers {
     Secondary,
 }
 
-pub struct MapMarker;
+// Resource to hold our map entity so we can use it in systems
+#[derive(Resource)]
+pub struct MapEntity(Entity);
 
 #[derive(Default, Copy, Clone, Reflect)]
 struct TileData(u8, u8);
@@ -56,10 +58,7 @@ pub struct FastTileMap;
 #[derive(Component, Default, Copy, Clone, Reflect)]
 pub struct ChunkMapSpawned;
 
-fn startup(
-    mut tilemap_builder: TilemapBuilder<MapMarker, TileData, MapLayers>,
-    mut commands: Commands,
-) {
+fn startup(mut tilemap_builder: TilemapBuilder<TileData, MapLayers>, mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
     let map_size = UVec2::new(500, 500);
     tilemap_builder.new_tilemap_with_main_layer(
@@ -70,6 +69,7 @@ fn startup(
     );
     let tilemap = tilemap_builder.spawn_tilemap();
     commands.entity(tilemap).insert(SpatialBundle::default());
+    commands.insert_resource(MapEntity(tilemap));
 }
 
 fn spawn_or_update_fast_tilemaps(

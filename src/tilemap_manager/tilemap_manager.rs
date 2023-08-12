@@ -1,29 +1,30 @@
 use crate::map::chunk::{Chunk, ChunkPos};
 use crate::map::{MapLayer, Tilemap};
-use crate::tilemap_manager::LayerIndex;
 use crate::tilemap_manager::TilemapManagerError;
+use crate::tilemap_manager::{LayerIndex, MapEntity};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::{Children, Commands, DespawnRecursiveExt, Entity, Local, Query};
+use std::ops::Deref;
 
 use crate::TilePos;
 
 /// A [`SystemParam`] used to access and interact with a [`Tilemap`]
+///
+/// # IMPORTANT
+///
+/// You **MUST** set the [TilemapManager] to a specific tilemap using [`set_tilemap_entity()`](TilemapManager::set_tilemap_entity) before you use the Tilemap Manager.
+/// If you don't these functions will panic.
+///
+/// # Internal [`SystemParam`]s
+/// - Query<(Entity, &mut Tilemap, Option<&'static Children>)>
+/// - Query<(Entity, &mut Chunk<TileData>, Option<&'static Children>)>,
 #[derive(SystemParam)]
-pub struct TilemapManager<'w, 's, TilemapMarker, TileData, MapLayers>
+pub struct TilemapManager<'w, 's, TileData, MapLayers>
 where
-    TilemapMarker: Send + Sync + 'static,
     TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
-    MapLayers: MapLayer + Default + Clone + Copy + Send + Sync  + 'static,
+    MapLayers: MapLayer + Default + Clone + Copy + Send + Sync + 'static,
 {
-    tilemap_query: Query<
-        'w,
-        's,
-        (
-            Entity,
-            &'static mut Tilemap<TilemapMarker>,
-            Option<&'static Children>,
-        ),
-    >,
+    tilemap_query: Query<'w, 's, (Entity, &'static mut Tilemap, Option<&'static Children>)>,
     chunk_query: Query<
         'w,
         's,
@@ -35,15 +36,25 @@ where
     >,
     commands: Commands<'w, 's>,
     layer_index: Local<'s, LayerIndex<MapLayers>>,
+    map_entity: Local<'s, MapEntity>,
 }
 
-impl<'w, 's, TilemapMarker, TileData, MapLayers>
-    TilemapManager<'w, 's, TilemapMarker, TileData, MapLayers>
+impl<'w, 's, TileData, MapLayers> TilemapManager<'w, 's, TileData, MapLayers>
 where
-    TilemapMarker: Send + Sync + 'static,
     TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
-    MapLayers: MapLayer + Default + Clone + Copy + Send + Sync  + 'static,
+    MapLayers: MapLayer + Default + Clone + Copy + Send + Sync + 'static,
 {
+    /// Returns the [`Tilemap`] entity that this tilemap manager is set to affect
+    pub fn tilemap_entity(&self) -> Option<Entity> {
+        self.map_entity.deref().0
+    }
+
+    /// Sets the [`Tilemap`] entity that this tilemap manager is set to affect. This must be set before
+    /// using any other functions that modify the tilemap
+    pub fn set_tilemap_entity(&mut self, entity: Entity) {
+        *self.map_entity = MapEntity(Some(entity));
+    }
+
     /// Returns the currently set [`MapLayers`]
     pub fn layer(&self) -> MapLayers {
         self.layer_index.0
@@ -60,7 +71,12 @@ where
 
     /// Gets the tile data for the given [`TilePos`] if it exists.
     pub fn get_tile_data(&self, tile_pos: TilePos) -> Result<TileData, TilemapManagerError> {
-        let (_, tilemap, _) = self.tilemap_query.single();
+        let (_, tilemap, _) = self.tilemap_query.get(
+            self.map_entity
+                .deref()
+                .0
+                .expect("TilemapManager must have a tilemap entity set"),
+        )?;
         let (_, chunk, _) = self.chunk_query.get(
             tilemap
                 .get_chunk_for_tile_pos(tile_pos)
@@ -80,8 +96,12 @@ where
         tile_data: TileData,
         tile_pos: TilePos,
     ) -> Result<(), TilemapManagerError> {
-        let (_, tilemap, _) = self.tilemap_query.single();
-        let (_, mut chunk, _) = self.chunk_query.get_mut(
+        let (_, tilemap, _) = self.tilemap_query.get(
+            self.map_entity
+                .deref()
+                .0
+                .expect("TilemapManager must have a tilemap entity set"),
+        )?;        let (_, mut chunk, _) = self.chunk_query.get_mut(
             tilemap
                 .get_chunk_for_tile_pos(tile_pos)
                 .ok_or(TilemapManagerError::InvalidChunkPos)?,
@@ -95,8 +115,12 @@ where
 
     /// Gets the [`Entity`] for the given [`TilePos`] if it exists.
     pub fn get_tile_entity(&self, tile_pos: TilePos) -> Result<Entity, TilemapManagerError> {
-        let (_, tilemap, _) = self.tilemap_query.single();
-        let (_, chunk, _) = self.chunk_query.get(
+        let (_, tilemap, _) = self.tilemap_query.get(
+            self.map_entity
+                .deref()
+                .0
+                .expect("TilemapManager must have a tilemap entity set"),
+        )?;        let (_, chunk, _) = self.chunk_query.get(
             tilemap
                 .get_chunk_for_tile_pos(tile_pos)
                 .ok_or(TilemapManagerError::InvalidChunkPos)?,
@@ -115,8 +139,12 @@ where
         &mut self,
         tile_pos: TilePos,
     ) -> Result<Entity, TilemapManagerError> {
-        let (_, tilemap, _) = self.tilemap_query.single();
-        let (_, mut chunk, _) = self.chunk_query.get_mut(
+        let (_, tilemap, _) = self.tilemap_query.get(
+            self.map_entity
+                .deref()
+                .0
+                .expect("TilemapManager must have a tilemap entity set"),
+        )?;        let (_, mut chunk, _) = self.chunk_query.get_mut(
             tilemap
                 .get_chunk_for_tile_pos(tile_pos)
                 .ok_or(TilemapManagerError::InvalidChunkPos)?,
@@ -143,8 +171,12 @@ where
     /// Gets the [`Entity`] for the given [`TilePos`] if it exists or spawns one and returns that if it
     /// doesn't.
     pub fn despawn_tile_entity(&mut self, tile_pos: TilePos) -> Result<(), TilemapManagerError> {
-        let (_, tilemap, _) = self.tilemap_query.single();
-        let (_, chunk, _) = self.chunk_query.get(
+        let (_, tilemap, _) = self.tilemap_query.get(
+            self.map_entity
+                .deref()
+                .0
+                .expect("TilemapManager must have a tilemap entity set"),
+        )?;        let (_, chunk, _) = self.chunk_query.get(
             tilemap
                 .get_chunk_for_tile_pos(tile_pos)
                 .ok_or(TilemapManagerError::InvalidChunkPos)?,
@@ -162,8 +194,12 @@ where
 
     /// Returns the [`Chunk`] data for the given [`ChunkPos`] if it exists
     pub fn get_chunk(&self, chunk_pos: ChunkPos) -> Result<&Chunk<TileData>, TilemapManagerError> {
-        let (_, tilemap, _) = self.tilemap_query.single();
-        let (_, chunk, _) = self.chunk_query.get(
+        let (_, tilemap, _) = self.tilemap_query.get(
+            self.map_entity
+                .deref()
+                .0
+                .expect("TilemapManager must have a tilemap entity set"),
+        )?;        let (_, chunk, _) = self.chunk_query.get(
             tilemap
                 .get_chunk(chunk_pos)
                 .ok_or(TilemapManagerError::InvalidChunkPos)?,
@@ -204,8 +240,8 @@ mod tests {
         let mut world = World::new();
 
         let mut system_state: SystemState<(
-            TilemapBuilder<MainMap, (i32, i32), MapLayers>,
-            TilemapManager<MainMap, (i32, i32), MapLayers>,
+            TilemapBuilder<(i32, i32), MapLayers>,
+            TilemapManager<(i32, i32), MapLayers>,
         )> = SystemState::new(&mut world);
         let (mut tilemap_builder, mut tilemap_manager) = system_state.get_mut(&mut world);
         assert_eq!(tilemap_manager.layer(), MapLayers::Main);
@@ -231,12 +267,12 @@ mod tests {
                 max_chunk_size: UVec2::new(5, 5),
             },
         );
-        tilemap_builder.spawn_tilemap();
+        let map_entity = tilemap_builder.spawn_tilemap();
 
         system_state.apply(&mut world);
 
-        let (_, tilemap_manager) = system_state.get_mut(&mut world);
-
+        let (_, mut tilemap_manager) = system_state.get_mut(&mut world);
+        tilemap_manager.set_tilemap_entity(map_entity);
         assert_eq!(
             tilemap_manager.get_tile_data(TilePos::new(0, 0)).unwrap(),
             (0, 0)
@@ -289,8 +325,8 @@ mod tests {
         let mut world = World::new();
 
         let mut system_state: SystemState<(
-            TilemapBuilder<MainMap, (i32, i32), MapLayers>,
-            TilemapManager<MainMap, (i32, i32), MapLayers>,
+            TilemapBuilder<(i32, i32), MapLayers>,
+            TilemapManager<(i32, i32), MapLayers>,
         )> = SystemState::new(&mut world);
         let (mut tilemap_builder, mut tilemap_manager) = system_state.get_mut(&mut world);
         assert_eq!(tilemap_manager.layer(), MapLayers::Main);
@@ -308,11 +344,12 @@ mod tests {
                 max_chunk_size: UVec2::new(5, 5),
             },
         );
-        tilemap_builder.spawn_tilemap();
+        let map_entity = tilemap_builder.spawn_tilemap();
 
         system_state.apply(&mut world);
 
-        let (_, tilemap_manager) = system_state.get_mut(&mut world);
+        let (_, mut tilemap_manager) = system_state.get_mut(&mut world);
+        tilemap_manager.set_tilemap_entity(map_entity);
 
         assert_eq!(
             tilemap_manager.get_tile_data(TilePos::new(0, 0)).unwrap(),
