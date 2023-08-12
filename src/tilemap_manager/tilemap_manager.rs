@@ -253,7 +253,7 @@ mod tests {
     use bevy::math::UVec2;
     use bevy::prelude::World;
     use bevy::utils::hashbrown::HashMap;
-    use bevy_sparse_tilemap_derive::MapLayer;
+    use bst_map_layer_derive::MapLayer;
 
     #[derive(Clone, Copy, Default, PartialEq, Eq, Debug)]
     struct TileData(u8);

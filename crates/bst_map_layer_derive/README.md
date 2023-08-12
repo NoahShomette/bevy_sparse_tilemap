@@ -1,0 +1,1 @@
+﻿Simple derive crate for [Bevy_Sparse_Tilemap](https://github.com/NoahShomette/bevy_sparse_tilemap)

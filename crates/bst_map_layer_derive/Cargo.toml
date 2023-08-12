@@ -1,5 +1,5 @@
 [package]
-name = "bevy_sparse_tilemap_derive"
+name = "bst_map_layer_derive"
 version = "0.1.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"

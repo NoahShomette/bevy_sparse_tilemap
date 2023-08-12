@@ -10,7 +10,7 @@ use bevy_sparse_tilemap::map::chunk::{Chunk, ChunkSettings};
 use bevy_sparse_tilemap::tilemap_builder::tilemap_layer_builder::TilemapLayer;
 use bevy_sparse_tilemap::tilemap_builder::TilemapBuilder;
 use bevy_sparse_tilemap::SparseTilemapPlugin;
-use bevy_sparse_tilemap_derive::MapLayer;
+use bst_map_layer_derive::MapLayer;
 use rand::Rng;
 
 fn main() {

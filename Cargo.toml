@@ -10,7 +10,7 @@ repository = "https://github.com/NoahShomette/bevy_sparse_tilemap"
 homepage = "https://github.com/NoahShomette/bevy_sparse_tilemap"
 
 [workspace]
-members = ["crates/bevy_sparse_tilemap_derive"]
+members = ["crates/bst_map_layer_derive"]
 resolver = "2"
 
 [features]
@@ -30,7 +30,7 @@ opt-level = 3
 
 [dependencies]
 bevy = { version = "0.11", default-features = false, features = [] }
-bevy_sparse_tilemap_derive = {path = "crates/bevy_sparse_tilemap_derive", version = "0.1.0"}
+bst_map_layer_derive = {path = "crates/bst_map_layer_derive", version = "0.1.0"}
 grid = "0.10.0"
 thiserror = "1.0.44"
 
