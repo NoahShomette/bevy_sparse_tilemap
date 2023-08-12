@@ -1,7 +1,7 @@
 ﻿# `bevy_sparse_tilemap`
 [![Crates.io](https://img.shields.io/crates/v/bevy_sparse_tilemap)](https://crates.io/crates/bevy_sparse_tilemap)
 [![docs](https://docs.rs/bevy_sparse_tilemap/badge.svg)](https://docs.rs/bevy_sparse_tilemap/)
-[![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/StarArawn/bevy_sparse_tilemap/blob/main/LICENSE)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/NoahShomette/bevy_sparse_tilemap/blob/main/LICENSE)
 [![Crates.io](https://img.shields.io/crates/d/bevy_sparse_tilemap)](https://crates.io/crates/bevy_sparse_tilemap)
 
 A Tilemap crate for the Bevy game engine with a focus on large map sizes and ECS sparse maps
