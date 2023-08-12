@@ -1,5 +1,5 @@
 ﻿# `bevy_sparse_tilemap`
-A Tilemap crate for the Bevy game engine with a focus on logic and map size.
+A Tilemap crate for the Bevy game engine with a focus on large map sizes and ECS sparse maps
 
 ## Features
 - Sparse-set style tilemaps
