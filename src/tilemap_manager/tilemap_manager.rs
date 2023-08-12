@@ -101,7 +101,8 @@ where
                 .deref()
                 .0
                 .expect("TilemapManager must have a tilemap entity set"),
-        )?;        let (_, mut chunk, _) = self.chunk_query.get_mut(
+        )?;
+        let (_, mut chunk, _) = self.chunk_query.get_mut(
             tilemap
                 .get_chunk_for_tile_pos(tile_pos)
                 .ok_or(TilemapManagerError::InvalidChunkPos)?,
@@ -120,7 +121,8 @@ where
                 .deref()
                 .0
                 .expect("TilemapManager must have a tilemap entity set"),
-        )?;        let (_, chunk, _) = self.chunk_query.get(
+        )?;
+        let (_, chunk, _) = self.chunk_query.get(
             tilemap
                 .get_chunk_for_tile_pos(tile_pos)
                 .ok_or(TilemapManagerError::InvalidChunkPos)?,
@@ -131,6 +133,33 @@ where
                 tile_pos.into_chunk_tile_pos(tilemap.get_chunks_max_size()),
             )
             .ok_or(TilemapManagerError::TileEntityDoesNotExist)
+    }
+
+    /// Sets the [`Entity`] for the given [`TilePos`]. Prefer to use [`get_or_spawn_tile_entity`](TilemapManager::get_or_spawn_tile_entity).
+    pub fn set_tile_entity(
+        &mut self,
+        tile_pos: TilePos,
+        entity: Entity,
+    ) -> Result<(), TilemapManagerError> {
+        let (_, tilemap, _) = self.tilemap_query.get(
+            self.map_entity
+                .deref()
+                .0
+                .expect("TilemapManager must have a tilemap entity set"),
+        )?;
+        let (_, mut chunk, _) = self.chunk_query.get_mut(
+            tilemap
+                .get_chunk_for_tile_pos(tile_pos)
+                .ok_or(TilemapManagerError::InvalidChunkPos)?,
+        )?;
+
+        chunk.set_tile_entity(
+            self.layer_index.0,
+            tile_pos.into_chunk_tile_pos(tilemap.get_chunks_max_size()),
+            entity,
+        );
+
+        Ok(())
     }
 
     /// Gets the [`Entity`] for the given [`TilePos`] if it exists or spawns one and returns that if it
@@ -144,7 +173,8 @@ where
                 .deref()
                 .0
                 .expect("TilemapManager must have a tilemap entity set"),
-        )?;        let (_, mut chunk, _) = self.chunk_query.get_mut(
+        )?;
+        let (_, mut chunk, _) = self.chunk_query.get_mut(
             tilemap
                 .get_chunk_for_tile_pos(tile_pos)
                 .ok_or(TilemapManagerError::InvalidChunkPos)?,
@@ -176,7 +206,8 @@ where
                 .deref()
                 .0
                 .expect("TilemapManager must have a tilemap entity set"),
-        )?;        let (_, chunk, _) = self.chunk_query.get(
+        )?;
+        let (_, chunk, _) = self.chunk_query.get(
             tilemap
                 .get_chunk_for_tile_pos(tile_pos)
                 .ok_or(TilemapManagerError::InvalidChunkPos)?,
@@ -199,7 +230,8 @@ where
                 .deref()
                 .0
                 .expect("TilemapManager must have a tilemap entity set"),
-        )?;        let (_, chunk, _) = self.chunk_query.get(
+        )?;
+        let (_, chunk, _) = self.chunk_query.get(
             tilemap
                 .get_chunk(chunk_pos)
                 .ok_or(TilemapManagerError::InvalidChunkPos)?,
