@@ -9,6 +9,7 @@ use bevy_sparse_tilemap::tilemap_builder::tilemap_layer_builder::TilemapLayer;
 use bevy_sparse_tilemap::tilemap_builder::TilemapBuilder;
 use bevy_sparse_tilemap_derive::MapLayer;
 use rand::Rng;
+use bevy_sparse_tilemap::tilemap_manager::TilemapManager;
 
 fn main() {
     App::new()
