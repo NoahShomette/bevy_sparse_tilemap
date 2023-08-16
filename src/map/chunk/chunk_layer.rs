@@ -25,7 +25,7 @@ where
     T: Hash + Clone + Copy + Sized + Default + Send + Sync,
 {
     fn map_entities(&mut self, entity_mapper: &mut EntityMapper) {
-        for mut tile_entity in self.tile_entities.iter_mut() {
+        for tile_entity in self.tile_entities.iter_mut() {
             *tile_entity.1 = entity_mapper.get_or_reserve(*tile_entity.1);
         }
     }
@@ -153,8 +153,9 @@ where
             ChunkLayerTypes::Sparse(hashmap, chunk_size) => {
                 let mut pairs: Vec<_> = hashmap.iter().collect();
                 pairs.sort_by_key(|i| i.0);
-
                 Hash::hash(&pairs, h);
+                Hash::hash(&chunk_size, h);
+
             }
             ChunkLayerTypes::Dense(grid) => {
                 Hash::hash(grid, h);
