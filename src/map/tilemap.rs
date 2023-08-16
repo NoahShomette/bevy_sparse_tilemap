@@ -9,7 +9,7 @@ use crate::map::chunk::ChunkPos;
 use crate::map::chunk::Chunks;
 use crate::TilePos;
 use bevy::math::UVec2;
-use bevy::prelude::{Component, Entity};
+use bevy::prelude::{Component, Entity, Reflect, ReflectComponent};
 
 /// The data structure containing the entirety of the tilemaps data for each chunk and tile as well
 /// as manages chunk access and setup
@@ -17,7 +17,8 @@ use bevy::prelude::{Component, Entity};
 /// Each tile should only contain the bare minimum data needed for you to figure out what it is. Any
 /// data that is not the same for every single tile of that type should be stored as a component
 /// on that tiles entity which is managed through the [`Chunk`](super::chunk::Chunk)
-#[derive(Component, Clone, Debug, Eq, PartialEq)]
+#[derive(Component, Default, Clone, Debug, Eq, PartialEq, Reflect)]
+#[reflect(Component)]
 pub struct Tilemap {
     /// Struct containing [`Entity`] mappings to the [`Chunk`](super::chunk::Chunk)s that hold tile data
     chunks: Chunks,

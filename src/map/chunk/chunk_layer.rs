@@ -1,13 +1,13 @@
 ﻿//! This module is for data structures to store and interact with a Chunks Layers.
 
 use bevy::math::UVec2;
-use bevy::prelude::Entity;
+use bevy::prelude::{Entity, Reflect};
 use bevy::utils::HashMap;
 use grid::Grid;
 use crate::map::chunk::chunk_tile_pos::ChunkTilePos;
 
 /// A struct that holds the chunk map data for the given layer
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Reflect)]
 pub struct ChunkLayerData<T>
 where
     T: Clone + Copy + Sized + Default + Send + Sync,
@@ -107,7 +107,7 @@ where
 /// # Dense
 ///
 /// **A layer where every tile has TileData**
-#[derive(Clone)]
+#[derive(Clone, Reflect)]
 pub enum ChunklayerTypes<T>
 where
     T: Clone + Copy + Sized + Default + Send + Sync,

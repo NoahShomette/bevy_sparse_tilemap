@@ -2,6 +2,7 @@ mod chunk_layer;
 mod chunk_pos;
 mod chunk_tile_pos;
 
+use crate::grid::Grid;
 pub use crate::map::chunk::chunk_layer::ChunkLayerData;
 pub use crate::map::chunk::chunk_pos::ChunkPos;
 pub use crate::map::chunk::chunk_tile_pos::ChunkTilePos;
@@ -9,15 +10,23 @@ use crate::map::MapLayer;
 use crate::TilePos;
 use bevy::prelude::{Component, Entity, Reflect, ReflectComponent, UVec2};
 use bevy::utils::hashbrown::HashMap;
-use grid::Grid;
 
 /// The chunks of a tilemap
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Reflect)]
 pub struct Chunks {
     /// A grid of [`Entity`] references pointing to that chunks entity
     chunk_entities: Grid<Entity>,
     /// The max size that a chunk can be
     max_chunk_size: UVec2,
+}
+
+impl Default for Chunks {
+    fn default() -> Self {
+        Self {
+            chunk_entities: Grid::<Entity>::init(0, 0, Entity::PLACEHOLDER),
+            max_chunk_size: Default::default(),
+        }
+    }
 }
 
 impl Chunks {
@@ -340,9 +349,18 @@ where
 }
 
 /// Settings for the chunks in a [`Chunks`] object
+#[derive(Reflect)]
 pub struct ChunkSettings {
     /// The max size that a chunk can be
     pub max_chunk_size: UVec2,
+}
+
+impl Default for ChunkSettings {
+    fn default() -> Self {
+        Self {
+            max_chunk_size: UVec2::new(25, 25),
+        }
+    }
 }
 
 impl ChunkSettings {
