@@ -12,7 +12,7 @@ pub struct ChunkLayerData<T>
 where
     T: Clone + Copy + Sized + Default + Send + Sync,
 {
-    layer_type_data: ChunklayerTypes<T>,
+    layer_type_data: ChunkLayerTypes<T>,
     tile_entities: HashMap<ChunkTilePos, Entity>,
 }
 
@@ -23,7 +23,7 @@ where
 {
     pub fn new_sparse_layer_empty(chunk_dimensions: UVec2) -> ChunkLayerData<T> {
         ChunkLayerData {
-            layer_type_data: ChunklayerTypes::Sparse(HashMap::new(), chunk_dimensions),
+            layer_type_data: ChunkLayerTypes::Sparse(HashMap::new(), chunk_dimensions),
             tile_entities: Default::default(),
         }
     }
@@ -33,21 +33,21 @@ where
         chunk_dimensions: UVec2,
     ) -> ChunkLayerData<T> {
         ChunkLayerData {
-            layer_type_data: ChunklayerTypes::Sparse(sparse_data, chunk_dimensions),
+            layer_type_data: ChunkLayerTypes::Sparse(sparse_data, chunk_dimensions),
             tile_entities: Default::default(),
         }
     }
 
     pub fn new_dense_default_layer(chunk_size_x: usize, chunk_size_y: usize) -> Self {
         Self {
-            layer_type_data: ChunklayerTypes::new_dense_default(chunk_size_x, chunk_size_y),
+            layer_type_data: ChunkLayerTypes::new_dense_default(chunk_size_x, chunk_size_y),
             tile_entities: Default::default(),
         }
     }
 
     pub fn new_dense_uniform_layer(chunk_size_x: usize, chunk_size_y: usize, tile_data: T) -> Self {
         Self {
-            layer_type_data: ChunklayerTypes::new_dense_uniform(
+            layer_type_data: ChunkLayerTypes::new_dense_uniform(
                 chunk_size_x,
                 chunk_size_y,
                 tile_data,
@@ -58,7 +58,7 @@ where
 
     pub fn new_dense_from_vecs_layer(tile_data: &Vec<Vec<T>>) -> Self {
         Self {
-            layer_type_data: ChunklayerTypes::new_dense_from_vecs(tile_data),
+            layer_type_data: ChunkLayerTypes::new_dense_from_vecs(tile_data),
             tile_entities: Default::default(),
         }
     }
@@ -108,7 +108,7 @@ where
 ///
 /// **A layer where every tile has TileData**
 #[derive(Clone, Reflect)]
-pub enum ChunklayerTypes<T>
+pub enum ChunkLayerTypes<T>
 where
     T: Clone + Copy + Sized + Default + Send + Sync,
 {
@@ -117,7 +117,7 @@ where
     Dense(Grid<T>),
 }
 
-impl<T> Default for ChunklayerTypes<T>
+impl<T> Default for ChunkLayerTypes<T>
 where
     T: Clone + Copy + Sized + Default + Send + Sync,
 {
@@ -126,25 +126,25 @@ where
     }
 }
 
-impl<T> ChunklayerTypes<T>
+impl<T> ChunkLayerTypes<T>
 where
     T: Clone + Copy + Sized + Default + Send + Sync,
 {
-    /// Creates a new [`ChunklayerTypes::Dense`] with all the tiles having the same data as the default
+    /// Creates a new [`ChunkLayerTypes::Dense`] with all the tiles having the same data as the default
     /// for T
     pub fn new_dense_default(chunk_size_x: usize, chunk_size_y: usize) -> Self {
         let grid: Grid<T> = Grid::new(chunk_size_x, chunk_size_y);
         Self::Dense(grid)
     }
 
-    /// Creates a new [`ChunklayerTypes::Dense`] with all the tiles having the same data as the given
+    /// Creates a new [`ChunkLayerTypes::Dense`] with all the tiles having the same data as the given
     /// tile_data
     pub fn new_dense_uniform(chunk_size_x: usize, chunk_size_y: usize, tile_data: T) -> Self {
         let grid: Grid<T> = Grid::init(chunk_size_x, chunk_size_y, tile_data);
         Self::Dense(grid)
     }
 
-    /// Creates a new [`ChunklayerTypes::Dense`]from the given vectors of vectors of T
+    /// Creates a new [`ChunkLayerTypes::Dense`]from the given vectors of vectors of T
     pub fn new_dense_from_vecs(tile_data: &Vec<Vec<T>>) -> Self {
         let mut given_tile_count = 0u64;
 
@@ -175,23 +175,23 @@ where
     }
 }
 
-impl<T> ChunklayerTypes<T>
+impl<T> ChunkLayerTypes<T>
 where
     T: Clone + Copy + Sized + Default + Send + Sync,
 {
     pub fn get_dimensions(&self) -> UVec2 {
         match self {
-            ChunklayerTypes::Sparse(_, dimensions) => *dimensions,
-            ChunklayerTypes::Dense(grid) => UVec2::new(grid.size().1 as u32, grid.size().0 as u32),
+            ChunkLayerTypes::Sparse(_, dimensions) => *dimensions,
+            ChunkLayerTypes::Dense(grid) => UVec2::new(grid.size().1 as u32, grid.size().0 as u32),
         }
     }
 
     pub fn set_tile_data(&mut self, chunk_tile_pos: ChunkTilePos, tile_data: T) {
         match self {
-            ChunklayerTypes::Sparse(layer_data, ..) => {
+            ChunkLayerTypes::Sparse(layer_data, ..) => {
                 layer_data.insert(chunk_tile_pos, tile_data);
             }
-            ChunklayerTypes::Dense(layer_data) => {
+            ChunkLayerTypes::Dense(layer_data) => {
                 if let Some(tile) =
                     layer_data.get_mut(chunk_tile_pos.y() as usize, chunk_tile_pos.x() as usize)
                 {
@@ -203,8 +203,8 @@ where
 
     pub fn get_tile_data_mut(&mut self, chunk_tile_pos: ChunkTilePos) -> Option<&mut T> {
         return match self {
-            ChunklayerTypes::Sparse(layer_data, ..) => layer_data.get_mut(&chunk_tile_pos),
-            ChunklayerTypes::Dense(layer_data) => {
+            ChunkLayerTypes::Sparse(layer_data, ..) => layer_data.get_mut(&chunk_tile_pos),
+            ChunkLayerTypes::Dense(layer_data) => {
                 layer_data.get_mut(chunk_tile_pos.y() as usize, chunk_tile_pos.x() as usize)
             }
         };
@@ -212,8 +212,8 @@ where
 
     pub fn get_tile_data(&self, chunk_tile_pos: ChunkTilePos) -> Option<&T> {
         return match self {
-            ChunklayerTypes::Sparse(layer_data, ..) => layer_data.get(&chunk_tile_pos),
-            ChunklayerTypes::Dense(layer_data) => {
+            ChunkLayerTypes::Sparse(layer_data, ..) => layer_data.get(&chunk_tile_pos),
+            ChunkLayerTypes::Dense(layer_data) => {
                 layer_data.get(chunk_tile_pos.y() as usize, chunk_tile_pos.x() as usize)
             }
         };
