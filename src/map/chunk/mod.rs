@@ -8,18 +8,28 @@ pub use crate::map::chunk::chunk_pos::ChunkPos;
 pub use crate::map::chunk::chunk_tile_pos::ChunkTilePos;
 use crate::map::MapLayer;
 use crate::TilePos;
+use bevy::ecs::entity::{EntityMapper, MapEntities};
+use bevy::ecs::reflect::ReflectMapEntities;
 use bevy::prelude::{Component, Entity, Reflect, ReflectComponent, UVec2};
 use bevy::utils::hashbrown::HashMap;
 use std::hash::{Hash, Hasher};
 
 /// The chunks of a tilemap
-#[derive(Clone, Hash, Debug, Eq, PartialEq, Reflect)]
-#[reflect(Hash)]
+#[derive(Clone, Component, Hash, Debug, Eq, PartialEq, Reflect)]
+#[reflect(Hash, MapEntities)]
 pub struct Chunks {
     /// A grid of [`Entity`] references pointing to that chunks entity
     chunk_entities: Grid<Entity>,
     /// The max size that a chunk can be
     max_chunk_size: UVec2,
+}
+
+impl MapEntities for Chunks {
+    fn map_entities(&mut self, entity_mapper: &mut EntityMapper) {
+        for mut tile_entity in self.chunk_entities.iter_mut() {
+            *tile_entity = entity_mapper.get_or_reserve(*tile_entity);
+        }
+    }
 }
 
 impl Default for Chunks {

@@ -2,20 +2,33 @@
 
 use crate::grid::Grid;
 use crate::map::chunk::chunk_tile_pos::ChunkTilePos;
+use bevy::ecs::entity::{EntityMapper, MapEntities};
+use bevy::ecs::reflect::ReflectMapEntities;
 use bevy::math::UVec2;
-use bevy::prelude::{Entity, Reflect};
+use bevy::prelude::{Component, Entity, Reflect};
 use bevy::utils::HashMap;
 use std::hash::{Hash, Hasher};
 
 /// A struct that holds the chunk map data for the given layer
-#[derive(Clone, Default, Reflect)]
-#[reflect(Hash)]
+#[derive(Clone, Component, Default, Reflect)]
+#[reflect(Hash, MapEntities)]
 pub struct ChunkLayerData<T>
 where
     T: Hash + Clone + Copy + Sized + Default + Send + Sync,
 {
     layer_type_data: ChunkLayerTypes<T>,
     tile_entities: HashMap<ChunkTilePos, Entity>,
+}
+
+impl<T> MapEntities for ChunkLayerData<T>
+where
+    T: Hash + Clone + Copy + Sized + Default + Send + Sync,
+{
+    fn map_entities(&mut self, entity_mapper: &mut EntityMapper) {
+        for mut tile_entity in self.tile_entities.iter_mut() {
+            *tile_entity.1 = entity_mapper.get_or_reserve(*tile_entity.1);
+        }
+    }
 }
 
 impl<T> Hash for ChunkLayerData<T>
