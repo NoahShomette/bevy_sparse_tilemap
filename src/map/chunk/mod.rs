@@ -3,7 +3,7 @@ mod chunk_pos;
 mod chunk_tile_pos;
 
 use crate::grid::Grid;
-pub use crate::map::chunk::chunk_layer::ChunkLayerData;
+pub use crate::map::chunk::chunk_layer::{ChunkLayerData, ChunklayerTypes};
 pub use crate::map::chunk::chunk_pos::ChunkPos;
 pub use crate::map::chunk::chunk_tile_pos::ChunkTilePos;
 use crate::map::MapLayer;

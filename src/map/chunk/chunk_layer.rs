@@ -3,7 +3,7 @@
 use bevy::math::UVec2;
 use bevy::prelude::{Entity, Reflect};
 use bevy::utils::HashMap;
-use grid::Grid;
+use crate::grid::Grid;
 use crate::map::chunk::chunk_tile_pos::ChunkTilePos;
 
 /// A struct that holds the chunk map data for the given layer
