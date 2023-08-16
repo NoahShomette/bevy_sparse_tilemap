@@ -1,3 +1,4 @@
+use std::hash::Hash;
 use crate::map::chunk::{Chunk, ChunkPos};
 use crate::map::{MapLayer, Tilemap};
 use crate::tilemap_manager::TilemapManagerError;
@@ -22,7 +23,7 @@ use crate::TilePos;
 #[derive(SystemParam)]
 pub struct TilemapManager<'w, 's, TileData, MapLayers>
 where
-    TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
+    TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayers: MapLayer + Default + Clone + Copy + Send + Sync + 'static,
 {
     tilemap_query: Query<'w, 's, (Entity, &'static mut Tilemap, Option<&'static Children>)>,
@@ -42,7 +43,7 @@ where
 
 impl<'w, 's, TileData, MapLayers> TilemapManager<'w, 's, TileData, MapLayers>
 where
-    TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
+    TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayers: MapLayer + Default + Clone + Copy + Send + Sync + 'static,
 {
     /// Returns the [`Tilemap`] entity that this tilemap manager is set to affect

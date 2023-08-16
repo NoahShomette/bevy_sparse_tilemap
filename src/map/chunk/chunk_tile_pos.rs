@@ -9,7 +9,7 @@ use std::fmt::{Display, Formatter};
 #[derive(
     Default, Eq, Hash, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Component, Reflect,
 )]
-#[reflect(Component)]
+#[reflect(Component, Hash)]
 pub struct ChunkTilePos(TilePos);
 
 impl ChunkTilePos {

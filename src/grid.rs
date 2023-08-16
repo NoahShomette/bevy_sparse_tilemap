@@ -61,7 +61,7 @@ macro_rules! count {
 ///
 ///  
 /// ```
-/// use grid::grid;
+/// use bevy_sparse_tilemap::grid::Grid;
 /// let grid = grid![[1, 2, 3]
 /// [4, 5, 6]
 /// [7, 8, 9]];
@@ -118,7 +118,7 @@ macro_rules! grid {
 /// The size limit of a grid is `rows * cols < usize`.
 ///
 /// The grid data is stored in a row-major memory layout.
-#[derive(Reflect)]
+#[derive(Reflect, Hash)]
 pub struct Grid<T> {
     data: Vec<T>,
     cols: usize,
@@ -130,7 +130,7 @@ impl<T> Grid<T> {
     /// For example this will generate a 2x3 grid of zeros:
     ///
     /// ```
-    /// use grid::Grid;
+    /// use bevy_sparse_tilemap::grid::Grid;
     /// let grid : Grid<u8> = Grid::new(2,3);
     /// assert_eq!(grid[0][0], 0);
     /// ```
@@ -187,7 +187,7 @@ impl<T> Grid<T> {
     /// For example:
     ///
     /// ```
-    /// use grid::Grid;
+    /// use bevy_sparse_tilemap::grid::Grid;
     /// let grid = Grid::from_vec(vec![1,2,3,4,5,6], 3);
     /// assert_eq!(grid.size(), (2, 3));
     /// ```
@@ -199,7 +199,7 @@ impl<T> Grid<T> {
     /// This example will fail, because `vec.len()` is not a multiple of `cols`:
     ///
     /// ``` should_panic
-    /// use grid::Grid;
+    /// use bevy_sparse_tilemap::grid::Grid;
     /// Grid::from_vec(vec![1,2,3,4,5], 3);
     /// ```
     ///
@@ -299,7 +299,7 @@ impl<T> Grid<T> {
     /// Returns true if the grid contains no elements.
     /// For example:
     /// ```
-    /// use grid::*;
+    /// use bevy_sparse_tilemap::grid::*;
     /// let grid : Grid<u8> = grid![];
     /// assert!(grid.is_empty());
     /// ```
@@ -332,7 +332,7 @@ impl<T> Grid<T> {
 
     /// Returns an mutable iterator over the whole grid that allows modifying each value.
     /// ```
-    /// use grid::*;
+    /// use bevy_sparse_tilemap::grid::Grid;
     /// let mut grid: Grid<u8> = grid![[1,2][3,4]];
     /// let mut iter = grid.iter_mut();
     /// let next = iter.next();

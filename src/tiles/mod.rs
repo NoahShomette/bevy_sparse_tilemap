@@ -19,7 +19,7 @@ use std::fmt::{Display, Formatter};
     Component,
     Reflect,
 )]
-#[reflect(Component)]
+#[reflect(Component, Hash)]
 pub struct TilePos {
     pub x: u32,
     pub y: u32,

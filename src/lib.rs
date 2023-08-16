@@ -71,7 +71,7 @@
 //!
 //! ```
 
-mod grid;
+pub mod grid;
 pub mod integrations;
 pub mod map;
 pub mod tilemap_builder;

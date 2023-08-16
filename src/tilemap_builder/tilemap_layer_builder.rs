@@ -7,6 +7,7 @@ use bevy::math::{vec2, UVec2};
 use bevy::prelude::{Bundle, Commands, Entity};
 use bevy::utils::hashbrown::HashMap;
 use std::cmp::max;
+use std::hash::Hash;
 
 /// An enum that holds all the data for a tilemap layer. This layer is only used in the [`TilemapBuilder`]
 ///
@@ -152,7 +153,7 @@ pub fn add_layer_to_chunks<TileData>(
     tilemap_layer: &TilemapLayer<TileData>,
     max_chunk_size: UVec2,
 ) where
-    TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
+    TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
 {
     match tilemap_layer {
         TilemapLayer::Sparse(data, .., entities) => {
@@ -195,7 +196,7 @@ pub fn break_layer_into_chunks<TileData>(
     max_chunk_size: UVec2,
 ) -> Vec<Vec<Chunk<TileData>>>
 where
-    TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
+    TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
 {
     return match tilemap_layer {
         TilemapLayer::Sparse(data, map_size, entities) => {
@@ -218,7 +219,7 @@ pub fn break_hashmap_into_chunks<TileData>(
     max_chunk_size: UVec2,
 ) -> Vec<Vec<Chunk<TileData>>>
 where
-    TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
+    TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
 {
     let mut chunks: Vec<Vec<Chunk<TileData>>> = vec![];
     // Get the chunks with the remainder for making chunks
@@ -269,7 +270,7 @@ pub fn break_data_vecs_into_chunks<TileData>(
     max_chunk_size: UVec2,
 ) -> Vec<Vec<Chunk<TileData>>>
 where
-    TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
+    TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
 {
     let mut chunks: Vec<Vec<Chunk<TileData>>> = vec![];
     let map_x = data[0].len() as f32;
@@ -326,7 +327,7 @@ pub fn add_entities_to_layer<TileData>(
     entities: &HashMap<TilePos, Entity>,
     max_chunk_size: UVec2,
 ) where
-    TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
+    TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
 {
     for (tile_pos, entity) in entities.iter() {
         let chunk_pos = tile_pos.into_chunk_pos(max_chunk_size);

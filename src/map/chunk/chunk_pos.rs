@@ -8,7 +8,7 @@ use std::fmt::{Display, Formatter};
 /// The position of a tile in a [`Tilemap`]
 #[derive(
     Default, Eq, Hash, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Component, Reflect, )]
-#[reflect(Component)]
+#[reflect(Component, Hash)]
 pub struct ChunkPos(TilePos);
 
 impl ChunkPos {

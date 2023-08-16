@@ -1,5 +1,6 @@
 ﻿pub mod tilemap_layer_builder;
 
+use std::hash::Hash;
 use crate::map::chunk::{ChunkSettings, Chunks};
 use crate::map::{MapLayer, Tilemap};
 use crate::tilemap_builder::tilemap_layer_builder::{
@@ -14,7 +15,7 @@ use std::marker::PhantomData;
 #[derive(Resource)]
 struct TilemapBuilderInfo<TileData, MapLayers>
 where
-    TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
+    TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayers: MapLayer + Clone + Copy + Send + Sync + 'static,
 {
     main_layer: TilemapLayer<TileData>,
@@ -28,7 +29,7 @@ where
 
 impl<TileData, MapLayers> Default for TilemapBuilderInfo<TileData, MapLayers>
 where
-    TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
+    TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayers: MapLayer + Clone + Copy + Send + Sync + 'static,
 {
     fn default() -> Self {
@@ -49,7 +50,7 @@ where
 #[derive(SystemParam)]
 pub struct TilemapBuilder<'w, 's, TileData, MapLayers>
 where
-    TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
+    TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayers: MapLayer + Clone + Copy + Send + Sync + 'static,
 {
     td_phantom: PhantomData<TileData>,
@@ -60,7 +61,7 @@ where
 
 impl<'w, 's, TileData, MapLayers> TilemapBuilder<'w, 's, TileData, MapLayers>
 where
-    TileData: Clone + Copy + Sized + Default + Send + Sync + 'static,
+    TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayers: MapLayer + Clone + Copy + Send + Sync + 'static,
 {
     /// Converts all the data from the [`SystemParam`] and spawns the

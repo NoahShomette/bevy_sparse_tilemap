@@ -10,9 +10,11 @@ use crate::map::MapLayer;
 use crate::TilePos;
 use bevy::prelude::{Component, Entity, Reflect, ReflectComponent, UVec2};
 use bevy::utils::hashbrown::HashMap;
+use std::hash::{Hash, Hasher};
 
 /// The chunks of a tilemap
-#[derive(Clone, Debug, Eq, PartialEq, Reflect)]
+#[derive(Clone, Hash, Debug, Eq, PartialEq, Reflect)]
+#[reflect(Hash)]
 pub struct Chunks {
     /// A grid of [`Entity`] references pointing to that chunks entity
     chunk_entities: Grid<Entity>,
@@ -103,10 +105,10 @@ impl Chunks {
 ///
 /// Contains all tile data as well as a hashmap that contains mapping to currently spawned tile entities
 #[derive(Component, Reflect)]
-#[reflect(Component)]
+#[reflect(Component, Hash)]
 pub struct Chunk<T>
 where
-    T: Clone + Copy + Sized + Default + Send + Sync,
+    T: Hash + Clone + Copy + Sized + Default + Send + Sync,
 {
     /// The position of the Chunk in the map
     pub chunk_pos: ChunkPos,
@@ -114,9 +116,21 @@ where
     pub data: HashMap<u32, ChunkLayerData<T>>,
 }
 
+impl<T> Hash for Chunk<T>
+where
+    T: Hash + Clone + Copy + Sized + Default + Send + Sync,
+{
+    fn hash<H: Hasher>(&self, h: &mut H) {
+        let mut pairs: Vec<_> = self.data.iter().collect();
+        pairs.sort_by_key(|i| i.0);
+        Hash::hash(&pairs, h);
+        Hash::hash(&self.chunk_pos, h);
+    }
+}
+
 impl<T> Default for Chunk<T>
 where
-    T: Clone + Copy + Sized + Default + Send + Sync,
+    T: Hash + Clone + Copy + Sized + Default + Send + Sync,
 {
     fn default() -> Self {
         Self {
@@ -128,7 +142,7 @@ where
 
 impl<T> Chunk<T>
 where
-    T: Clone + Copy + Sized + Default + Send + Sync,
+    T: Hash + Clone + Copy + Sized + Default + Send + Sync,
 {
     /// Creates a new chunk with every tile containing the same given tile_data
     ///
@@ -275,7 +289,7 @@ where
 
 impl<T> Chunk<T>
 where
-    T: Clone + Copy + Sized + Default + Send + Sync,
+    T: Hash + Clone + Copy + Sized + Default + Send + Sync,
 {
     /// Returns the actual dimensions for the given [`MapLayer`] in the [`Chunk`].
     ///
@@ -349,7 +363,8 @@ where
 }
 
 /// Settings for the chunks in a [`Chunks`] object
-#[derive(Reflect)]
+#[derive(Reflect, Hash)]
+#[reflect(Hash)]
 pub struct ChunkSettings {
     /// The max size that a chunk can be
     pub max_chunk_size: UVec2,
@@ -393,7 +408,7 @@ mod tests {
     use bevy::utils::HashMap;
     use bst_map_layer_derive::MapLayer;
 
-    #[derive(Clone, Copy, Default, PartialEq, Eq, Debug)]
+    #[derive(Clone, Copy, Default, PartialEq, Eq, Debug, Hash)]
     struct TileData(u8);
 
     #[derive(MapLayer)]
