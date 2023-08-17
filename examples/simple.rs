@@ -41,7 +41,7 @@ pub enum MapLayers {
     DenseExtra,
 }
 
-#[derive(Default, Copy, Clone, Reflect)]
+#[derive(Hash, Default, Copy, Clone, Reflect)]
 struct TileData(u8, u8);
 
 // Resource to hold our map entity so we can use it in systems

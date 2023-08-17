@@ -415,6 +415,10 @@ mod tests {
         map::chunk::chunk_pos::ChunkPos, map::chunk::chunk_tile_pos::ChunkTilePos,
         map::chunk::Chunk,
     };
+    use bevy::prelude::{FromReflect, Reflect};
+    use bevy::reflect::erased_serde::__private::serde::de::DeserializeSeed;
+    use bevy::reflect::serde::{ReflectSerializer, UntypedReflectDeserializer};
+    use bevy::reflect::TypeRegistry;
     use bevy::utils::HashMap;
     use bst_map_layer_derive::MapLayer;
 
@@ -556,5 +560,30 @@ mod tests {
                 .unwrap(),
             (11, 4)
         );
+    }
+
+    #[test]
+    fn test_hashing_chunk() {
+        let chunk = Chunk::new_uniform(ChunkPos::new(0, 0), 30, 30, (0u32, 0u32));
+
+        let mut registry = TypeRegistry::default();
+        let mut write_registry = registry.write();
+        write_registry.register::<Chunk<(u32,u32)>>();
+
+        let read_registry = registry.read();
+        // Serialize
+        let reflect_serializer = ReflectSerializer::new(&chunk, &read_registry);
+        let serialized_value: String = ron::to_string(&reflect_serializer).unwrap();
+
+        // Deserialize
+        let reflect_deserializer = UntypedReflectDeserializer::new(&read_registry);
+        let deserialized_value: Box<dyn Reflect> = reflect_deserializer.deserialize(
+            &mut ron::Deserializer::from_str(&serialized_value).unwrap()
+        ).unwrap();
+
+        // Convert
+        let converted_value = <Chunk<(u32,u32)> as FromReflect>::from_reflect(&*deserialized_value).unwrap();
+
+        assert_eq!(converted_value.chunk_pos, ChunkPos::new(0, 0));
     }
 }

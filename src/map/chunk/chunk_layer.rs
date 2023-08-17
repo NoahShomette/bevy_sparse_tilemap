@@ -17,7 +17,7 @@ where
     T: Hash + Clone + Copy + Sized + Default + Send + Sync,
 {
     layer_type_data: ChunkLayerTypes<T>,
-    tile_entities: HashMap<ChunkTilePos, Entity>,
+    tile_entities: HashMap<u64, Entity>,
 }
 
 impl<T> MapEntities for ChunkLayerData<T>
@@ -59,6 +59,13 @@ where
         sparse_data: HashMap<ChunkTilePos, T>,
         chunk_dimensions: UVec2,
     ) -> ChunkLayerData<T> {
+        let sparse_data = sparse_data
+            .iter()
+            .map(|(chunk_tile_pos, tile_data)| {
+                let number = ((chunk_tile_pos.x() as u64) << 32) | chunk_tile_pos.y() as u64;
+                (number, tile_data.clone())
+            })
+            .collect();
         ChunkLayerData {
             layer_type_data: ChunkLayerTypes::Sparse(sparse_data, chunk_dimensions),
             tile_entities: Default::default(),
@@ -114,11 +121,13 @@ where
     }
 
     pub fn get_tile_entity(&self, chunk_tile_pos: ChunkTilePos) -> Option<Entity> {
-        self.tile_entities.get(&chunk_tile_pos).cloned()
+        let number = ((chunk_tile_pos.x() as u64) << 32) | chunk_tile_pos.y() as u64;
+        self.tile_entities.get(&number).cloned()
     }
 
     pub fn set_tile_entity(&mut self, chunk_tile_pos: ChunkTilePos, entity: Entity) {
-        self.tile_entities.insert(chunk_tile_pos, entity);
+        let number = ((chunk_tile_pos.x() as u64) << 32) | chunk_tile_pos.y() as u64;
+        self.tile_entities.insert(number, entity);
     }
 }
 
@@ -140,7 +149,7 @@ pub enum ChunkLayerTypes<T>
 where
     T: Hash + Clone + Copy + Sized + Default + Send + Sync,
 {
-    Sparse(HashMap<ChunkTilePos, T>, UVec2),
+    Sparse(HashMap<u64, T>, UVec2),
     Dense(Grid<T>),
 }
 
@@ -155,7 +164,6 @@ where
                 pairs.sort_by_key(|i| i.0);
                 Hash::hash(&pairs, h);
                 Hash::hash(&chunk_size, h);
-
             }
             ChunkLayerTypes::Dense(grid) => {
                 Hash::hash(grid, h);
@@ -236,7 +244,8 @@ where
     pub fn set_tile_data(&mut self, chunk_tile_pos: ChunkTilePos, tile_data: T) {
         match self {
             ChunkLayerTypes::Sparse(layer_data, ..) => {
-                layer_data.insert(chunk_tile_pos, tile_data);
+                let number = ((chunk_tile_pos.x() as u64) << 32) | chunk_tile_pos.y() as u64;
+                layer_data.insert(number, tile_data);
             }
             ChunkLayerTypes::Dense(layer_data) => {
                 if let Some(tile) =
@@ -250,7 +259,10 @@ where
 
     pub fn get_tile_data_mut(&mut self, chunk_tile_pos: ChunkTilePos) -> Option<&mut T> {
         return match self {
-            ChunkLayerTypes::Sparse(layer_data, ..) => layer_data.get_mut(&chunk_tile_pos),
+            ChunkLayerTypes::Sparse(layer_data, ..) => {
+                let number = ((chunk_tile_pos.x() as u64) << 32) | chunk_tile_pos.y() as u64;
+                layer_data.get_mut(&number)
+            }
             ChunkLayerTypes::Dense(layer_data) => {
                 layer_data.get_mut(chunk_tile_pos.y() as usize, chunk_tile_pos.x() as usize)
             }
@@ -259,7 +271,10 @@ where
 
     pub fn get_tile_data(&self, chunk_tile_pos: ChunkTilePos) -> Option<&T> {
         return match self {
-            ChunkLayerTypes::Sparse(layer_data, ..) => layer_data.get(&chunk_tile_pos),
+            ChunkLayerTypes::Sparse(layer_data, ..) => {
+                let number = ((chunk_tile_pos.x() as u64) << 32) | chunk_tile_pos.y() as u64;
+                layer_data.get(&number)
+            }
             ChunkLayerTypes::Dense(layer_data) => {
                 layer_data.get(chunk_tile_pos.y() as usize, chunk_tile_pos.x() as usize)
             }

@@ -49,7 +49,7 @@ pub enum MapLayers {
 #[derive(Resource)]
 pub struct MapEntity(Entity);
 
-#[derive(Default, Copy, Clone, Reflect)]
+#[derive(Hash, Default, Copy, Clone, Reflect)]
 struct TileData(u8, u8);
 
 #[derive(Component, Default, Copy, Clone, Reflect)]
