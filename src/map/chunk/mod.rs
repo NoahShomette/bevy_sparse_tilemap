@@ -26,7 +26,7 @@ pub struct Chunks {
 
 impl MapEntities for Chunks {
     fn map_entities(&mut self, entity_mapper: &mut EntityMapper) {
-        for mut tile_entity in self.chunk_entities.iter_mut() {
+        for tile_entity in self.chunk_entities.iter_mut() {
             *tile_entity = entity_mapper.get_or_reserve(*tile_entity);
         }
     }
@@ -115,7 +115,7 @@ impl Chunks {
 ///
 /// Contains all tile data as well as a hashmap that contains mapping to currently spawned tile entities
 #[derive(Component, Reflect)]
-#[reflect(Component, Hash)]
+#[reflect(Component, Hash, MapEntities)]
 pub struct Chunk<T>
 where
     T: Hash + Clone + Copy + Sized + Default + Send + Sync,
@@ -124,6 +124,17 @@ where
     pub chunk_pos: ChunkPos,
     /// Chunk tile data mapped to layers
     pub data: HashMap<u32, ChunkLayerData<T>>,
+}
+
+impl<T> MapEntities for Chunk<T>
+where
+    T: Hash + Clone + Copy + Sized + Default + Send + Sync,
+{
+    fn map_entities(&mut self, entity_mapper: &mut EntityMapper) {
+        for datum in self.data.iter_mut() {
+            datum.1.map_entities(entity_mapper);
+        }
+    }
 }
 
 impl<T> Hash for Chunk<T>
@@ -568,7 +579,7 @@ mod tests {
 
         let mut registry = TypeRegistry::default();
         let mut write_registry = registry.write();
-        write_registry.register::<Chunk<(u32,u32)>>();
+        write_registry.register::<Chunk<(u32, u32)>>();
 
         let read_registry = registry.read();
         // Serialize
@@ -577,12 +588,13 @@ mod tests {
 
         // Deserialize
         let reflect_deserializer = UntypedReflectDeserializer::new(&read_registry);
-        let deserialized_value: Box<dyn Reflect> = reflect_deserializer.deserialize(
-            &mut ron::Deserializer::from_str(&serialized_value).unwrap()
-        ).unwrap();
+        let deserialized_value: Box<dyn Reflect> = reflect_deserializer
+            .deserialize(&mut ron::Deserializer::from_str(&serialized_value).unwrap())
+            .unwrap();
 
         // Convert
-        let converted_value = <Chunk<(u32,u32)> as FromReflect>::from_reflect(&*deserialized_value).unwrap();
+        let converted_value =
+            <Chunk<(u32, u32)> as FromReflect>::from_reflect(&*deserialized_value).unwrap();
 
         assert_eq!(converted_value.chunk_pos, ChunkPos::new(0, 0));
     }

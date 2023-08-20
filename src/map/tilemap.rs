@@ -8,6 +8,8 @@
 use crate::map::chunk::ChunkPos;
 use crate::map::chunk::Chunks;
 use crate::TilePos;
+use bevy::ecs::entity::{EntityMapper, MapEntities};
+use bevy::ecs::reflect::ReflectMapEntities;
 use bevy::math::UVec2;
 use bevy::prelude::{Component, Entity, Reflect, ReflectComponent};
 
@@ -18,10 +20,16 @@ use bevy::prelude::{Component, Entity, Reflect, ReflectComponent};
 /// data that is not the same for every single tile of that type should be stored as a component
 /// on that tiles entity which is managed through the [`Chunk`](super::chunk::Chunk)
 #[derive(Component, Default, Hash, Clone, Debug, Eq, PartialEq, Reflect)]
-#[reflect(Component, Hash)]
+#[reflect(Component, Hash, MapEntities)]
 pub struct Tilemap {
     /// Struct containing [`Entity`] mappings to the [`Chunk`](super::chunk::Chunk)s that hold tile data
     chunks: Chunks,
+}
+
+impl MapEntities for Tilemap {
+    fn map_entities(&mut self, entity_mapper: &mut EntityMapper) {
+        self.chunks.map_entities(entity_mapper);
+    }
 }
 
 impl Tilemap {

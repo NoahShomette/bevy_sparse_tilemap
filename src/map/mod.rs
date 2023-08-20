@@ -1,4 +1,4 @@
-﻿//! Core Tilemap concept and
+//! Core Tilemap concept and
 
 pub mod chunk;
 mod tilemap;
@@ -16,8 +16,7 @@ pub trait MapLayer: Sized {
     fn all_bits() -> u32;
 }
 
-impl<L: MapLayer> MapLayer for &L
-{
+impl<L: MapLayer> MapLayer for &L {
     fn to_bits(&self) -> u32 {
         L::to_bits(self)
     }

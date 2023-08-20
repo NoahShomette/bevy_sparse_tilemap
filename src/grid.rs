@@ -1,4 +1,4 @@
-﻿/*!
+/*!
 # Copied from https://docs.rs/grid/latest/grid/
 Copied because Grid must impl Bevy::Reflect
 
@@ -34,6 +34,7 @@ assert_eq!(grid, grid![[1,2,3][4,5,6][7,8,9]])
  ```
  */
 
+use bevy::prelude::Reflect;
 use core::cmp;
 use core::cmp::Eq;
 use core::fmt;
@@ -42,7 +43,6 @@ use core::ops::Index;
 use core::ops::IndexMut;
 use core::slice::Iter;
 use core::slice::IterMut;
-use bevy::prelude::Reflect;
 
 #[doc(hidden)]
 #[macro_export]
@@ -141,8 +141,8 @@ impl<T> Grid<T> {
     ///
     /// Panics if `rows * cols > usize`.
     pub fn new(rows: usize, cols: usize) -> Grid<T>
-        where
-            T: Default,
+    where
+        T: Default,
     {
         if rows == 0 || cols == 0 {
             return Grid {
@@ -164,8 +164,8 @@ impl<T> Grid<T> {
     ///
     /// Panics if `rows * cols > usize`.
     pub fn init(rows: usize, cols: usize, data: T) -> Grid<T>
-        where
-            T: Clone,
+    where
+        T: Clone,
     {
         if rows == 0 || cols == 0 {
             return Grid {
@@ -765,8 +765,8 @@ impl<T> Grid<T> {
     /// Transpose the grid so that columns become rows in new grid.
     #[must_use]
     pub fn transpose(&self) -> Grid<T>
-        where
-            T: Clone,
+    where
+        T: Clone,
     {
         let mut data = Vec::with_capacity(self.data.len());
         for c in 0..self.cols {
@@ -793,8 +793,8 @@ impl<T> Grid<T> {
     /// assert_eq!(grid[1], [7,7,7]);
     /// ```
     pub fn fill(&mut self, value: T)
-        where
-            T: Clone,
+    where
+        T: Clone,
     {
         self.data.fill(value);
     }
@@ -818,8 +818,8 @@ impl<T> Grid<T> {
     /// assert_eq!(grid[1], [0,0,0]);
     /// ```
     pub fn fill_with<F>(&mut self, f: F)
-        where
-            F: FnMut() -> T,
+    where
+        F: FnMut() -> T,
     {
         self.data.fill_with(f);
     }

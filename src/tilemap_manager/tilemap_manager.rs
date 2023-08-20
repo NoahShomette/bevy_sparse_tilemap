@@ -1,4 +1,3 @@
-use std::hash::Hash;
 use crate::map::chunk::{Chunk, ChunkPos};
 use crate::map::{MapLayer, Tilemap};
 use crate::tilemap_manager::TilemapManagerError;
@@ -6,6 +5,7 @@ use crate::tilemap_manager::{LayerIndex, MapEntity};
 use bevy::ecs::system::SystemParam;
 use bevy::math::UVec2;
 use bevy::prelude::{Children, Commands, DespawnRecursiveExt, Entity, Local, Query};
+use std::hash::Hash;
 use std::ops::Deref;
 
 use crate::TilePos;
@@ -95,7 +95,7 @@ where
             .chunk_query
             .get(
                 tilemap
-                    .get_chunk(ChunkPos::new(chunks.x- 1, 0))
+                    .get_chunk(ChunkPos::new(chunks.x - 1, 0))
                     .ok_or(TilemapManagerError::InvalidChunkPos)?,
             )?
             .1

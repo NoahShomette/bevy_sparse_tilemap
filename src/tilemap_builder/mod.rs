@@ -1,6 +1,5 @@
-﻿pub mod tilemap_layer_builder;
+pub mod tilemap_layer_builder;
 
-use std::hash::Hash;
 use crate::map::chunk::{ChunkSettings, Chunks};
 use crate::map::{MapLayer, Tilemap};
 use crate::tilemap_builder::tilemap_layer_builder::{
@@ -9,6 +8,7 @@ use crate::tilemap_builder::tilemap_layer_builder::{
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::{BuildChildren, Commands, Entity, Local, Resource, UVec2};
 use bevy::utils::HashMap;
+use std::hash::Hash;
 use std::marker::PhantomData;
 
 /// Information to construct a Tilemap

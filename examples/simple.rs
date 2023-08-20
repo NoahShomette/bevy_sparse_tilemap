@@ -1,15 +1,17 @@
-﻿use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
+use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::math::UVec2;
-use bevy::prelude::{default, App, PluginGroup, Reflect, Startup, Window, WindowPlugin, Resource, Entity, Commands};
+use bevy::prelude::{
+    default, App, Commands, Entity, PluginGroup, Reflect, Resource, Startup, Window, WindowPlugin,
+};
 use bevy::window::PresentMode;
 use bevy::DefaultPlugins;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_sparse_tilemap::map::chunk::ChunkSettings;
 use bevy_sparse_tilemap::tilemap_builder::tilemap_layer_builder::TilemapLayer;
 use bevy_sparse_tilemap::tilemap_builder::TilemapBuilder;
+use bevy_sparse_tilemap::tilemap_manager::TilemapManager;
 use bst_map_layer_derive::MapLayer;
 use rand::Rng;
-use bevy_sparse_tilemap::tilemap_manager::TilemapManager;
 
 fn main() {
     App::new()
@@ -74,7 +76,6 @@ fn spawn_map(mut tilemap_builder: TilemapBuilder<TileData, MapLayers>, mut comma
     );
     let tilemap = tilemap_builder.spawn_tilemap();
     commands.insert_resource(MapEntity(tilemap));
-
 }
 
 fn generate_random_tile_data(size_to_generate: UVec2) -> Vec<Vec<TileData>> {

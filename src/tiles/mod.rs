@@ -6,19 +6,7 @@ use bevy::prelude::{Component, Reflect, ReflectComponent, UVec2};
 use std::fmt::{Display, Formatter};
 
 /// The position of a tile in a [`Tilemap`]
-#[derive(
-    Default,
-    Eq,
-    Hash,
-    PartialEq,
-    Ord,
-    PartialOrd,
-    Copy,
-    Clone,
-    Debug,
-    Component,
-    Reflect,
-)]
+#[derive(Default, Eq, Hash, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Component, Reflect)]
 #[reflect(Component, Hash)]
 pub struct TilePos {
     pub x: u32,
