@@ -1,12 +1,14 @@
 use crate::TilePos;
 use bevy::prelude::{Component, Reflect, ReflectComponent, UVec2};
 use std::fmt::{Display, Formatter};
+use serde::{Deserialize, Serialize};
 
 /// A tile position inside a [`Chunk`]
 ///
 /// You can get a [`ChunkTilePos`] from a [`TilePos`] using [`TilePos::into_chunk_tile_pos`]
 /// The position of a tile in a [`Tilemap`]
 #[derive(Default, Eq, Hash, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Component, Reflect)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[reflect(Component, Hash)]
 pub struct ChunkTilePos(TilePos);
 

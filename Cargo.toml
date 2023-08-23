@@ -16,6 +16,7 @@ resolver = "2"
 [features]
 default = []
 bevy_fast_tilemap = ["dep:bevy_fast_tilemap"]
+serde = ["dep:serde", "serde/default", "bevy/serialize"]
 
 [badges]
 maintenance = { status = "actively-developed" }
@@ -36,6 +37,7 @@ thiserror = "1.0.44"
 # Optional feature based dependencies
 # Rendering with bevy_fast_tilemap
 bevy_fast_tilemap = { version = "0.5.1", optional = true }
+serde = { version = "1.0.183", optional = true }
 
 
 [dev-dependencies]

@@ -4,9 +4,11 @@ use crate::map::chunk::ChunkPos;
 use crate::map::chunk::ChunkTilePos;
 use bevy::prelude::{Component, Reflect, ReflectComponent, UVec2};
 use std::fmt::{Display, Formatter};
+use serde::{Deserialize, Serialize};
 
 /// The position of a tile in a [`Tilemap`]
 #[derive(Default, Eq, Hash, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Component, Reflect)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[reflect(Component, Hash)]
 pub struct TilePos {
     pub x: u32,
