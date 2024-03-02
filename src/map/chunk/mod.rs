@@ -25,9 +25,9 @@ pub struct Chunks {
 }
 
 impl MapEntities for Chunks {
-    fn map_entities(&mut self, entity_mapper: &mut EntityMapper) {
+    fn map_entities<M: EntityMapper>(&mut self, entity_mapper: &mut M) {
         for tile_entity in self.chunk_entities.iter_mut() {
-            *tile_entity = entity_mapper.get_or_reserve(*tile_entity);
+            *tile_entity = entity_mapper.map_entity(*tile_entity);
         }
     }
 }
@@ -130,7 +130,7 @@ impl<T> MapEntities for Chunk<T>
 where
     T: Hash + Clone + Copy + Sized + Default + Send + Sync,
 {
-    fn map_entities(&mut self, entity_mapper: &mut EntityMapper) {
+    fn map_entities<M: EntityMapper>(&mut self, entity_mapper: &mut M) {
         for datum in self.data.iter_mut() {
             datum.1.map_entities(entity_mapper);
         }
@@ -578,16 +578,13 @@ mod tests {
         let chunk = Chunk::new_uniform(ChunkPos::new(0, 0), 30, 30, (0u32, 0u32));
 
         let mut registry = TypeRegistry::default();
-        let mut write_registry = registry.write();
-        write_registry.register::<Chunk<(u32, u32)>>();
-
-        let read_registry = registry.read();
+        registry.register::<Chunk<(u32, u32)>>();
         // Serialize
-        let reflect_serializer = ReflectSerializer::new(&chunk, &read_registry);
+        let reflect_serializer = ReflectSerializer::new(&chunk, &registry);
         let serialized_value: String = ron::to_string(&reflect_serializer).unwrap();
 
         // Deserialize
-        let reflect_deserializer = UntypedReflectDeserializer::new(&read_registry);
+        let reflect_deserializer = UntypedReflectDeserializer::new(&registry);
         let deserialized_value: Box<dyn Reflect> = reflect_deserializer
             .deserialize(&mut ron::Deserializer::from_str(&serialized_value).unwrap())
             .unwrap();

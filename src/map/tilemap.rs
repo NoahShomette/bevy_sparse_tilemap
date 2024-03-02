@@ -27,7 +27,7 @@ pub struct Tilemap {
 }
 
 impl MapEntities for Tilemap {
-    fn map_entities(&mut self, entity_mapper: &mut EntityMapper) {
+    fn map_entities<M: EntityMapper>(&mut self, entity_mapper: &mut M) {
         self.chunks.map_entities(entity_mapper);
     }
 }

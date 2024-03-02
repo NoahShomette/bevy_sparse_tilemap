@@ -4,6 +4,8 @@ use crate::map::chunk::ChunkPos;
 use crate::map::chunk::ChunkTilePos;
 use bevy::prelude::{Component, Reflect, ReflectComponent, UVec2};
 use std::fmt::{Display, Formatter};
+
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 /// The position of a tile in a [`Tilemap`]

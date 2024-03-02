@@ -6,7 +6,6 @@ use crate::TilePos;
 use bevy::math::{vec2, UVec2};
 use bevy::prelude::{Bundle, Commands, Entity};
 use bevy::utils::hashbrown::HashMap;
-use std::cmp::max;
 use std::hash::Hash;
 
 /// An enum that holds all the data for a tilemap layer. This layer is only used in the [`TilemapBuilder`]
@@ -15,15 +14,18 @@ use std::hash::Hash;
 ///
 /// # Tilemaps can have two types of layers
 ///
-/// ### Sparse
+/// ## Sparse
 ///
 /// *A layer where not every tile exists*
 ///
-/// Consists of two parts:
+/// Consists of three parts:
+///
 /// 0. A hashmap of TilePos -> TileData
 /// 1. A UVec2 representing the size of the Tilemap
+/// 2. A hashmap of TilePos -> Entity
+///     - The optional entities that hold the extra information when a tile needs it
 ///
-/// ### Dense
+/// ## Dense-
 ///
 /// *A layer where every tile has TileData*
 #[derive(Clone, Debug)]
@@ -358,7 +360,7 @@ mod tests {
         let vecs = vec![vec![0, 1, 2, 3], vec![4, 5, 6, 7], vec![8, 9, 10, 11]];
         let tilemap = TilemapLayer::new_dense_from_vecs(vecs);
 
-        let TilemapLayer::Dense(data, ..) = tilemap else{
+        let TilemapLayer::Dense(data, ..) = tilemap else {
             panic!("Wrong type")
         };
         assert_eq!(data[0][0], 0);
@@ -370,7 +372,7 @@ mod tests {
             vec![TileData(8), TileData(9), TileData(10), TileData(11)],
         ];
         let tilemap = TilemapLayer::new_dense_from_vecs(vecs);
-        let TilemapLayer::Dense(data, ..) = tilemap else{
+        let TilemapLayer::Dense(data, ..) = tilemap else {
             panic!("Wrong type")
         };
         assert_eq!(data[0][0], TileData(0));
@@ -382,7 +384,7 @@ mod tests {
             vec![(8, 4), (9, 6), (10, 1), (11, 4)],
         ];
         let tilemap = TilemapLayer::new_dense_from_vecs(vecs);
-        let TilemapLayer::Dense(data, ..) = tilemap else{
+        let TilemapLayer::Dense(data, ..) = tilemap else {
             panic!("Wrong type")
         };
         assert_eq!(data[0][0], (0, 0));
@@ -398,7 +400,7 @@ mod tests {
 
         let tilemap = TilemapLayer::new_sparse_from_hashmap(32, 32, hashmap);
 
-        let TilemapLayer::Sparse(data, size, ..) = tilemap else{
+        let TilemapLayer::Sparse(data, size, ..) = tilemap else {
             panic!("Wrong type")
         };
 
@@ -476,7 +478,6 @@ mod tests {
     #[derive(MapLayer)]
     enum MapLayers {
         Main,
-        Secondary,
     }
 
     #[test]

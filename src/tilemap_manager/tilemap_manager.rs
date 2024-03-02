@@ -313,8 +313,6 @@ mod tests {
         Secondary,
     }
 
-    pub struct MainMap;
-
     #[test]
     fn tilemap_manager_dense_access() {
         let mut world = World::new();

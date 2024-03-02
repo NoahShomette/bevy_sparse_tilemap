@@ -1,8 +1,8 @@
 use crate::TilePos;
 use bevy::prelude::{Component, Reflect, ReflectComponent, UVec2};
-use std::fmt::{Display, Formatter};
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-
+use std::fmt::{Display, Formatter};
 /// A tile position inside a [`Chunk`]
 ///
 /// You can get a [`ChunkTilePos`] from a [`TilePos`] using [`TilePos::into_chunk_tile_pos`]

@@ -1,8 +1,8 @@
 use crate::TilePos;
 use bevy::prelude::{Component, Reflect, ReflectComponent, UVec2};
-use std::fmt::{Display, Formatter};
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-
+use std::fmt::{Display, Formatter};
 /// The position of a [`Chunk`] in the [`Tilemap`]
 ///
 /// A [`TilePos`] can be converted into a [`ChunkPos`] using [`TilePos::into_chunk_pos`]

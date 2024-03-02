@@ -24,9 +24,9 @@ impl<T> MapEntities for ChunkLayerData<T>
 where
     T: Hash + Clone + Copy + Sized + Default + Send + Sync,
 {
-    fn map_entities(&mut self, entity_mapper: &mut EntityMapper) {
+    fn map_entities<M: EntityMapper>(&mut self, entity_mapper: &mut M) {
         for tile_entity in self.tile_entities.iter_mut() {
-            *tile_entity.1 = entity_mapper.get_or_reserve(*tile_entity.1);
+            *tile_entity.1 = entity_mapper.map_entity(*tile_entity.1);
         }
     }
 }

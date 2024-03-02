@@ -4,7 +4,7 @@ use bevy::math::{uvec2, vec2, vec3};
 use bevy::prelude::*;
 use bevy::window::PresentMode;
 use bevy::DefaultPlugins;
-use bevy_fast_tilemap::{Map, MapBundle, MeshManagedByMap};
+use bevy_fast_tilemap::{FastTileMapPlugin, Map, MapBundleManaged};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_sparse_tilemap::map::chunk::{Chunk, ChunkSettings};
 use bevy_sparse_tilemap::tilemap_builder::tilemap_layer_builder::TilemapLayer;
@@ -29,7 +29,7 @@ fn main() {
             FrameTimeDiagnosticsPlugin::default(),
             WorldInspectorPlugin::default(),
         ))
-        .add_plugins(SparseTilemapPlugin)
+        .add_plugins((SparseTilemapPlugin, FastTileMapPlugin))
         .add_systems(Startup, startup)
         .add_systems(
             Update,
@@ -82,9 +82,9 @@ fn spawn_or_update_fast_tilemaps(
         ),
         Changed<Chunk<TileData>>,
     >,
-    fast_tile_map_query: Query<&mut Map, With<FastTileMap>>,
+    fast_tile_map_query: Query<&Handle<Map>, With<FastTileMap>>,
     asset_server: Res<AssetServer>,
-    mut images: ResMut<Assets<Image>>,
+    mut materials: ResMut<Assets<Map>>,
     mut commands: Commands,
 ) {
     let mut rng = rand::thread_rng();
@@ -92,14 +92,16 @@ fn spawn_or_update_fast_tilemaps(
         if let Some(_) = map_spawned_option {
             for child in children.unwrap().iter() {
                 if let Ok(map) = fast_tile_map_query.get(*child) {
-                    let mut m = match map.get_mut(&mut *images) {
-                        Err(e) => {
+                    let m = match materials.get_mut(map) {
+                        None => {
                             // Map texture is not available
-                            warn!("no map: {:?}", e);
+                            warn!("no map: {:?}", map);
                             continue;
                         }
-                        Ok(x) => x,
+                        Some(x) => x,
                     };
+
+                    let mut m = m.indexer_mut();
 
                     for y in 0..chunk.get_chunk_dimensions().y {
                         for x in 0..chunk.get_chunk_dimensions().x {
@@ -124,7 +126,7 @@ fn spawn_or_update_fast_tilemaps(
             // Tile size (pixels)
             vec2(16., 16.),
         )
-        .build_and_set(&mut images, |_| rng.gen_range(0..15));
+        .build_and_set(|_| rng.gen_range(0..15));
 
         commands
             .entity(entity)
@@ -147,7 +149,7 @@ fn spawn_or_update_fast_tilemaps(
                 ChunkMapSpawned,
             ))
             .with_children(|parent| {
-                let mut map_bundle = MapBundle::new(map);
+                let mut map_bundle = MapBundleManaged::new(map, &mut materials);
                 map_bundle.transform.translation = Vec3::new(
                     chunk.chunk_pos.x() as f32 * chunk.get_chunk_dimensions().x as f32 * 16.0,
                     chunk.chunk_pos.y() as f32 * chunk.get_chunk_dimensions().y as f32 * 16.0,
@@ -157,7 +159,6 @@ fn spawn_or_update_fast_tilemaps(
                     .spawn(map_bundle)
                     .insert(Transform::from_translation(Vec3::new(1.0, 1.0, 1.0)))
                     // Have the map manage our mesh so it always has the right size
-                    .insert(MeshManagedByMap)
                     .insert(FastTileMap);
             });
     }
@@ -183,7 +184,7 @@ fn generate_random_tile_data(size_to_generate: UVec2) -> Vec<Vec<TileData>> {
 /// Use RMB for panning
 /// Use scroll wheel for zooming
 fn mouse_controls_camera(
-    mouse_button: Res<Input<MouseButton>>,
+    mouse_button: Res<ButtonInput<MouseButton>>,
     mut mouse_motion_events: EventReader<MouseMotion>,
     mut mouse_wheel_events: EventReader<MouseWheel>,
     mut camera_query: Query<(
@@ -193,7 +194,7 @@ fn mouse_controls_camera(
         &mut OrthographicProjection,
     )>,
 ) {
-    for event in mouse_motion_events.iter() {
+    for event in mouse_motion_events.read() {
         if mouse_button.pressed(MouseButton::Left) || mouse_button.pressed(MouseButton::Right) {
             for (_, mut transform, _, _) in camera_query.iter_mut() {
                 transform.translation.x -= event.delta.x * transform.scale.x;
@@ -203,7 +204,7 @@ fn mouse_controls_camera(
     }
 
     let mut wheel_y = 0.;
-    for event in mouse_wheel_events.iter() {
+    for event in mouse_wheel_events.read() {
         wheel_y += event.y;
     }
 
