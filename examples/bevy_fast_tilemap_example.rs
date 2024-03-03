@@ -38,6 +38,8 @@ fn main() {
         .run();
 }
 
+pub static TILE_SIZE: f32 = 16.0;
+
 #[derive(MapLayer, Clone, Copy, Default)]
 pub enum MapLayers {
     #[default]
@@ -60,11 +62,11 @@ pub struct ChunkMapSpawned;
 
 fn startup(mut tilemap_builder: TilemapBuilder<TileData, MapLayers>, mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
-    let map_size = UVec2::new(500, 500);
+    let map_size = UVec2::new(15000, 15000);
     tilemap_builder.new_tilemap_with_main_layer(
         TilemapLayer::new_dense_from_vecs(generate_random_tile_data(map_size.clone())),
         ChunkSettings {
-            max_chunk_size: UVec2::new(100, 100),
+            max_chunk_size: UVec2::new(250, 250),
         },
     );
     let tilemap = tilemap_builder.spawn_tilemap();
@@ -124,7 +126,7 @@ fn spawn_or_update_fast_tilemaps(
             // Tile atlas
             asset_server.load("tiles_16.png"),
             // Tile size (pixels)
-            vec2(16., 16.),
+            vec2(TILE_SIZE, TILE_SIZE),
         )
         .build_and_set(|_| rng.gen_range(0..15));
 
@@ -136,10 +138,10 @@ fn spawn_or_update_fast_tilemaps(
                         translation: Vec3::new(
                             chunk.chunk_pos.x() as f32
                                 * chunk.get_chunk_dimensions().x as f32
-                                * 16.0,
+                                * TILE_SIZE,
                             chunk.chunk_pos.y() as f32
                                 * chunk.get_chunk_dimensions().y as f32
-                                * 16.0,
+                                * TILE_SIZE,
                             1.0,
                         ),
                         ..default()
@@ -151,8 +153,8 @@ fn spawn_or_update_fast_tilemaps(
             .with_children(|parent| {
                 let mut map_bundle = MapBundleManaged::new(map, &mut materials);
                 map_bundle.transform.translation = Vec3::new(
-                    chunk.chunk_pos.x() as f32 * chunk.get_chunk_dimensions().x as f32 * 16.0,
-                    chunk.chunk_pos.y() as f32 * chunk.get_chunk_dimensions().y as f32 * 16.0,
+                    chunk.chunk_pos.x() as f32 * chunk.get_chunk_dimensions().x as f32 * TILE_SIZE,
+                    chunk.chunk_pos.y() as f32 * chunk.get_chunk_dimensions().y as f32 * TILE_SIZE,
                     1.0,
                 );
                 parent
