@@ -14,8 +14,12 @@ use bevy::prelude::{Component, Entity, Reflect, ReflectComponent, UVec2};
 use bevy::utils::hashbrown::HashMap;
 use std::hash::{Hash, Hasher};
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 /// The chunks of a tilemap
 #[derive(Clone, Component, Hash, Debug, Eq, PartialEq, Reflect)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[reflect(Hash, MapEntities)]
 pub struct Chunks {
     /// A grid of [`Entity`] references pointing to that chunks entity
@@ -116,6 +120,7 @@ impl Chunks {
 /// Contains all tile data as well as a hashmap that contains mapping to currently spawned tile entities
 #[derive(Component, Reflect)]
 #[reflect(Component, Hash, MapEntities)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Chunk<T>
 where
     T: Hash + Clone + Copy + Sized + Default + Send + Sync,

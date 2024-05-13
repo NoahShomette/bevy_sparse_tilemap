@@ -9,8 +9,12 @@ use bevy::prelude::{Component, Entity, Reflect};
 use bevy::utils::HashMap;
 use std::hash::{Hash, Hasher};
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 /// A struct that holds the chunk map data for the given layer
 #[derive(Clone, Component, Default, Reflect)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[reflect(Hash, MapEntities)]
 pub struct ChunkLayerData<T>
 where
@@ -144,6 +148,7 @@ where
 ///
 /// **A layer where every tile has TileData**
 #[derive(Clone, Reflect)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[reflect(Hash)]
 pub enum ChunkLayerTypes<T>
 where

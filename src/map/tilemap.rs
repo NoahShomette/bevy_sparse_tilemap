@@ -13,6 +13,9 @@ use bevy::ecs::reflect::ReflectMapEntities;
 use bevy::math::UVec2;
 use bevy::prelude::{Component, Entity, Reflect, ReflectComponent};
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 /// The data structure containing the entirety of the tilemaps data for each chunk and tile as well
 /// as manages chunk access and setup
 ///
@@ -20,6 +23,7 @@ use bevy::prelude::{Component, Entity, Reflect, ReflectComponent};
 /// data that is not the same for every single tile of that type should be stored as a component
 /// on that tiles entity which is managed through the [`Chunk`](super::chunk::Chunk)
 #[derive(Component, Default, Hash, Clone, Debug, Eq, PartialEq, Reflect)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[reflect(Component, Hash, MapEntities)]
 pub struct Tilemap {
     /// Struct containing [`Entity`] mappings to the [`Chunk`](super::chunk::Chunk)s that hold tile data

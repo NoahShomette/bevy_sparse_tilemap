@@ -44,6 +44,9 @@ use core::ops::IndexMut;
 use core::slice::Iter;
 use core::slice::IterMut;
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 #[doc(hidden)]
 #[macro_export]
 macro_rules! count {
@@ -119,6 +122,7 @@ macro_rules! grid {
 ///
 /// The grid data is stored in a row-major memory layout.
 #[derive(Reflect, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Grid<T> {
     data: Vec<T>,
     cols: usize,

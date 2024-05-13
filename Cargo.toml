@@ -14,7 +14,7 @@ members = ["crates/bst_map_layer_derive"]
 resolver = "2"
 
 [features]
-default = []
+default = ["serde"]
 # bevy_fast_tilemap = ["dep:bevy_fast_tilemap"]
 serde = ["dep:serde", "serde/default", "bevy/serialize"]
 
