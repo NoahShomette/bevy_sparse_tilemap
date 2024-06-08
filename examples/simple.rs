@@ -5,7 +5,6 @@ use bevy::prelude::{
 };
 use bevy::window::PresentMode;
 use bevy::DefaultPlugins;
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_sparse_tilemap::map::chunk::ChunkSettings;
 use bevy_sparse_tilemap::tilemap_builder::tilemap_layer_builder::TilemapLayer;
 use bevy_sparse_tilemap::tilemap_builder::TilemapBuilder;
@@ -26,7 +25,6 @@ fn main() {
         .add_plugins((
             LogDiagnosticsPlugin::default(),
             FrameTimeDiagnosticsPlugin::default(),
-            WorldInspectorPlugin::default(),
         ))
         .add_systems(Startup, spawn_map)
         .run();
@@ -49,9 +47,9 @@ struct TileData(u8, u8);
 #[derive(Resource)]
 pub struct MapEntity(Entity);
 
-fn spawn_map(mut tilemap_builder: TilemapBuilder<TileData, MapLayers>, mut commands: Commands) {
+fn spawn_map(mut commands: Commands) {
     let map_size = UVec2::new(500, 500);
-    tilemap_builder.new_tilemap_with_main_layer(
+    let mut tilemap_builder = TilemapBuilder::<TileData, MapLayers>::new_tilemap_with_main_layer(
         TilemapLayer::new_dense_from_vecs(generate_random_tile_data(map_size.clone())),
         ChunkSettings {
             max_chunk_size: UVec2::new(100, 100),
@@ -73,7 +71,7 @@ fn spawn_map(mut tilemap_builder: TilemapBuilder<TileData, MapLayers>, mut comma
         TilemapLayer::new_sparse_empty(map_size.x as usize, map_size.y as usize),
         MapLayers::SparseThree,
     );
-    let tilemap = tilemap_builder.spawn_tilemap();
+    let tilemap = tilemap_builder.spawn_tilemap(&mut commands);
     commands.insert_resource(MapEntity(tilemap));
 }
 

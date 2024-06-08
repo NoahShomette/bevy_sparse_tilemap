@@ -297,7 +297,7 @@ mod tests {
     use crate::tilemap_builder::TilemapBuilder;
     use crate::tilemap_manager::tilemap_manager::TilemapManager;
     use crate::TilePos;
-    use bevy::ecs::system::SystemState;
+    use bevy::ecs::system::{Commands, SystemState};
     use bevy::math::UVec2;
     use bevy::prelude::World;
     use bevy::utils::hashbrown::HashMap;
@@ -317,11 +317,9 @@ mod tests {
     fn tilemap_manager_dense_access() {
         let mut world = World::new();
 
-        let mut system_state: SystemState<(
-            TilemapBuilder<(i32, i32), MapLayers>,
-            TilemapManager<(i32, i32), MapLayers>,
-        )> = SystemState::new(&mut world);
-        let (mut tilemap_builder, mut tilemap_manager) = system_state.get_mut(&mut world);
+        let mut system_state: SystemState<(Commands, TilemapManager<(i32, i32), MapLayers>)> =
+            SystemState::new(&mut world);
+        let (mut commands, mut tilemap_manager) = system_state.get_mut(&mut world);
         assert_eq!(tilemap_manager.layer(), MapLayers::Main);
         tilemap_manager.on_layer(MapLayers::Secondary);
         assert_eq!(tilemap_manager.layer(), MapLayers::Secondary);
@@ -339,13 +337,13 @@ mod tests {
             vec![(0, 7), (1, 7), (2, 7), (3, 7),(4, 7), (5, 7), (6, 7), (7, 7)],
             vec![(0, 8), (1, 8), (2, 8), (3, 8),(4, 8), (5, 8), (6, 8), (7, 8)]
         ];
-        tilemap_builder.new_tilemap_with_main_layer(
+        let tilemap_builder = TilemapBuilder::<(i32, i32), MapLayers>::new_tilemap_with_main_layer(
             TilemapLayer::new_dense_from_vecs(vecs),
             ChunkSettings {
                 max_chunk_size: UVec2::new(5, 5),
             },
         );
-        let map_entity = tilemap_builder.spawn_tilemap();
+        let map_entity = tilemap_builder.spawn_tilemap(&mut commands);
 
         system_state.apply(&mut world);
 
@@ -402,11 +400,9 @@ mod tests {
     fn tilemap_manager_sparse_access() {
         let mut world = World::new();
 
-        let mut system_state: SystemState<(
-            TilemapBuilder<(i32, i32), MapLayers>,
-            TilemapManager<(i32, i32), MapLayers>,
-        )> = SystemState::new(&mut world);
-        let (mut tilemap_builder, mut tilemap_manager) = system_state.get_mut(&mut world);
+        let mut system_state: SystemState<(Commands, TilemapManager<(i32, i32), MapLayers>)> =
+            SystemState::new(&mut world);
+        let (mut commands, mut tilemap_manager) = system_state.get_mut(&mut world);
         assert_eq!(tilemap_manager.layer(), MapLayers::Main);
         tilemap_manager.on_layer(MapLayers::Secondary);
         assert_eq!(tilemap_manager.layer(), MapLayers::Secondary);
@@ -416,13 +412,13 @@ mod tests {
         hashmap.insert(TilePos::new(0, 0), (0, 0));
         hashmap.insert(TilePos::new(31, 31), (31, 31));
 
-        tilemap_builder.new_tilemap_with_main_layer(
+        let tilemap_builder = TilemapBuilder::<(i32, i32), MapLayers>::new_tilemap_with_main_layer(
             TilemapLayer::new_sparse_from_hashmap(32, 32, hashmap),
             ChunkSettings {
                 max_chunk_size: UVec2::new(5, 5),
             },
         );
-        let map_entity = tilemap_builder.spawn_tilemap();
+        let map_entity = tilemap_builder.spawn_tilemap(&mut commands);
 
         system_state.apply(&mut world);
 
@@ -460,11 +456,9 @@ mod tests {
     fn tilemap_manager_dimensions() {
         let mut world = World::new();
 
-        let mut system_state: SystemState<(
-            TilemapBuilder<(i32, i32), MapLayers>,
-            TilemapManager<(i32, i32), MapLayers>,
-        )> = SystemState::new(&mut world);
-        let (mut tilemap_builder, _) = system_state.get_mut(&mut world);
+        let mut system_state: SystemState<(Commands, TilemapManager<(i32, i32), MapLayers>)> =
+            SystemState::new(&mut world);
+        let (mut commands, _) = system_state.get_mut(&mut world);
 
         #[rustfmt::skip]
             let vecs = vec![
@@ -478,13 +472,13 @@ mod tests {
             vec![(0, 7), (1, 7), (2, 7), (3, 7), (4, 7), (5, 7), (6, 7), (7, 7)],
             vec![(0, 8), (1, 8), (2, 8), (3, 8), (4, 8), (5, 8), (6, 8), (7, 8)]
         ];
-        tilemap_builder.new_tilemap_with_main_layer(
+        let tilemap_builder = TilemapBuilder::<(i32, i32), MapLayers>::new_tilemap_with_main_layer(
             TilemapLayer::new_dense_from_vecs(vecs),
             ChunkSettings {
                 max_chunk_size: UVec2::new(5, 5),
             },
         );
-        let map_entity = tilemap_builder.spawn_tilemap();
+        let map_entity = tilemap_builder.spawn_tilemap(&mut commands);
         system_state.apply(&mut world);
         let (_, mut tilemap_manager) = system_state.get_mut(&mut world);
         tilemap_manager.set_tilemap_entity(map_entity);

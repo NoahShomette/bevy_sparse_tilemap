@@ -5,15 +5,13 @@ use crate::map::{MapLayer, Tilemap};
 use crate::tilemap_builder::tilemap_layer_builder::{
     add_layer_to_chunks, break_layer_into_chunks, TilemapLayer,
 };
-use bevy::ecs::system::SystemParam;
-use bevy::prelude::{BuildChildren, Commands, Entity, Local, Resource, UVec2};
+use bevy::prelude::{BuildChildren, Commands, Entity, UVec2};
 use bevy::utils::HashMap;
 use std::hash::Hash;
 use std::marker::PhantomData;
 
 /// Information to construct a Tilemap
-#[derive(Resource)]
-struct TilemapBuilderInfo<TileData, MapLayers>
+pub struct TilemapBuilder<TileData, MapLayers>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayers: MapLayer + Clone + Copy + Send + Sync + 'static,
@@ -27,7 +25,7 @@ where
     ml_phantom: PhantomData<MapLayers>,
 }
 
-impl<TileData, MapLayers> Default for TilemapBuilderInfo<TileData, MapLayers>
+impl<TileData, MapLayers> Default for TilemapBuilder<TileData, MapLayers>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayers: MapLayer + Clone + Copy + Send + Sync + 'static,
@@ -46,20 +44,7 @@ where
     }
 }
 
-/// A custom [`SystemParam`] used to construct Tilemaps
-#[derive(SystemParam)]
-pub struct TilemapBuilder<'w, 's, TileData, MapLayers>
-where
-    TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
-    MapLayers: MapLayer + Clone + Copy + Send + Sync + 'static,
-{
-    td_phantom: PhantomData<TileData>,
-    ml_phantom: PhantomData<MapLayers>,
-    tilemap_info: Local<'s, TilemapBuilderInfo<TileData, MapLayers>>,
-    commands: Commands<'w, 's>,
-}
-
-impl<'w, 's, TileData, MapLayers> TilemapBuilder<'w, 's, TileData, MapLayers>
+impl<TileData, MapLayers> TilemapBuilder<TileData, MapLayers>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayers: MapLayer + Clone + Copy + Send + Sync + 'static,
@@ -67,19 +52,12 @@ where
     /// Converts all the data from the [`SystemParam`] and spawns the
     /// tilemap returning the Tilemaps [`Entity`]
     #[must_use]
-    pub fn spawn_tilemap(&mut self) -> Entity {
-        let mut chunks = break_layer_into_chunks(
-            &self.tilemap_info.main_layer,
-            self.tilemap_info.chunk_settings.max_chunk_size,
-        );
+    pub fn spawn_tilemap(self, commands: &mut Commands) -> Entity {
+        let mut chunks =
+            break_layer_into_chunks(&self.main_layer, self.chunk_settings.max_chunk_size);
 
-        for (id, layer) in self.tilemap_info.layer_info.iter() {
-            add_layer_to_chunks(
-                *id,
-                &mut chunks,
-                layer,
-                self.tilemap_info.chunk_settings.max_chunk_size,
-            )
+        for (id, layer) in self.layer_info.iter() {
+            add_layer_to_chunks(*id, &mut chunks, layer, self.chunk_settings.max_chunk_size)
         }
 
         let mut chunk_entities: Vec<Vec<Entity>> = vec![];
@@ -89,7 +67,7 @@ where
         for y in 0..chunks.len() {
             let mut vec: Vec<Entity> = vec![];
             for _ in 0..map_x {
-                let entity = self.commands.spawn(chunks[y].remove(0)).id();
+                let entity = commands.spawn(chunks[y].remove(0)).id();
                 vec.push(entity);
             }
             chunk_entities.push(vec);
@@ -103,11 +81,10 @@ where
 
         let chunks = Chunks::new(
             Chunks::new_chunk_entity_grid(chunk_entities),
-            self.tilemap_info.chunk_settings.max_chunk_size,
+            self.chunk_settings.max_chunk_size,
         );
 
-        let tilemap_entity = self
-            .commands
+        let tilemap_entity = commands
             .spawn(Tilemap::new(chunks))
             .push_children(flattened_chunk_entities.as_slice())
             .id();
@@ -117,32 +94,28 @@ where
     /// Sets the [`TilemapBuilder`] to the default with the addition of the given [`TilemapLayer`] as
     /// the main layer.
     pub fn new_tilemap_with_main_layer(
-        &mut self,
         layer_data: TilemapLayer<TileData>,
         chunk_settings: ChunkSettings,
-    ) {
+    ) -> Self {
         let dimensions = layer_data.dimensions();
-        println!("{:?}", dimensions);
-        *self.tilemap_info = TilemapBuilderInfo::<TileData, MapLayers> {
+        TilemapBuilder::<TileData, MapLayers> {
             main_layer: layer_data,
             layer_info: Default::default(),
             chunk_settings,
             map_size: dimensions,
             td_phantom: Default::default(),
             ml_phantom: Default::default(),
-        };
+        }
     }
 
     /// Adds the given [`TilemapLayer`] to the tilemap keyed to the given [`MapLayers`]
     pub fn add_layer(&mut self, layer_data: TilemapLayer<TileData>, map_layer: MapLayers) {
         assert_eq!(
-            self.tilemap_info.map_size,
+            self.map_size,
             layer_data.dimensions(),
             "New layers must be the same size as the map dimensions"
         );
-        self.tilemap_info
-            .layer_info
-            .insert(map_layer.to_bits(), layer_data);
+        self.layer_info.insert(map_layer.to_bits(), layer_data);
     }
 }
 

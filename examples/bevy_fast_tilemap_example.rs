@@ -5,7 +5,6 @@ use bevy::prelude::*;
 use bevy::window::PresentMode;
 use bevy::DefaultPlugins;
 use bevy_fast_tilemap::{FastTileMapPlugin, Map, MapBundleManaged};
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_sparse_tilemap::map::chunk::{Chunk, ChunkSettings};
 use bevy_sparse_tilemap::tilemap_builder::tilemap_layer_builder::TilemapLayer;
 use bevy_sparse_tilemap::tilemap_builder::TilemapBuilder;
@@ -27,7 +26,6 @@ fn main() {
         .add_plugins((
             LogDiagnosticsPlugin::default(),
             FrameTimeDiagnosticsPlugin::default(),
-            WorldInspectorPlugin::default(),
         ))
         .add_plugins((SparseTilemapPlugin, FastTileMapPlugin))
         .add_systems(Startup, startup)
@@ -60,16 +58,16 @@ pub struct FastTileMap;
 #[derive(Component, Default, Copy, Clone, Reflect)]
 pub struct ChunkMapSpawned;
 
-fn startup(mut tilemap_builder: TilemapBuilder<TileData, MapLayers>, mut commands: Commands) {
+fn startup(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
     let map_size = UVec2::new(15000, 15000);
-    tilemap_builder.new_tilemap_with_main_layer(
+    let tilemap_builder = TilemapBuilder::<TileData, MapLayers>::new_tilemap_with_main_layer(
         TilemapLayer::new_dense_from_vecs(generate_random_tile_data(map_size.clone())),
         ChunkSettings {
             max_chunk_size: UVec2::new(250, 250),
         },
     );
-    let tilemap = tilemap_builder.spawn_tilemap();
+    let tilemap = tilemap_builder.spawn_tilemap(&mut commands);
     commands.entity(tilemap).insert(SpatialBundle::default());
     commands.insert_resource(MapEntity(tilemap));
 }
