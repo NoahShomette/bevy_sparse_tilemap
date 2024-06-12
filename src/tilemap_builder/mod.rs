@@ -11,24 +11,27 @@ use std::hash::Hash;
 use std::marker::PhantomData;
 
 /// Information to construct a Tilemap
-pub struct TilemapBuilder<TileData, MapLayers>
+pub struct TilemapBuilder<TileData, MapLayers, MapType>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayers: MapLayer + Clone + Copy + Send + Sync + 'static,
+    MapType: Default,
 {
     main_layer: TilemapLayer<TileData>,
     layer_info: HashMap<u32, TilemapLayer<TileData>>,
     chunk_settings: ChunkSettings,
     map_size: UVec2,
+    map_type: MapType,
     // All phantom data below
     td_phantom: PhantomData<TileData>,
     ml_phantom: PhantomData<MapLayers>,
 }
 
-impl<TileData, MapLayers> Default for TilemapBuilder<TileData, MapLayers>
+impl<TileData, MapLayers, MapType> Default for TilemapBuilder<TileData, MapLayers, MapType>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayers: MapLayer + Clone + Copy + Send + Sync + 'static,
+    MapType: Default,
 {
     fn default() -> Self {
         Self {
@@ -38,16 +41,18 @@ where
                 max_chunk_size: UVec2::new(50, 50),
             },
             map_size: Default::default(),
+            map_type: Default::default(),
             td_phantom: PhantomData::default(),
             ml_phantom: PhantomData::default(),
         }
     }
 }
 
-impl<TileData, MapLayers> TilemapBuilder<TileData, MapLayers>
+impl<TileData, MapLayers, MapType> TilemapBuilder<TileData, MapLayers, MapType>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayers: MapLayer + Clone + Copy + Send + Sync + 'static,
+    MapType: Default,
 {
     /// Converts all the data from the [`SystemParam`] and spawns the
     /// tilemap returning the Tilemaps [`Entity`]
@@ -95,14 +100,16 @@ where
     /// the main layer.
     pub fn new_tilemap_with_main_layer(
         layer_data: TilemapLayer<TileData>,
+        map_type: MapType,
         chunk_settings: ChunkSettings,
     ) -> Self {
         let dimensions = layer_data.dimensions();
-        TilemapBuilder::<TileData, MapLayers> {
+        TilemapBuilder::<TileData, MapLayers, MapType> {
             main_layer: layer_data,
             layer_info: Default::default(),
             chunk_settings,
             map_size: dimensions,
+            map_type,
             td_phantom: Default::default(),
             ml_phantom: Default::default(),
         }
@@ -127,7 +134,6 @@ mod tests {
     use crate::tilemap_builder::tilemap_layer_builder::TilemapLayer;
     use crate::tilemap_builder::TilemapBuilder;
     use crate::tilemap_manager::TilemapManager;
-    use crate::TilePos;
     use bevy::ecs::system::SystemState;
     use bevy::math::UVec2;
     use bevy::prelude::World;

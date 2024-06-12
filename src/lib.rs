@@ -71,18 +71,17 @@
 //!
 //! ```
 
-pub mod grid;
+pub mod cell;
 pub mod integrations;
 pub mod map;
+pub mod square;
 pub mod tilemap_builder;
 pub mod tilemap_manager;
-pub mod tiles;
 
 use bevy::app::App;
 use bevy::prelude::Plugin;
 
 pub use bst_map_layer_derive::MapLayer;
-pub use tiles::TilePos;
 
 use crate::integrations::IntegrationsPlugin;
 

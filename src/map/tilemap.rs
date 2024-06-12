@@ -7,17 +7,16 @@
 
 use crate::map::chunk::ChunkPos;
 use crate::map::chunk::Chunks;
-use crate::TilePos;
 use bevy::ecs::entity::{EntityMapper, MapEntities};
 use bevy::ecs::reflect::ReflectMapEntities;
 use bevy::math::UVec2;
 use bevy::prelude::{Component, Entity, Reflect, ReflectComponent};
 
+use lettuces::cell::Cell;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-/// The data structure containing the entirety of the tilemaps data for each chunk and tile as well
-/// as manages chunk access and setup
+/// The data structure containing information for each chunk.
 ///
 /// Each tile should only contain the bare minimum data needed for you to figure out what it is. Any
 /// data that is not the same for every single tile of that type should be stored as a component
@@ -43,8 +42,8 @@ impl Tilemap {
     }
 
     /// Gets the chunk entity that has the tile_info for the given TilePos
-    pub fn get_chunk_for_tile_pos(&self, tile_pos: TilePos) -> Option<Entity> {
-        self.chunks.get_chunk_from_tile_pos(tile_pos)
+    pub fn get_chunk_for_tile_pos(&self, cell: Cell) -> Option<Entity> {
+        self.chunks.get_chunk_from_cell(cell)
     }
 
     /// Gets the chunk entity that has the tile_info for the given TilePos

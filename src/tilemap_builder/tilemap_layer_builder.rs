@@ -1,11 +1,11 @@
 ﻿//! This module is specifically for making Tilemaps and helps to give ways to make Tilemap global layers
 //! and then convert those into chunks
 
-use crate::map::chunk::{Chunk, ChunkPos};
-use crate::TilePos;
+use crate::map::chunk::{Chunk, ChunkLayerData, ChunkPos};
 use bevy::math::{vec2, UVec2};
 use bevy::prelude::{Bundle, Commands, Entity};
 use bevy::utils::hashbrown::HashMap;
+use lettuces::cell::Cell;
 use std::hash::Hash;
 
 /// An enum that holds all the data for a tilemap layer. This layer is only used in the [`TilemapBuilder`]
@@ -33,8 +33,8 @@ pub enum TilemapLayer<T>
 where
     T: Clone + Copy + Sized + Default + Send + Sync,
 {
-    Sparse(HashMap<TilePos, T>, UVec2, HashMap<TilePos, Entity>),
-    Dense(Vec<Vec<T>>, HashMap<TilePos, Entity>),
+    Sparse(HashMap<Cell, T>, UVec2, HashMap<Cell, Entity>),
+    Dense(Vec<Vec<T>>, HashMap<Cell, Entity>),
 }
 
 impl<T> Default for TilemapLayer<T>
@@ -71,7 +71,7 @@ where
     pub fn new_sparse_from_hashmap(
         tile_map_size_x: usize,
         tile_map_size_y: usize,
-        hashmap: HashMap<TilePos, T>,
+        hashmap: HashMap<Cell, T>,
     ) -> Self {
         Self::Sparse(
             hashmap,
@@ -131,7 +131,7 @@ where
     /// Spawns an entity at the given [`TilePos`] with the given [`Bundle`]
     pub fn spawn_entity_at_tile_pos<B: Bundle>(
         &mut self,
-        tile_pos: TilePos,
+        cell: Cell,
         bundle: B,
         commands: &mut Commands,
     ) {
@@ -139,23 +139,24 @@ where
 
         match self {
             TilemapLayer::Sparse(_, _, entities) => {
-                entities.insert(tile_pos, entity);
+                entities.insert(cell, entity);
             }
             TilemapLayer::Dense(_, entities) => {
-                entities.insert(tile_pos, entity);
+                entities.insert(cell, entity);
             }
         }
     }
 }
 
 /// Adds the given layer to the tilemap
-pub fn add_layer_to_chunks<TileData>(
+pub fn add_layer_to_chunks<TileData, ChunkType>(
     map_layer: u32,
-    chunks: &mut Vec<Vec<Chunk<TileData>>>,
+    chunks: &mut Vec<Vec<Chunk<ChunkType, TileData>>>,
     tilemap_layer: &TilemapLayer<TileData>,
     max_chunk_size: UVec2,
 ) where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
+    ChunkType: ChunkLayerData<TileData> + Send + Sync + 'static + Default,
 {
     match tilemap_layer {
         TilemapLayer::Sparse(data, .., entities) => {
@@ -193,12 +194,13 @@ pub fn add_layer_to_chunks<TileData>(
     }
 }
 
-pub fn break_layer_into_chunks<TileData>(
+pub fn break_layer_into_chunks<TileData, ChunkType>(
     tilemap_layer: &TilemapLayer<TileData>,
     max_chunk_size: UVec2,
-) -> Vec<Vec<Chunk<TileData>>>
+) -> Vec<Vec<Chunk<ChunkType, TileData>>>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
+    ChunkType: ChunkLayerData<TileData> + Send + Sync + 'static + Default,
 {
     return match tilemap_layer {
         TilemapLayer::Sparse(data, map_size, entities) => {
@@ -215,15 +217,16 @@ where
 }
 
 /// Function that breaks a [`HashMap<TilePos, TileData>`] into [`Vec<Vec<Chunk<TileData>>>`]
-pub fn break_hashmap_into_chunks<TileData>(
-    data: &HashMap<TilePos, TileData>,
+pub fn break_hashmap_into_chunks<TileData, ChunkType>(
+    data: &HashMap<Cell, TileData>,
     map_size: UVec2,
     max_chunk_size: UVec2,
-) -> Vec<Vec<Chunk<TileData>>>
+) -> Vec<Vec<Chunk<ChunkType, TileData>>>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
+    ChunkType: ChunkLayerData<TileData> + Send + Sync + 'static + Default,
 {
-    let mut chunks: Vec<Vec<Chunk<TileData>>> = vec![];
+    let mut chunks: Vec<Vec<Chunk<ChunkType, TileData>>> = vec![];
     // Get the chunks with the remainder for making chunks
     let max_chunks_floats = vec2(
         (f64::from(map_size.x) / f64::from(max_chunk_size.x)) as f32,
@@ -237,7 +240,7 @@ where
     );
 
     for y in 0..max_chunks.y {
-        let mut chunks_rows: Vec<Chunk<TileData>> = vec![];
+        let mut chunks_rows: Vec<Chunk<ChunkType, TileData>> = vec![];
         for x in 0..max_chunks.x {
             // Gets the actual chunk size of the given chunk
             let mut chunk_size = max_chunk_size;
@@ -267,14 +270,15 @@ where
 }
 
 /// Function that breaks a [`Vec<Vec<TileData>>`] into [`Vec<Vec<Chunk<TileData>>>`]
-pub fn break_data_vecs_into_chunks<TileData>(
+pub fn break_data_vecs_into_chunks<TileData, ChunkType>(
     data: &Vec<Vec<TileData>>,
     max_chunk_size: UVec2,
-) -> Vec<Vec<Chunk<TileData>>>
+) -> Vec<Vec<Chunk<ChunkType, TileData>>>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
+    ChunkType: ChunkLayerData<TileData> + Send + Sync + 'static + Default,
 {
-    let mut chunks: Vec<Vec<Chunk<TileData>>> = vec![];
+    let mut chunks: Vec<Vec<Chunk<ChunkType, TileData>>> = vec![];
     let map_x = data[0].len() as f32;
     let map_y = data.len() as f32;
 
@@ -282,11 +286,12 @@ where
     let y_chunk_amount = (map_y / max_chunk_size.y as f32).ceil() as u32;
 
     for y in 0..y_chunk_amount {
-        let mut chunks_rows: Vec<Chunk<TileData>> = vec![];
+        let mut chunks_rows: Vec<Chunk<ChunkType, TileData>> = vec![];
         for x in 0..x_chunk_amount {
             let vec =
                 break_data_vecs_down_into_chunk_data(&data, ChunkPos::new(x, y), max_chunk_size);
-            let chunk = Chunk::<TileData>::new_dense_from_vecs(ChunkPos::new(x, y), &vec);
+            let chunk =
+                Chunk::<ChunkType, TileData>::new_dense_from_vecs(ChunkPos::new(x, y), &vec);
             chunks_rows.push(chunk);
         }
         chunks.push(chunks_rows);
@@ -323,13 +328,14 @@ where
     vec
 }
 
-pub fn add_entities_to_layer<TileData>(
+pub fn add_entities_to_layer<TileData, ChunkType>(
     map_layer: u32,
-    chunks: &mut Vec<Vec<Chunk<TileData>>>,
-    entities: &HashMap<TilePos, Entity>,
+    chunks: &mut Vec<Vec<Chunk<ChunkType, TileData>>>,
+    entities: &HashMap<Cell, Entity>,
     max_chunk_size: UVec2,
 ) where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
+    ChunkType: ChunkLayerData<TileData> + Send + Sync + 'static + Default,
 {
     for (tile_pos, entity) in entities.iter() {
         let chunk_pos = tile_pos.into_chunk_pos(max_chunk_size);
@@ -346,10 +352,10 @@ mod tests {
     use crate as bevy_sparse_tilemap;
 
     use crate::tilemap_builder::tilemap_layer_builder::{break_hashmap_into_chunks, TilemapLayer};
-    use crate::TilePos;
     use bevy::math::UVec2;
     use bevy::utils::HashMap;
     use bst_map_layer_derive::MapLayer;
+    use lettuces::cell::Cell;
 
     #[derive(Clone, Copy, Default, PartialEq, Eq, Debug)]
     struct TileData(u8);
@@ -394,9 +400,9 @@ mod tests {
     #[test]
     fn test_new_from_hashmap() {
         // Tests basic i32
-        let mut hashmap: HashMap<TilePos, (u32, u32)> = HashMap::new();
-        hashmap.insert(TilePos::new(0, 0), (0, 0));
-        hashmap.insert(TilePos::new(31, 31), (31, 31));
+        let mut hashmap: HashMap<Cell, (u32, u32)> = HashMap::new();
+        hashmap.insert(Cell::new(0, 0), (0, 0));
+        hashmap.insert(Cell::new(31, 31), (31, 31));
 
         let tilemap = TilemapLayer::new_sparse_from_hashmap(32, 32, hashmap);
 
@@ -406,9 +412,9 @@ mod tests {
 
         assert_eq!(size, UVec2::new(32, 32));
 
-        assert_eq!(data.get(&TilePos::new(1, 1)).is_none(), true);
-        assert_eq!(data.get(&TilePos::new(0, 0)).unwrap(), &(0, 0));
-        assert_eq!(data.get(&TilePos::new(31, 31)).unwrap(), &(31, 31));
+        assert_eq!(data.get(&Cell::new(1, 1)).is_none(), true);
+        assert_eq!(data.get(&Cell::new(0, 0)).unwrap(), &(0, 0));
+        assert_eq!(data.get(&Cell::new(31, 31)).unwrap(), &(31, 31));
     }
 
     /// TilemapLayer breakdown
@@ -483,17 +489,17 @@ mod tests {
     #[test]
     fn test_hashmap_breakdown() {
         // Tests basic i32
-        let mut hashmap: HashMap<TilePos, (u32, u32)> = HashMap::new();
-        hashmap.insert(TilePos::new(0, 0), (0, 0));
-        hashmap.insert(TilePos::new(5, 5), (5, 5));
-        hashmap.insert(TilePos::new(1, 0), (1, 0));
-        hashmap.insert(TilePos::new(0, 19), (0, 19));
-        hashmap.insert(TilePos::new(31, 3), (31, 3));
-        hashmap.insert(TilePos::new(12, 31), (12, 31));
-        hashmap.insert(TilePos::new(10, 10), (10, 10));
-        hashmap.insert(TilePos::new(15, 15), (15, 15));
-        hashmap.insert(TilePos::new(27, 27), (27, 27));
-        hashmap.insert(TilePos::new(31, 31), (31, 31));
+        let mut hashmap: HashMap<Cell, (u32, u32)> = HashMap::new();
+        hashmap.insert(Cell::new(0, 0), (0, 0));
+        hashmap.insert(Cell::new(5, 5), (5, 5));
+        hashmap.insert(Cell::new(1, 0), (1, 0));
+        hashmap.insert(Cell::new(0, 19), (0, 19));
+        hashmap.insert(Cell::new(31, 3), (31, 3));
+        hashmap.insert(Cell::new(12, 31), (12, 31));
+        hashmap.insert(Cell::new(10, 10), (10, 10));
+        hashmap.insert(Cell::new(15, 15), (15, 15));
+        hashmap.insert(Cell::new(27, 27), (27, 27));
+        hashmap.insert(Cell::new(31, 31), (31, 31));
 
         let mcs = UVec2::new(10, 10);
 
@@ -504,28 +510,25 @@ mod tests {
 
         assert_eq!(
             chunks[0][0]
-                .get_tile_data(MapLayers::Main, TilePos::new(0, 0).into_chunk_tile_pos(mcs))
+                .get_tile_data(MapLayers::Main, Cell::new(0, 0).into_chunk_tile_pos(mcs))
                 .unwrap(),
             (0, 0)
         );
         assert_eq!(
             chunks[3][3]
-                .get_tile_data(
-                    MapLayers::Main,
-                    TilePos::new(31, 31).into_chunk_tile_pos(mcs)
-                )
+                .get_tile_data(MapLayers::Main, Cell::new(31, 31).into_chunk_tile_pos(mcs))
                 .unwrap(),
             (31, 31)
         );
         assert_eq!(
             chunks[0][0]
-                .get_tile_data(MapLayers::Main, TilePos::new(0, 0).into_chunk_tile_pos(mcs))
+                .get_tile_data(MapLayers::Main, Cell::new(0, 0).into_chunk_tile_pos(mcs))
                 .unwrap(),
             (0, 0)
         );
         assert_eq!(
             chunks[0][0]
-                .get_tile_data(MapLayers::Main, TilePos::new(0, 0).into_chunk_tile_pos(mcs))
+                .get_tile_data(MapLayers::Main, Cell::new(0, 0).into_chunk_tile_pos(mcs))
                 .unwrap(),
             (0, 0)
         );

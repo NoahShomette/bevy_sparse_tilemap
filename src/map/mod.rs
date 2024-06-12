@@ -3,6 +3,11 @@
 pub mod chunk;
 mod tilemap;
 
+use bevy::{
+    ecs::{component::Component, reflect::ReflectComponent},
+    reflect::Reflect,
+};
+use serde::{Deserialize, Serialize};
 pub use tilemap::Tilemap;
 
 /// A layer used for identifying and accessing multiple layers of a [`Tilemap`]
@@ -24,4 +29,14 @@ impl<L: MapLayer> MapLayer for &L {
     fn all_bits() -> u32 {
         L::all_bits()
     }
+}
+
+/// Specifices the type of map
+#[derive(Component, Default, Hash, Clone, Debug, Eq, PartialEq, Reflect)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[reflect(Component, Hash)]
+pub enum MapType {
+    #[default]
+    Square,
+    Hexagon,
 }

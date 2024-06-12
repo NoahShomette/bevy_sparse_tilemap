@@ -6,6 +6,7 @@ use bevy::window::PresentMode;
 use bevy::DefaultPlugins;
 use bevy_fast_tilemap::{FastTileMapPlugin, Map, MapBundleManaged};
 use bevy_sparse_tilemap::map::chunk::{Chunk, ChunkSettings};
+use bevy_sparse_tilemap::map::MapType;
 use bevy_sparse_tilemap::tilemap_builder::tilemap_layer_builder::TilemapLayer;
 use bevy_sparse_tilemap::tilemap_builder::TilemapBuilder;
 use bevy_sparse_tilemap::SparseTilemapPlugin;
@@ -63,6 +64,7 @@ fn startup(mut commands: Commands) {
     let map_size = UVec2::new(15000, 15000);
     let tilemap_builder = TilemapBuilder::<TileData, MapLayers>::new_tilemap_with_main_layer(
         TilemapLayer::new_dense_from_vecs(generate_random_tile_data(map_size.clone())),
+        MapType::Square,
         ChunkSettings {
             max_chunk_size: UVec2::new(250, 250),
         },
