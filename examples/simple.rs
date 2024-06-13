@@ -6,7 +6,10 @@ use bevy::prelude::{
 use bevy::window::PresentMode;
 use bevy::DefaultPlugins;
 use bevy_sparse_tilemap::map::chunk::ChunkSettings;
-use bevy_sparse_tilemap::map::MapType;
+use bevy_sparse_tilemap::square::map_chunk_layer::{
+    SquareChunkLayer, SquareChunkLayerConversionSettings,
+};
+use bevy_sparse_tilemap::square::map_data::{SquareMapData, SquareMapDataConversionSettings};
 use bevy_sparse_tilemap::tilemap_builder::tilemap_layer_builder::TilemapLayer;
 use bevy_sparse_tilemap::tilemap_builder::TilemapBuilder;
 use bst_map_layer_derive::MapLayer;
@@ -50,9 +53,18 @@ pub struct MapEntity(Entity);
 
 fn spawn_map(mut commands: Commands) {
     let map_size = UVec2::new(500, 500);
-    let mut tilemap_builder = TilemapBuilder::<TileData, MapLayers>::new_tilemap_with_main_layer(
+    let mut tilemap_builder = TilemapBuilder::<
+        TileData,
+        MapLayers,
+        SquareChunkLayer<TileData>,
+        SquareMapData,
+    >::new_tilemap_with_main_layer(
         TilemapLayer::new_dense_from_vecs(generate_random_tile_data(map_size.clone())),
-        MapType::Square,
+        SquareMapData {
+            conversion_settings: SquareMapDataConversionSettings {
+                max_chunk_dimensions: UVec2::new(100, 100),
+            },
+        },
         ChunkSettings {
             max_chunk_size: UVec2::new(100, 100),
         },
@@ -73,7 +85,15 @@ fn spawn_map(mut commands: Commands) {
         TilemapLayer::new_sparse_empty(map_size.x as usize, map_size.y as usize),
         MapLayers::SparseThree,
     );
-    let tilemap = tilemap_builder.spawn_tilemap(&mut commands);
+
+    let chunk_conversion_settings = SquareChunkLayerConversionSettings {
+        max_chunk_dimensions: UVec2 { x: 5, y: 5 },
+    };
+
+    let Some(tilemap) = tilemap_builder.spawn_tilemap(chunk_conversion_settings, &mut commands)
+    else {
+        return;
+    };
     commands.insert_resource(MapEntity(tilemap));
 }
 

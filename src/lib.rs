@@ -13,6 +13,9 @@
 //! # use bevy_sparse_tilemap::tilemap_builder::tilemap_layer_builder::TilemapLayer;
 //! # use bevy_sparse_tilemap::tilemap_builder::TilemapBuilder;
 //! # use bst_map_layer_derive::MapLayer;
+//! #    use bevy_sparse_tilemap::square::{
+//! # map_chunk_layer::SquareChunkLayer, map_data::SquareMapData, map_data::SquareMapDataConversionSettings, map_chunk_layer::SquareChunkLayerConversionSettings
+//! # };
 //! #
 //! # #[derive(MapLayer, Clone, Copy, Default)]
 //! # pub enum MapLayers {
@@ -21,18 +24,32 @@
 //! #     Secondary,
 //! # }
 //! #
-//! # #[derive(Default, Copy, Clone, Reflect)]
+//! # #[derive(Default, Copy, Clone, Reflect, Hash)]
 //! # struct TileData(u8, u8);
 //! #
 //! #
-//! fn spawn_tilemap(mut tilemap_builder: TilemapBuilder<TileData, MapLayers>, mut commands: Commands) {
-//!     tilemap_builder.new_tilemap_with_main_layer(
-//!         TilemapLayer::new_dense_default(5000,5000),
+//! fn spawn_tilemap(mut commands: Commands) {
+//!     let mut tilemap_builder = TilemapBuilder::<TileData, MapLayers, SquareChunkLayer<TileData>, SquareMapData,
+//!         >::new_tilemap_with_main_layer(
+//!         TilemapLayer::new_dense_default(10000, 10000),
+//!         SquareMapData {
+//!             conversion_settings: SquareMapDataConversionSettings {
+//!                 max_chunk_dimensions: UVec2::new(100, 100),
+//!                 },
+//!             },
 //!         ChunkSettings {
 //!             max_chunk_size: UVec2::new(100, 100),
 //!         },
 //!     );
-//!     let tilemap = tilemap_builder.spawn_tilemap();
+//!
+//!     let chunk_conversion_settings = SquareChunkLayerConversionSettings {
+//!         max_chunk_dimensions: UVec2 { x: 100, y: 100 },
+//!     };
+//!     
+//!     let Some(tilemap) = tilemap_builder.spawn_tilemap(chunk_conversion_settings, &mut commands)
+//!         else {
+//!             return;
+//!     };
 //! }
 //!
 //! ```
@@ -48,8 +65,11 @@
 //! # use bevy_sparse_tilemap::tilemap_builder::tilemap_layer_builder::TilemapLayer;
 //! # use bevy_sparse_tilemap::tilemap_builder::TilemapBuilder;
 //! # use bevy_sparse_tilemap::tilemap_manager::TilemapManager;
-//! # use bevy_sparse_tilemap::TilePos;
+//! # use lettuces::cell::Cell;
 //! # use bst_map_layer_derive::MapLayer;
+//!     use bevy_sparse_tilemap::square::map_chunk_layer::{
+//! SquareChunkLayer,
+//! };
 //! #
 //! # #[derive(MapLayer, Clone, Copy, Default)]
 //! # pub enum MapLayers {
@@ -58,12 +78,12 @@
 //! #     Secondary,
 //! # }
 //! #
-//! # #[derive(Default, Copy, Clone, Reflect)]
+//! # #[derive(Default, Copy, Clone, Reflect, Hash)]
 //! # struct TileData(u8, u8);
 //! #
 //!
-//! fn access(tilemap_manager: TilemapManager<TileData, MapLayers>, mut commands: Commands) {
-//!     let tile_data = tilemap_manager.get_tile_data(TilePos::new(9,16)).unwrap();
+//! fn access(tilemap_manager: TilemapManager<TileData, MapLayers, SquareChunkLayer<TileData>>, mut commands: Commands) {
+//!     let tile_data = tilemap_manager.get_tile_data(Cell::new(9,16)).unwrap();
 //!
 //!     //    
 //!
@@ -71,7 +91,6 @@
 //!
 //! ```
 
-pub mod cell;
 pub mod integrations;
 pub mod map;
 pub mod square;

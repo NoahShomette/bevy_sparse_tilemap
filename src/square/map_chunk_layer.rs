@@ -1,6 +1,6 @@
 //! This module is for data structures to store and interact with a Chunks Layers.
 
-use crate::map::chunk::chunk_cell::ChunkCell;
+use crate::map::chunk::{ChunkCell, LayerType, MapChunkLayer};
 use bevy::ecs::entity::{EntityMapper, MapEntities};
 use bevy::ecs::reflect::ReflectMapEntities;
 use bevy::math::UVec2;
@@ -12,21 +12,32 @@ use std::hash::{Hash, Hasher};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use super::ChunkLayerData;
+#[derive(Reflect, Clone, Copy)]
+pub struct SquareChunkLayerConversionSettings {
+    pub max_chunk_dimensions: UVec2,
+}
+
+impl Default for SquareChunkLayerConversionSettings {
+    fn default() -> Self {
+        Self {
+            max_chunk_dimensions: UVec2 { x: 10, y: 10 },
+        }
+    }
+}
 
 /// A struct that holds the chunk map data for the given layer
 #[derive(Clone, Component, Default, Reflect)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[reflect(Hash, MapEntities)]
-pub struct SquareLayerData<T>
+pub struct SquareChunkLayer<T>
 where
     T: Hash + Clone + Copy + Sized + Default + Send + Sync,
 {
-    layer_type_data: SquareLayerTypes<T>,
+    layer_type_data: SquareChunkLayerData<T>,
     tile_entities: HashMap<u64, Entity>,
 }
 
-impl<T> MapEntities for SquareLayerData<T>
+impl<T> MapEntities for SquareChunkLayer<T>
 where
     T: Hash + Clone + Copy + Sized + Default + Send + Sync,
 {
@@ -37,7 +48,7 @@ where
     }
 }
 
-impl<T> Hash for SquareLayerData<T>
+impl<T> Hash for SquareChunkLayer<T>
 where
     T: Hash + Clone + Copy + Sized + Default + Send + Sync,
 {
@@ -48,17 +59,31 @@ where
         Hash::hash(&self.layer_type_data, h);
     }
 }
-impl<T> ChunkLayerData<T> for SquareLayerData<T>
+impl<T> MapChunkLayer<T> for SquareChunkLayer<T>
 where
     T: Hash + Clone + Copy + Sized + Default + Send + Sync,
 {
-    fn new(layer_type: super::LayerType<T>, chunk_dimensions: UVec2) -> Self {
+    type ConversionSettings = SquareChunkLayerConversionSettings;
+
+    fn into_chunk_cell(
+        cell: lettuces::cell::Cell,
+        conversion_settings: &Self::ConversionSettings,
+    ) -> ChunkCell {
+        let chunk_pos_x = cell.x / conversion_settings.max_chunk_dimensions.x as i32;
+        let chunk_pos_y = cell.y / conversion_settings.max_chunk_dimensions.y as i32;
+        ChunkCell::new(
+            cell.x - (chunk_pos_x * conversion_settings.max_chunk_dimensions.x as i32),
+            cell.y - (chunk_pos_y * conversion_settings.max_chunk_dimensions.y as i32),
+        )
+    }
+
+    fn new(layer_type: LayerType<T>, chunk_dimensions: UVec2) -> Self {
         match layer_type {
-            super::LayerType::Dense(dense_data) => Self {
-                layer_type_data: SquareLayerTypes::new_dense_from_vecs(&dense_data),
+            LayerType::Dense(dense_data) => Self {
+                layer_type_data: SquareChunkLayerData::new_dense_from_vecs(&dense_data),
                 tile_entities: Default::default(),
             },
-            super::LayerType::Sparse(hashmap) => {
+            LayerType::Sparse(hashmap) => {
                 let sparse_data = hashmap
                     .iter()
                     .map(|(chunk_tile_pos, tile_data)| {
@@ -67,8 +92,8 @@ where
                         (number, tile_data.clone())
                     })
                     .collect();
-                SquareLayerData {
-                    layer_type_data: SquareLayerTypes::Sparse(sparse_data, chunk_dimensions),
+                SquareChunkLayer {
+                    layer_type_data: SquareChunkLayerData::Sparse(sparse_data, chunk_dimensions),
                     tile_entities: Default::default(),
                 }
             }
@@ -110,7 +135,7 @@ where
 /// **A layer where every tile is not filled**
 ///
 /// 0. A hashmap of TilePos -> TileData
-/// 1. A UVec2 representing the size of the chunk
+/// 1. A UVec2 representing the actual size of the chunk
 ///
 /// # Dense
 ///
@@ -118,7 +143,7 @@ where
 #[derive(Clone, Reflect)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[reflect(Hash)]
-pub enum SquareLayerTypes<T>
+pub enum SquareChunkLayerData<T>
 where
     T: Hash + Clone + Copy + Sized + Default + Send + Sync,
 {
@@ -126,26 +151,26 @@ where
     Dense(Grid<T>),
 }
 
-impl<T> Hash for SquareLayerTypes<T>
+impl<T> Hash for SquareChunkLayerData<T>
 where
     T: Hash + Clone + Copy + Sized + Default + Send + Sync,
 {
     fn hash<H: Hasher>(&self, h: &mut H) {
         match self {
-            SquareLayerTypes::Sparse(hashmap, chunk_size) => {
+            SquareChunkLayerData::Sparse(hashmap, chunk_size) => {
                 let mut pairs: Vec<_> = hashmap.iter().collect();
                 pairs.sort_by_key(|i| i.0);
                 Hash::hash(&pairs, h);
                 Hash::hash(&chunk_size, h);
             }
-            SquareLayerTypes::Dense(grid) => {
+            SquareChunkLayerData::Dense(grid) => {
                 Hash::hash(grid, h);
             }
         }
     }
 }
 
-impl<T> Default for SquareLayerTypes<T>
+impl<T> Default for SquareChunkLayerData<T>
 where
     T: Hash + Clone + Copy + Sized + Default + Send + Sync,
 {
@@ -154,25 +179,25 @@ where
     }
 }
 
-impl<T> SquareLayerTypes<T>
+impl<T> SquareChunkLayerData<T>
 where
     T: Hash + Clone + Copy + Sized + Default + Send + Sync,
 {
-    /// Creates a new [`ChunkLayerTypes::Dense`] with all the tiles having the same data as the default
+    /// Creates a new [`SquareChunkLayerData::Dense`] with all the tiles having the same data as the default
     /// for T
     pub fn new_dense_default(chunk_size_x: usize, chunk_size_y: usize) -> Self {
         let grid: Grid<T> = Grid::new(chunk_size_x, chunk_size_y);
         Self::Dense(grid)
     }
 
-    /// Creates a new [`ChunkLayerTypes::Dense`] with all the tiles having the same data as the given
+    /// Creates a new [`SquareChunkLayerData::Dense`] with all the tiles having the same data as the given
     /// tile_data
     pub fn new_dense_uniform(chunk_size_x: usize, chunk_size_y: usize, tile_data: T) -> Self {
         let grid: Grid<T> = Grid::init(chunk_size_x, chunk_size_y, tile_data);
         Self::Dense(grid)
     }
 
-    /// Creates a new [`ChunkLayerTypes::Dense`]from the given vectors of vectors of T
+    /// Creates a new [`SquareChunkLayerData::Dense`]from the given vectors of vectors of T
     pub fn new_dense_from_vecs(tile_data: &Vec<Vec<T>>) -> Self {
         let mut given_tile_count = 0u64;
 
@@ -203,24 +228,26 @@ where
     }
 }
 
-impl<T> SquareLayerTypes<T>
+impl<T> SquareChunkLayerData<T>
 where
     T: Hash + Clone + Copy + Sized + Default + Send + Sync,
 {
     pub fn get_dimensions(&self) -> UVec2 {
         match self {
-            SquareLayerTypes::Sparse(_, dimensions) => *dimensions,
-            SquareLayerTypes::Dense(grid) => UVec2::new(grid.size().1 as u32, grid.size().0 as u32),
+            SquareChunkLayerData::Sparse(_, dimensions) => *dimensions,
+            SquareChunkLayerData::Dense(grid) => {
+                UVec2::new(grid.size().1 as u32, grid.size().0 as u32)
+            }
         }
     }
 
     pub fn set_tile_data(&mut self, chunk_tile_pos: ChunkCell, tile_data: T) {
         match self {
-            SquareLayerTypes::Sparse(layer_data, ..) => {
+            SquareChunkLayerData::Sparse(layer_data, ..) => {
                 let number = ((chunk_tile_pos.x() as u64) << 32) | chunk_tile_pos.y() as u64;
                 layer_data.insert(number, tile_data);
             }
-            SquareLayerTypes::Dense(layer_data) => {
+            SquareChunkLayerData::Dense(layer_data) => {
                 if let Some(tile) =
                     layer_data.get_mut(chunk_tile_pos.y() as usize, chunk_tile_pos.x() as usize)
                 {
@@ -232,11 +259,11 @@ where
 
     pub fn get_tile_data_mut(&mut self, chunk_tile_pos: ChunkCell) -> Option<&mut T> {
         return match self {
-            SquareLayerTypes::Sparse(layer_data, ..) => {
+            SquareChunkLayerData::Sparse(layer_data, ..) => {
                 let number = ((chunk_tile_pos.x() as u64) << 32) | chunk_tile_pos.y() as u64;
                 layer_data.get_mut(&number)
             }
-            SquareLayerTypes::Dense(layer_data) => {
+            SquareChunkLayerData::Dense(layer_data) => {
                 layer_data.get_mut(chunk_tile_pos.y() as usize, chunk_tile_pos.x() as usize)
             }
         };
@@ -244,11 +271,11 @@ where
 
     pub fn get_tile_data(&self, chunk_tile_pos: ChunkCell) -> Option<&T> {
         return match self {
-            SquareLayerTypes::Sparse(layer_data, ..) => {
+            SquareChunkLayerData::Sparse(layer_data, ..) => {
                 let number = ((chunk_tile_pos.x() as u64) << 32) | chunk_tile_pos.y() as u64;
                 layer_data.get(&number)
             }
-            SquareLayerTypes::Dense(layer_data) => {
+            SquareChunkLayerData::Dense(layer_data) => {
                 layer_data.get(chunk_tile_pos.y() as usize, chunk_tile_pos.x() as usize)
             }
         };

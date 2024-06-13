@@ -7,9 +7,9 @@ use lettuces::cell::Cell;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 
-/// A tile position inside a [`Chunk`]
+/// A position inside a [`Chunk`]
 ///
-/// You can get a [`ChunkTilePos`] from a [`TilePos`] using [`TilePos::into_chunk_tile_pos`]
+/// You can get a [`ChunkCell`] using the method [`MapChunkLayer::into_chunk_cell()`]
 #[derive(Default, Eq, Hash, PartialEq, Copy, Clone, Debug, Component, Reflect)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[reflect(Component, Hash)]

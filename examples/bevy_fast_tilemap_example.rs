@@ -6,7 +6,10 @@ use bevy::window::PresentMode;
 use bevy::DefaultPlugins;
 use bevy_fast_tilemap::{FastTileMapPlugin, Map, MapBundleManaged};
 use bevy_sparse_tilemap::map::chunk::{Chunk, ChunkSettings};
-use bevy_sparse_tilemap::map::MapType;
+use bevy_sparse_tilemap::square::map_chunk_layer::{
+    SquareChunkLayer, SquareChunkLayerConversionSettings,
+};
+use bevy_sparse_tilemap::square::map_data::{SquareMapData, SquareMapDataConversionSettings};
 use bevy_sparse_tilemap::tilemap_builder::tilemap_layer_builder::TilemapLayer;
 use bevy_sparse_tilemap::tilemap_builder::TilemapBuilder;
 use bevy_sparse_tilemap::SparseTilemapPlugin;
@@ -62,14 +65,31 @@ pub struct ChunkMapSpawned;
 fn startup(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
     let map_size = UVec2::new(15000, 15000);
-    let tilemap_builder = TilemapBuilder::<TileData, MapLayers>::new_tilemap_with_main_layer(
+    let tilemap_builder = TilemapBuilder::<
+        TileData,
+        MapLayers,
+        SquareChunkLayer<TileData>,
+        SquareMapData,
+    >::new_tilemap_with_main_layer(
         TilemapLayer::new_dense_from_vecs(generate_random_tile_data(map_size.clone())),
-        MapType::Square,
+        SquareMapData {
+            conversion_settings: SquareMapDataConversionSettings {
+                max_chunk_dimensions: UVec2::new(100, 100),
+            },
+        },
         ChunkSettings {
-            max_chunk_size: UVec2::new(250, 250),
+            max_chunk_size: UVec2::new(100, 100),
         },
     );
-    let tilemap = tilemap_builder.spawn_tilemap(&mut commands);
+
+    let chunk_conversion_settings = SquareChunkLayerConversionSettings {
+        max_chunk_dimensions: UVec2 { x: 5, y: 5 },
+    };
+
+    let Some(tilemap) = tilemap_builder.spawn_tilemap(chunk_conversion_settings, &mut commands)
+    else {
+        return;
+    };
     commands.entity(tilemap).insert(SpatialBundle::default());
     commands.insert_resource(MapEntity(tilemap));
 }
@@ -78,11 +98,11 @@ fn spawn_or_update_fast_tilemaps(
     chunk_query: Query<
         (
             Entity,
-            &Chunk<TileData>,
+            &Chunk<SquareChunkLayer<TileData>, TileData>,
             Option<&Children>,
             Option<&ChunkMapSpawned>,
         ),
-        Changed<Chunk<TileData>>,
+        Changed<Chunk<SquareChunkLayer<TileData>, TileData>>,
     >,
     fast_tile_map_query: Query<&Handle<Map>, With<FastTileMap>>,
     asset_server: Res<AssetServer>,

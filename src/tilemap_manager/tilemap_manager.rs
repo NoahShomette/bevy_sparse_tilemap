@@ -1,4 +1,4 @@
-use crate::map::chunk::{Chunk, ChunkLayerData, ChunkPos};
+use crate::map::chunk::{Chunk, ChunkPos, MapChunkLayer};
 use crate::map::{MapLayer, Tilemap};
 use crate::tilemap_manager::TilemapManagerError;
 use crate::tilemap_manager::{LayerIndex, MapEntity};
@@ -24,7 +24,7 @@ pub struct TilemapManager<'w, 's, TileData, MapLayers, ChunkType>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayers: MapLayer + Default + Clone + Copy + Send + Sync + 'static,
-    ChunkType: ChunkLayerData<TileData> + Send + Sync + 'static + Default,
+    ChunkType: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
 {
     tilemap_query: Query<'w, 's, (Entity, &'static mut Tilemap, Option<&'static Children>)>,
     chunk_query: Query<
@@ -45,7 +45,7 @@ impl<'w, 's, TileData, MapLayers, ChunkType> TilemapManager<'w, 's, TileData, Ma
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayers: MapLayer + Default + Clone + Copy + Send + Sync + 'static,
-    ChunkType: ChunkLayerData<TileData> + Send + Sync + 'static + Default,
+    ChunkType: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
 {
     /// Returns the [`Tilemap`] entity that this tilemap manager is set to affect
     pub fn tilemap_entity(&self) -> Option<Entity> {
@@ -134,7 +134,7 @@ where
         chunk
             .get_tile_data(
                 self.layer_index.0,
-                cell.into_chunk_tile_pos(tilemap.get_chunks_max_size()),
+                ChunkType::into_chunk_cell(cell, &chunk.cell_conversion_settings),
             )
             .ok_or(TilemapManagerError::TileDataDoesNotExist)
     }
@@ -156,11 +156,7 @@ where
                 .get_chunk_for_tile_pos(cell)
                 .ok_or(TilemapManagerError::InvalidChunkPos)?,
         )?;
-        Ok(chunk.set_tile_data(
-            self.layer_index.0,
-            cell.into_chunk_tile_pos(tilemap.get_chunks_max_size()),
-            tile_data,
-        ))
+        Ok(chunk.set_tile_data_from_cell(self.layer_index.0.to_bits(), cell, tile_data))
     }
 
     /// Gets the [`Entity`] for the given [`TilePos`] if it exists.
@@ -179,7 +175,7 @@ where
         chunk
             .get_tile_entity(
                 self.layer_index.0,
-                cell.into_chunk_tile_pos(tilemap.get_chunks_max_size()),
+                ChunkType::into_chunk_cell(cell, &chunk.cell_conversion_settings),
             )
             .ok_or(TilemapManagerError::TileEntityDoesNotExist)
     }
@@ -201,10 +197,10 @@ where
                 .get_chunk_for_tile_pos(cell)
                 .ok_or(TilemapManagerError::InvalidChunkPos)?,
         )?;
-
+        let chunk_conversion_settings = chunk.cell_conversion_settings;
         chunk.set_tile_entity(
-            self.layer_index.0,
-            cell.into_chunk_tile_pos(tilemap.get_chunks_max_size()),
+            self.layer_index.0.to_bits(),
+            ChunkType::into_chunk_cell(cell, &chunk_conversion_settings),
             entity,
         );
 
@@ -229,15 +225,11 @@ where
         let entity = chunk
             .get_tile_entity(
                 self.layer_index.0,
-                cell.into_chunk_tile_pos(tilemap.get_chunks_max_size()),
+                ChunkType::into_chunk_cell(cell, &chunk.cell_conversion_settings),
             )
             .unwrap_or_else(|| {
                 let entity = self.commands.spawn_empty().id();
-                chunk.set_tile_entity(
-                    self.layer_index.0,
-                    cell.into_chunk_tile_pos(tilemap.get_chunks_max_size()),
-                    entity,
-                );
+                chunk.set_tile_entity_from_cell(self.layer_index.0.to_bits(), cell, entity);
                 entity
             });
 
@@ -261,7 +253,7 @@ where
 
         if let Some(entity) = chunk.get_tile_entity(
             self.layer_index.0,
-            cell.into_chunk_tile_pos(tilemap.get_chunks_max_size()),
+            ChunkType::into_chunk_cell(cell, &chunk.cell_conversion_settings),
         ) {
             self.commands.entity(entity).despawn_recursive();
         };
@@ -292,6 +284,8 @@ where
 #[cfg(test)]
 mod tests {
     use crate as bevy_sparse_tilemap;
+    use crate::square::map_chunk_layer::{SquareChunkLayer, SquareChunkLayerConversionSettings};
+    use crate::square::map_data::{SquareMapData, SquareMapDataConversionSettings};
 
     use crate::map::chunk::ChunkSettings;
     use crate::tilemap_builder::tilemap_layer_builder::TilemapLayer;
@@ -318,8 +312,10 @@ mod tests {
     fn tilemap_manager_dense_access() {
         let mut world = World::new();
 
-        let mut system_state: SystemState<(Commands, TilemapManager<(i32, i32), MapLayers>)> =
-            SystemState::new(&mut world);
+        let mut system_state: SystemState<(
+            Commands,
+            TilemapManager<(i32, i32), MapLayers, SquareChunkLayer<(i32, i32)>>,
+        )> = SystemState::new(&mut world);
         let (mut commands, mut tilemap_manager) = system_state.get_mut(&mut world);
         assert_eq!(tilemap_manager.layer(), MapLayers::Main);
         tilemap_manager.on_layer(MapLayers::Secondary);
@@ -338,15 +334,32 @@ mod tests {
             vec![(0, 7), (1, 7), (2, 7), (3, 7),(4, 7), (5, 7), (6, 7), (7, 7)],
             vec![(0, 8), (1, 8), (2, 8), (3, 8),(4, 8), (5, 8), (6, 8), (7, 8)]
         ];
-        let tilemap_builder = TilemapBuilder::<(i32, i32), MapLayers>::new_tilemap_with_main_layer(
+        let tilemap_builder = TilemapBuilder::<
+            (i32, i32),
+            MapLayers,
+            SquareChunkLayer<(i32, i32)>,
+            SquareMapData,
+        >::new_tilemap_with_main_layer(
             TilemapLayer::new_dense_from_vecs(vecs),
-            crate::map::MapType::Square,
+            SquareMapData {
+                conversion_settings: SquareMapDataConversionSettings {
+                    max_chunk_dimensions: UVec2::new(5, 5),
+                },
+            },
             ChunkSettings {
                 max_chunk_size: UVec2::new(5, 5),
             },
         );
-        let map_entity = tilemap_builder.spawn_tilemap(&mut commands);
 
+        let chunk_conversion_settings = SquareChunkLayerConversionSettings {
+            max_chunk_dimensions: UVec2 { x: 5, y: 5 },
+        };
+
+        let Some(map_entity) =
+            tilemap_builder.spawn_tilemap(chunk_conversion_settings, &mut commands)
+        else {
+            return;
+        };
         system_state.apply(&mut world);
 
         let (_, mut tilemap_manager) = system_state.get_mut(&mut world);
@@ -402,8 +415,10 @@ mod tests {
     fn tilemap_manager_sparse_access() {
         let mut world = World::new();
 
-        let mut system_state: SystemState<(Commands, TilemapManager<(i32, i32), MapLayers>)> =
-            SystemState::new(&mut world);
+        let mut system_state: SystemState<(
+            Commands,
+            TilemapManager<(i32, i32), MapLayers, SquareChunkLayer<(i32, i32)>>,
+        )> = SystemState::new(&mut world);
         let (mut commands, mut tilemap_manager) = system_state.get_mut(&mut world);
         assert_eq!(tilemap_manager.layer(), MapLayers::Main);
         tilemap_manager.on_layer(MapLayers::Secondary);
@@ -414,15 +429,31 @@ mod tests {
         hashmap.insert(Cell::new(0, 0), (0, 0));
         hashmap.insert(Cell::new(31, 31), (31, 31));
 
-        let tilemap_builder = TilemapBuilder::<(i32, i32), MapLayers>::new_tilemap_with_main_layer(
+        let tilemap_builder = TilemapBuilder::<
+            (i32, i32),
+            MapLayers,
+            SquareChunkLayer<(i32, i32)>,
+            SquareMapData,
+        >::new_tilemap_with_main_layer(
             TilemapLayer::new_sparse_from_hashmap(32, 32, hashmap),
-            crate::map::MapType::Square,
+            SquareMapData {
+                conversion_settings: SquareMapDataConversionSettings {
+                    max_chunk_dimensions: UVec2::new(5, 5),
+                },
+            },
             ChunkSettings {
                 max_chunk_size: UVec2::new(5, 5),
             },
         );
-        let map_entity = tilemap_builder.spawn_tilemap(&mut commands);
+        let chunk_conversion_settings = SquareChunkLayerConversionSettings {
+            max_chunk_dimensions: UVec2 { x: 5, y: 5 },
+        };
 
+        let Some(map_entity) =
+            tilemap_builder.spawn_tilemap(chunk_conversion_settings, &mut commands)
+        else {
+            return;
+        };
         system_state.apply(&mut world);
 
         let (_, mut tilemap_manager) = system_state.get_mut(&mut world);
@@ -459,8 +490,10 @@ mod tests {
     fn tilemap_manager_dimensions() {
         let mut world = World::new();
 
-        let mut system_state: SystemState<(Commands, TilemapManager<(i32, i32), MapLayers>)> =
-            SystemState::new(&mut world);
+        let mut system_state: SystemState<(
+            Commands,
+            TilemapManager<(i32, i32), MapLayers, SquareChunkLayer<(i32, i32)>>,
+        )> = SystemState::new(&mut world);
         let (mut commands, _) = system_state.get_mut(&mut world);
 
         #[rustfmt::skip]
@@ -475,14 +508,31 @@ mod tests {
             vec![(0, 7), (1, 7), (2, 7), (3, 7), (4, 7), (5, 7), (6, 7), (7, 7)],
             vec![(0, 8), (1, 8), (2, 8), (3, 8), (4, 8), (5, 8), (6, 8), (7, 8)]
         ];
-        let tilemap_builder = TilemapBuilder::<(i32, i32), MapLayers>::new_tilemap_with_main_layer(
+        let tilemap_builder = TilemapBuilder::<
+            (i32, i32),
+            MapLayers,
+            SquareChunkLayer<(i32, i32)>,
+            SquareMapData,
+        >::new_tilemap_with_main_layer(
             TilemapLayer::new_dense_from_vecs(vecs),
-            crate::map::MapType::Square,
+            SquareMapData {
+                conversion_settings: SquareMapDataConversionSettings {
+                    max_chunk_dimensions: UVec2::new(5, 5),
+                },
+            },
             ChunkSettings {
                 max_chunk_size: UVec2::new(5, 5),
             },
         );
-        let map_entity = tilemap_builder.spawn_tilemap(&mut commands);
+        let chunk_conversion_settings = SquareChunkLayerConversionSettings {
+            max_chunk_dimensions: UVec2 { x: 5, y: 5 },
+        };
+
+        let Some(map_entity) =
+            tilemap_builder.spawn_tilemap(chunk_conversion_settings, &mut commands)
+        else {
+            return;
+        };
         system_state.apply(&mut world);
         let (_, mut tilemap_manager) = system_state.get_mut(&mut world);
         tilemap_manager.set_tilemap_entity(map_entity);
