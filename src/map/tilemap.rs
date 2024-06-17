@@ -8,9 +8,14 @@
 use crate::map::chunk::ChunkPos;
 use crate::map::chunk::Chunks;
 use bevy::ecs::entity::{EntityMapper, MapEntities};
+
+#[cfg(feature = "reflect")]
 use bevy::ecs::reflect::ReflectMapEntities;
+#[cfg(feature = "reflect")]
+use bevy::prelude::{Reflect, ReflectComponent};
+
 use bevy::math::UVec2;
-use bevy::prelude::{Component, Entity, Reflect, ReflectComponent};
+use bevy::prelude::{Component, Entity};
 
 use lettuces::cell::Cell;
 #[cfg(feature = "serde")]
@@ -21,9 +26,10 @@ use serde::{Deserialize, Serialize};
 /// Each tile should only contain the bare minimum data needed for you to figure out what it is. Any
 /// data that is not the same for every single tile of that type should be stored as a component
 /// on that tiles entity which is managed through the [`Chunk`](super::chunk::Chunk)
-#[derive(Component, Default, Hash, Clone, Debug, Eq, PartialEq, Reflect)]
+#[derive(Component, Default, Hash, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[reflect(Component, Hash, MapEntities)]
+#[cfg_attr(feature = "reflect", derive(Reflect))]
+#[cfg_attr(feature = "reflect", reflect(Component, Hash, MapEntities))]
 pub struct Tilemap {
     /// Struct containing [`Entity`] mappings to the [`Chunk`](super::chunk::Chunk)s that hold tile data
     chunks: Chunks,

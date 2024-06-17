@@ -31,7 +31,7 @@ fn main() {
             LogDiagnosticsPlugin::default(),
             FrameTimeDiagnosticsPlugin::default(),
         ))
-        .add_plugins((SparseTilemapPlugin, FastTileMapPlugin))
+        .add_plugins((SparseTilemapPlugin, FastTileMapPlugin::default()))
         .add_systems(Startup, startup)
         .add_systems(
             Update,

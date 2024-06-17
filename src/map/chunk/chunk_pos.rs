@@ -1,19 +1,22 @@
-use bevy::{
-    math::IVec2,
-    prelude::{Component, Reflect, ReflectComponent},
-};
+use bevy::{math::IVec2, prelude::Component};
 use lettuces::cell::Cell;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 
+#[cfg(feature = "reflect")]
+use bevy::ecs::reflect::ReflectMapEntities;
+#[cfg(feature = "reflect")]
+use bevy::prelude::{Reflect, ReflectComponent};
+
 /// The position of a [`Chunk`] in the [`Tilemap`]
 ///
 /// A [`TilePos`] can be converted into a [`ChunkPos`] using [`TilePos::into_chunk_pos`]
 /// The position of a tile in a [`Tilemap`]
-#[derive(Default, Eq, Hash, PartialEq, Copy, Clone, Debug, Component, Reflect)]
+#[derive(Default, Eq, Hash, PartialEq, Copy, Clone, Debug, Component)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[reflect(Component, Hash)]
+#[cfg_attr(feature = "reflect", derive(Reflect))]
+#[cfg_attr(feature = "reflect", reflect(Component, Hash))]
 pub struct ChunkPos(Cell);
 
 impl ChunkPos {

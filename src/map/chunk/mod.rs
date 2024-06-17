@@ -6,8 +6,7 @@ pub use crate::map::chunk::chunk_cell::ChunkCell;
 pub use crate::map::chunk::chunk_pos::ChunkPos;
 use crate::map::MapLayer;
 use bevy::ecs::entity::{EntityMapper, MapEntities};
-use bevy::ecs::reflect::ReflectMapEntities;
-use bevy::prelude::{Component, Entity, Reflect, ReflectComponent, UVec2};
+use bevy::prelude::{Component, Entity, UVec2};
 use bevy::utils::hashbrown::HashMap;
 pub use layer_data::{LayerType, MapChunkLayer};
 use lettuces::cell::Cell;
@@ -18,10 +17,16 @@ use std::marker::PhantomData;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "reflect")]
+use bevy::ecs::reflect::ReflectMapEntities;
+#[cfg(feature = "reflect")]
+use bevy::prelude::{Reflect, ReflectComponent};
+
 /// The chunks of a tilemap
-#[derive(Clone, Component, Hash, Debug, Eq, PartialEq, Reflect)]
+#[derive(Clone, Component, Hash, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[reflect(Hash, MapEntities)]
+#[cfg_attr(feature = "reflect", derive(Reflect))]
+#[cfg_attr(feature = "reflect", reflect(Hash, MapEntities))]
 pub struct Chunks {
     /// A grid of [`Entity`] references pointing to that chunks entity
     chunk_entities: Grid<Entity>,
@@ -119,9 +124,10 @@ impl Chunks {
 /// A Chunk of a [`Tilemap`](super::Tilemap)
 ///
 /// Contains all tile data as well as a hashmap that contains mapping to currently spawned tile entities
-#[derive(Component, Reflect)]
-#[reflect(Component, Hash, MapEntities)]
+#[derive(Component)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "reflect", derive(Reflect))]
+#[cfg_attr(feature = "reflect", reflect(Component, Hash, MapEntities))]
 pub struct Chunk<ChunkType, TileData>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync,
@@ -133,7 +139,7 @@ where
     pub data: HashMap<u32, ChunkType>,
     /// Conversion Settings used to convert a cell into a position in the chunk
     pub cell_conversion_settings: ChunkType::ConversionSettings,
-    #[reflect(ignore)]
+    #[cfg_attr(feature = "reflect", reflect(ignore))]
     ph: PhantomData<TileData>,
 }
 
@@ -326,8 +332,9 @@ where
 }
 
 /// Settings for the chunks in a [`Chunks`] object
-#[derive(Reflect, Hash)]
-#[reflect(Hash)]
+#[derive(Hash)]
+#[cfg_attr(feature = "reflect", derive(Reflect))]
+#[cfg_attr(feature = "reflect", reflect(Hash))]
 pub struct ChunkSettings {
     /// The max size that a chunk can be
     pub max_chunk_size: UVec2,
@@ -363,23 +370,14 @@ impl ChunkSettings {
 
 #[cfg(test)]
 mod tests {
-    use crate::square::map_chunk_layer::{
-        SquareChunkLayer, SquareChunkLayerConversionSettings, SquareChunkLayerData,
-    };
-    use crate::square::map_data::SquareMapDataConversionSettings;
+    use crate::square::map_chunk_layer::{SquareChunkLayer, SquareChunkLayerConversionSettings};
     use crate::{self as bevy_sparse_tilemap};
     use crate::{
         map::chunk::chunk_cell::ChunkCell, map::chunk::chunk_pos::ChunkPos, map::chunk::Chunk,
     };
     use bevy::math::UVec2;
-    use bevy::prelude::{Entity, FromReflect, Reflect};
-    use bevy::reflect::erased_serde::__private::serde::de::DeserializeSeed;
-    use bevy::reflect::serde::{ReflectSerializer, UntypedReflectDeserializer};
-    use bevy::reflect::TypeRegistry;
     use bevy::utils::hashbrown::HashMap;
     use bst_map_layer_derive::MapLayer;
-    use lettuces::cell::Cell;
-    use lettuces::storage::grid::Grid;
 
     #[derive(Clone, Copy, Default, PartialEq, Eq, Debug, Hash)]
     struct TileData(u8);
@@ -583,50 +581,71 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_hashing_chunk() {
-        let chunk: Chunk<SquareChunkLayer<(u32, u32)>, (u32, u32)> = Chunk::new(
-            ChunkPos::new(0, 0),
-            bevy::math::UVec2 { x: 2, y: 2 },
-            crate::map::chunk::LayerType::Sparse::<(u32, u32)>(HashMap::new()),
-            SquareChunkLayerConversionSettings {
-                max_chunk_dimensions: UVec2 { x: 2, y: 2 },
-            },
-        );
-        let mut registry = TypeRegistry::default();
-        registry.register::<Chunk<SquareChunkLayer<(u32, u32)>, (u32, u32)>>();
-        registry.register::<ChunkPos>();
-        registry.register::<Cell>();
-        registry.register::<HashMap<u32, SquareChunkLayer<(u32, u32)>>>();
-        registry.register::<HashMap<u64, Entity>>();
-        registry.register::<HashMap<u64, (u32, u32)>>();
-        registry.register::<SquareChunkLayer<(u32, u32)>>();
-        registry.register::<SquareChunkLayerConversionSettings>();
-        registry.register::<SquareMapDataConversionSettings>();
-        registry.register::<SquareChunkLayerData<(u32, u32)>>();
-        registry.register::<Grid<(u32, u32)>>();
-        registry.register::<Vec<(u32, u32)>>();
-        registry.register::<(u32, u32)>();
-        registry.register::<Entity>();
-        registry.register::<UVec2>();
+    #[cfg(feature = "reflect")]
+    mod reflect_test {
+        use crate::square::map_chunk_layer::{
+            SquareChunkLayer, SquareChunkLayerConversionSettings, SquareChunkLayerData,
+        };
+        use crate::square::map_data::SquareMapDataConversionSettings;
+        use crate::{self as bevy_sparse_tilemap};
+        use crate::{
+            map::chunk::chunk_cell::ChunkCell, map::chunk::chunk_pos::ChunkPos, map::chunk::Chunk,
+        };
+        use bevy::math::UVec2;
+        use bevy::prelude::{Entity, FromReflect, Reflect};
+        use bevy::reflect::erased_serde::__private::serde::de::DeserializeSeed;
+        use bevy::reflect::serde::{ReflectSerializer, UntypedReflectDeserializer};
+        use bevy::reflect::TypeRegistry;
+        use bevy::utils::hashbrown::HashMap;
+        use bst_map_layer_derive::MapLayer;
+        use lettuces::cell::Cell;
+        use lettuces::storage::grid::Grid;
 
-        // Serialize
-        let reflect_serializer = ReflectSerializer::new(&chunk, &registry);
-        let serialized_value: String = ron::to_string(&reflect_serializer).unwrap();
+        #[test]
+        fn test_hashing_chunk() {
+            let chunk: Chunk<SquareChunkLayer<(u32, u32)>, (u32, u32)> = Chunk::new(
+                ChunkPos::new(0, 0),
+                bevy::math::UVec2 { x: 2, y: 2 },
+                crate::map::chunk::LayerType::Sparse::<(u32, u32)>(HashMap::new()),
+                SquareChunkLayerConversionSettings {
+                    max_chunk_dimensions: UVec2 { x: 2, y: 2 },
+                },
+            );
+            let mut registry = TypeRegistry::default();
+            registry.register::<Chunk<SquareChunkLayer<(u32, u32)>, (u32, u32)>>();
+            registry.register::<ChunkPos>();
+            registry.register::<Cell>();
+            registry.register::<HashMap<u32, SquareChunkLayer<(u32, u32)>>>();
+            registry.register::<HashMap<u64, Entity>>();
+            registry.register::<HashMap<u64, (u32, u32)>>();
+            registry.register::<SquareChunkLayer<(u32, u32)>>();
+            registry.register::<SquareChunkLayerConversionSettings>();
+            registry.register::<SquareMapDataConversionSettings>();
+            registry.register::<SquareChunkLayerData<(u32, u32)>>();
+            registry.register::<Grid<(u32, u32)>>();
+            registry.register::<Vec<(u32, u32)>>();
+            registry.register::<(u32, u32)>();
+            registry.register::<Entity>();
+            registry.register::<UVec2>();
 
-        // Deserialize
-        let reflect_deserializer = UntypedReflectDeserializer::new(&registry);
-        let deserialized_value: Box<dyn Reflect> = reflect_deserializer
-            .deserialize(&mut ron::Deserializer::from_str(&serialized_value).unwrap())
-            .unwrap();
+            // Serialize
+            let reflect_serializer = ReflectSerializer::new(&chunk, &registry);
+            let serialized_value: String = ron::to_string(&reflect_serializer).unwrap();
 
-        // Convert
-        let converted_value =
-            <Chunk<SquareChunkLayer<(u32, u32)>, (u32, u32)> as FromReflect>::from_reflect(
-                &*deserialized_value,
-            )
-            .unwrap();
+            // Deserialize
+            let reflect_deserializer = UntypedReflectDeserializer::new(&registry);
+            let deserialized_value: Box<dyn Reflect> = reflect_deserializer
+                .deserialize(&mut ron::Deserializer::from_str(&serialized_value).unwrap())
+                .unwrap();
 
-        assert_eq!(converted_value.chunk_pos, ChunkPos::new(0, 0));
+            // Convert
+            let converted_value =
+                <Chunk<SquareChunkLayer<(u32, u32)>, (u32, u32)> as FromReflect>::from_reflect(
+                    &*deserialized_value,
+                )
+                .unwrap();
+
+            assert_eq!(converted_value.chunk_pos, ChunkPos::new(0, 0));
+        }
     }
 }
