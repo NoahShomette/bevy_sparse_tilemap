@@ -101,6 +101,7 @@ use bevy::app::App;
 use bevy::prelude::Plugin;
 
 pub use bst_map_layer_derive::MapLayer;
+pub use lettuces::*;
 
 use crate::integrations::IntegrationsPlugin;
 
