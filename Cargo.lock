@@ -2226,8 +2226,9 @@ checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 
 [[package]]
 name = "lettuces"
-version = "0.0.1"
-source = "git+https://github.com/NoahShomette/lettuces.git#aef63a8d6a7f9c01576153e892ed9188b673c13d"
+version = "0.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "83fefe9d12be64fa2f11c6f837fc7ac08d33f1dc43fdbd23120c7dcddc5bdcbf"
 dependencies = [
  "bevy",
  "glam 0.28.0",
