@@ -334,12 +334,17 @@ mod tests {
             vec![(0, 7), (1, 7), (2, 7), (3, 7),(4, 7), (5, 7), (6, 7), (7, 7)],
             vec![(0, 8), (1, 8), (2, 8), (3, 8),(4, 8), (5, 8), (6, 8), (7, 8)]
         ];
+
+        let chunk_conversion_settings = SquareChunkLayerConversionSettings {
+            max_chunk_dimensions: UVec2 { x: 5, y: 5 },
+        };
+
         let tilemap_builder = TilemapBuilder::<
             (i32, i32),
             MapLayers,
             SquareChunkLayer<(i32, i32)>,
             SquareMapData,
-        >::new_tilemap_with_main_layer(
+        >::new(
             TilemapLayer::new_dense_from_vecs(vecs),
             SquareMapData {
                 conversion_settings: SquareMapDataConversionSettings {
@@ -349,15 +354,10 @@ mod tests {
             ChunkSettings {
                 max_chunk_size: UVec2::new(5, 5),
             },
+            chunk_conversion_settings,
         );
 
-        let chunk_conversion_settings = SquareChunkLayerConversionSettings {
-            max_chunk_dimensions: UVec2 { x: 5, y: 5 },
-        };
-
-        let Some(map_entity) =
-            tilemap_builder.spawn_tilemap(chunk_conversion_settings, &mut commands)
-        else {
+        let Some(map_entity) = tilemap_builder.spawn_tilemap(&mut commands) else {
             return;
         };
         system_state.apply(&mut world);
@@ -429,12 +429,16 @@ mod tests {
         hashmap.insert(Cell::new(0, 0), (0, 0));
         hashmap.insert(Cell::new(31, 31), (31, 31));
 
+        let chunk_conversion_settings = SquareChunkLayerConversionSettings {
+            max_chunk_dimensions: UVec2 { x: 5, y: 5 },
+        };
+
         let tilemap_builder = TilemapBuilder::<
             (i32, i32),
             MapLayers,
             SquareChunkLayer<(i32, i32)>,
             SquareMapData,
-        >::new_tilemap_with_main_layer(
+        >::new(
             TilemapLayer::new_sparse_from_hashmap(32, 32, hashmap),
             SquareMapData {
                 conversion_settings: SquareMapDataConversionSettings {
@@ -444,14 +448,10 @@ mod tests {
             ChunkSettings {
                 max_chunk_size: UVec2::new(5, 5),
             },
+            chunk_conversion_settings,
         );
-        let chunk_conversion_settings = SquareChunkLayerConversionSettings {
-            max_chunk_dimensions: UVec2 { x: 5, y: 5 },
-        };
 
-        let Some(map_entity) =
-            tilemap_builder.spawn_tilemap(chunk_conversion_settings, &mut commands)
-        else {
+        let Some(map_entity) = tilemap_builder.spawn_tilemap(&mut commands) else {
             return;
         };
         system_state.apply(&mut world);
@@ -508,12 +508,17 @@ mod tests {
             vec![(0, 7), (1, 7), (2, 7), (3, 7), (4, 7), (5, 7), (6, 7), (7, 7)],
             vec![(0, 8), (1, 8), (2, 8), (3, 8), (4, 8), (5, 8), (6, 8), (7, 8)]
         ];
+
+        let chunk_conversion_settings = SquareChunkLayerConversionSettings {
+            max_chunk_dimensions: UVec2 { x: 5, y: 5 },
+        };
+
         let tilemap_builder = TilemapBuilder::<
             (i32, i32),
             MapLayers,
             SquareChunkLayer<(i32, i32)>,
             SquareMapData,
-        >::new_tilemap_with_main_layer(
+        >::new(
             TilemapLayer::new_dense_from_vecs(vecs),
             SquareMapData {
                 conversion_settings: SquareMapDataConversionSettings {
@@ -523,14 +528,10 @@ mod tests {
             ChunkSettings {
                 max_chunk_size: UVec2::new(5, 5),
             },
+            chunk_conversion_settings,
         );
-        let chunk_conversion_settings = SquareChunkLayerConversionSettings {
-            max_chunk_dimensions: UVec2 { x: 5, y: 5 },
-        };
 
-        let Some(map_entity) =
-            tilemap_builder.spawn_tilemap(chunk_conversion_settings, &mut commands)
-        else {
+        let Some(map_entity) = tilemap_builder.spawn_tilemap(&mut commands) else {
             return;
         };
         system_state.apply(&mut world);

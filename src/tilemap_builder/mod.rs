@@ -21,6 +21,7 @@ where
     chunk_settings: ChunkSettings,
     map_size: UVec2,
     map_type: MapType,
+    chunk_conversion_settings: ChunkType::ConversionSettings,
     // All phantom data below
     td_phantom: PhantomData<TileData>,
     ml_phantom: PhantomData<MapLayers>,
@@ -48,6 +49,7 @@ where
             td_phantom: PhantomData::default(),
             ml_phantom: PhantomData::default(),
             ct_phantom: PhantomData::default(),
+            chunk_conversion_settings: ChunkType::ConversionSettings::default(),
         }
     }
 }
@@ -63,18 +65,14 @@ where
     /// Converts all the data from the [`SystemParam`] and spawns the
     /// tilemap returning the Tilemaps [`Entity`]
     #[must_use]
-    pub fn spawn_tilemap(
-        mut self,
-        chunk_conversion_settings: ChunkType::ConversionSettings,
-        commands: &mut Commands,
-    ) -> Option<Entity> {
+    pub fn spawn_tilemap(mut self, commands: &mut Commands) -> Option<Entity> {
         let Some(layer) = self.main_layer.take() else {
             return None;
         };
 
         let mut chunks = self.create_new_chunks_from_layer(
             &layer,
-            chunk_conversion_settings,
+            self.chunk_conversion_settings,
             self.chunk_settings.max_chunk_size,
         );
 
@@ -115,12 +113,12 @@ where
         Some(tilemap_entity)
     }
 
-    /// Sets the [`TilemapBuilder`] to the default with the addition of the given [`TilemapLayer`] as
-    /// the main layer.
-    pub fn new_tilemap_with_main_layer(
+    /// Makes a new [`TilemapBuilder`] with the given [`TilemapLayer`] as the main layer.
+    pub fn new(
         layer_data: TilemapLayer<TileData>,
         map_type: MapType,
         chunk_settings: ChunkSettings,
+        chunk_conversion_settings: ChunkType::ConversionSettings,
     ) -> Self {
         let dimensions = layer_data.dimensions();
         TilemapBuilder::<TileData, MapLayers, ChunkType, MapType> {
@@ -132,6 +130,7 @@ where
             td_phantom: Default::default(),
             ml_phantom: Default::default(),
             ct_phantom: PhantomData::default(),
+            chunk_conversion_settings,
         }
     }
 

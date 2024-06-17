@@ -67,3 +67,11 @@ You should use `bevy_sparse_tilemap` if:
 - Basically the above is the main reason, giant maps that are (currently) more cumbersome to work with but can be millions of tiles
 - You want tile shapes other than square (other shapes are planned but not implemented and not on the radar currently)
 - You are willing to implement your own tilemap rendering (This crate has an example for integration with `bevy_fast_tilemap` however that is not currently a feature of this crate)
+
+## Bevy Version
+
+| BST Version | Bevy Version |
+| :----------: | :----------: |
+|     0.3      |     0.14     |
+|     0.2      |     0.13     |
+|     0.1      |     0.13     |

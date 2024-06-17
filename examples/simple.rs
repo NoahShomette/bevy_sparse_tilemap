@@ -53,22 +53,24 @@ pub struct MapEntity(Entity);
 
 fn spawn_map(mut commands: Commands) {
     let map_size = UVec2::new(500, 500);
-    let mut tilemap_builder = TilemapBuilder::<
-        TileData,
-        MapLayers,
-        SquareChunkLayer<TileData>,
-        SquareMapData,
-    >::new_tilemap_with_main_layer(
-        TilemapLayer::new_dense_from_vecs(generate_random_tile_data(map_size.clone())),
-        SquareMapData {
-            conversion_settings: SquareMapDataConversionSettings {
-                max_chunk_dimensions: UVec2::new(100, 100),
+
+    let chunk_conversion_settings = SquareChunkLayerConversionSettings {
+        max_chunk_dimensions: UVec2 { x: 5, y: 5 },
+    };
+
+    let mut tilemap_builder =
+        TilemapBuilder::<TileData, MapLayers, SquareChunkLayer<TileData>, SquareMapData>::new(
+            TilemapLayer::new_dense_from_vecs(generate_random_tile_data(map_size.clone())),
+            SquareMapData {
+                conversion_settings: SquareMapDataConversionSettings {
+                    max_chunk_dimensions: UVec2::new(100, 100),
+                },
             },
-        },
-        ChunkSettings {
-            max_chunk_size: UVec2::new(100, 100),
-        },
-    );
+            ChunkSettings {
+                max_chunk_size: UVec2::new(100, 100),
+            },
+            chunk_conversion_settings,
+        );
     tilemap_builder.add_layer(
         TilemapLayer::new_dense_from_vecs(generate_random_tile_data(map_size.clone())),
         MapLayers::DenseExtra,
@@ -86,12 +88,7 @@ fn spawn_map(mut commands: Commands) {
         MapLayers::SparseThree,
     );
 
-    let chunk_conversion_settings = SquareChunkLayerConversionSettings {
-        max_chunk_dimensions: UVec2 { x: 5, y: 5 },
-    };
-
-    let Some(tilemap) = tilemap_builder.spawn_tilemap(chunk_conversion_settings, &mut commands)
-    else {
+    let Some(tilemap) = tilemap_builder.spawn_tilemap(&mut commands) else {
         return;
     };
     commands.insert_resource(MapEntity(tilemap));
