@@ -13,6 +13,7 @@ use std::hash::{Hash, Hasher};
 use serde::{Deserialize, Serialize};
 
 #[derive(Reflect, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct SquareChunkLayerConversionSettings {
     pub max_chunk_dimensions: UVec2,
 }
