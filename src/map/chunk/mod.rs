@@ -128,25 +128,25 @@ impl Chunks {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "reflect", derive(Reflect))]
 #[cfg_attr(feature = "reflect", reflect(Component, Hash, MapEntities))]
-pub struct Chunk<ChunkType, TileData>
+pub struct Chunk<MapChunk, TileData>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync,
-    ChunkType: MapChunkLayer<TileData> + Send + Sync + Default,
+    MapChunk: MapChunkLayer<TileData> + Send + Sync + Default,
 {
     /// The position of the Chunk in the map
     pub chunk_pos: ChunkPos,
     /// Chunk tile data mapped to layers
-    pub data: HashMap<u32, ChunkType>,
+    pub data: HashMap<u32, MapChunk>,
     /// Conversion Settings used to convert a cell into a position in the chunk
-    pub cell_conversion_settings: ChunkType::ConversionSettings,
+    pub cell_conversion_settings: MapChunk::ConversionSettings,
     #[cfg_attr(feature = "reflect", reflect(ignore))]
     ph: PhantomData<TileData>,
 }
 
-impl<ChunkType, TileData> MapEntities for Chunk<ChunkType, TileData>
+impl<MapChunk, TileData> MapEntities for Chunk<MapChunk, TileData>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync,
-    ChunkType: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
+    MapChunk: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
 {
     fn map_entities<M: EntityMapper>(&mut self, entity_mapper: &mut M) {
         for datum in self.data.iter_mut() {
@@ -155,10 +155,10 @@ where
     }
 }
 
-impl<ChunkType, TileData> Hash for Chunk<ChunkType, TileData>
+impl<MapChunk, TileData> Hash for Chunk<MapChunk, TileData>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync,
-    ChunkType: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
+    MapChunk: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
 {
     fn hash<H: Hasher>(&self, h: &mut H) {
         let mut pairs: Vec<_> = self.data.iter().collect();
@@ -168,35 +168,35 @@ where
     }
 }
 
-impl<ChunkType, TileData> Default for Chunk<ChunkType, TileData>
+impl<MapChunk, TileData> Default for Chunk<MapChunk, TileData>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync,
-    ChunkType: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
+    MapChunk: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
 {
     fn default() -> Self {
         Self {
             chunk_pos: Default::default(),
             data: HashMap::default(),
-            cell_conversion_settings: ChunkType::ConversionSettings::default(),
+            cell_conversion_settings: MapChunk::ConversionSettings::default(),
             ph: Default::default(),
         }
     }
 }
 
-impl<ChunkType, TileData> Chunk<ChunkType, TileData>
+impl<MapChunk, TileData> Chunk<MapChunk, TileData>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync,
-    ChunkType: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
+    MapChunk: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
 {
     /// Creates a new chunk with the given data. chunk size represents the actual size of the chunk object.
     pub fn new(
         chunk_pos: ChunkPos,
         chunk_size: UVec2,
         tile_data: LayerType<TileData>,
-        cell_conversion_settings: ChunkType::ConversionSettings,
-    ) -> Chunk<ChunkType, TileData> {
+        cell_conversion_settings: MapChunk::ConversionSettings,
+    ) -> Chunk<MapChunk, TileData> {
         let mut hashmap = HashMap::new();
-        hashmap.insert(1u32, ChunkType::new(tile_data, chunk_size));
+        hashmap.insert(1u32, MapChunk::new(tile_data, chunk_size));
         Self {
             chunk_pos,
             data: hashmap,
@@ -212,15 +212,15 @@ where
     pub fn add_layer(&mut self, map_layer: u32, tile_data: LayerType<TileData>) {
         self.data.insert(
             map_layer,
-            ChunkType::new(tile_data, self.get_chunk_dimensions()),
+            MapChunk::new(tile_data, self.get_chunk_dimensions()),
         );
     }
 }
 
-impl<ChunkType, TileData> Chunk<ChunkType, TileData>
+impl<MapChunk, TileData> Chunk<MapChunk, TileData>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync,
-    ChunkType: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
+    MapChunk: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
 {
     /// Returns the actual dimensions for the given [`MapLayer`] in the [`Chunk`].
     ///
@@ -242,7 +242,7 @@ where
     pub fn set_tile_data_from_cell(&mut self, map_layer: u32, cell: Cell, tile_data: TileData) {
         self.set_tile_data(
             map_layer,
-            ChunkType::into_chunk_cell(cell, &self.cell_conversion_settings),
+            MapChunk::into_chunk_cell(cell, &self.cell_conversion_settings),
             tile_data,
         )
     }
@@ -271,7 +271,7 @@ where
     ) -> Option<TileData> {
         self.get_tile_data(
             map_layer,
-            ChunkType::into_chunk_cell(cell, &self.cell_conversion_settings),
+            MapChunk::into_chunk_cell(cell, &self.cell_conversion_settings),
         )
     }
 
@@ -298,7 +298,7 @@ where
     ) -> Option<Entity> {
         self.get_tile_entity(
             map_layer,
-            ChunkType::into_chunk_cell(cell, &self.cell_conversion_settings),
+            MapChunk::into_chunk_cell(cell, &self.cell_conversion_settings),
         )
     }
 
@@ -317,7 +317,7 @@ where
     pub fn set_tile_entity_from_cell(&mut self, map_layer: u32, cell: Cell, entity: Entity) {
         self.set_tile_entity(
             map_layer,
-            ChunkType::into_chunk_cell(cell, &self.cell_conversion_settings),
+            MapChunk::into_chunk_cell(cell, &self.cell_conversion_settings),
             entity,
         )
     }

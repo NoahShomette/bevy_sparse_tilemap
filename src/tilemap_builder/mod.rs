@@ -9,11 +9,11 @@ use std::hash::Hash;
 use std::marker::PhantomData;
 
 /// Information to construct a Tilemap
-pub struct TilemapBuilder<TileData, MapLayers, ChunkType, MapType>
+pub struct TilemapBuilder<TileData, MapLayers, MapChunk, MapType>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayers: MapLayer + Clone + Copy + Send + Sync + 'static,
-    ChunkType: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
+    MapChunk: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
     MapType: MapData + Default,
 {
     main_layer: Option<TilemapLayer<TileData>>,
@@ -21,19 +21,19 @@ where
     chunk_settings: ChunkSettings,
     map_size: UVec2,
     map_type: MapType,
-    chunk_conversion_settings: ChunkType::ConversionSettings,
+    chunk_conversion_settings: MapChunk::ConversionSettings,
     // All phantom data below
     td_phantom: PhantomData<TileData>,
     ml_phantom: PhantomData<MapLayers>,
-    ct_phantom: PhantomData<ChunkType>,
+    ct_phantom: PhantomData<MapChunk>,
 }
 
-impl<TileData, MapLayers, ChunkType, MapType> Default
-    for TilemapBuilder<TileData, MapLayers, ChunkType, MapType>
+impl<TileData, MapLayers, MapChunk, MapType> Default
+    for TilemapBuilder<TileData, MapLayers, MapChunk, MapType>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayers: MapLayer + Clone + Copy + Send + Sync + 'static,
-    ChunkType: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
+    MapChunk: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
 
     MapType: MapData + Default,
 {
@@ -49,17 +49,17 @@ where
             td_phantom: PhantomData::default(),
             ml_phantom: PhantomData::default(),
             ct_phantom: PhantomData::default(),
-            chunk_conversion_settings: ChunkType::ConversionSettings::default(),
+            chunk_conversion_settings: MapChunk::ConversionSettings::default(),
         }
     }
 }
 
-impl<TileData, MapLayers, ChunkType, MapType>
-    TilemapBuilder<TileData, MapLayers, ChunkType, MapType>
+impl<TileData, MapLayers, MapChunk, MapType>
+    TilemapBuilder<TileData, MapLayers, MapChunk, MapType>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayers: MapLayer + Clone + Copy + Send + Sync + 'static,
-    ChunkType: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
+    MapChunk: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
     MapType: MapData + Default,
 {
     /// Converts all the data from the [`SystemParam`] and spawns the
@@ -118,10 +118,10 @@ where
         layer_data: TilemapLayer<TileData>,
         map_type: MapType,
         chunk_settings: ChunkSettings,
-        chunk_conversion_settings: ChunkType::ConversionSettings,
+        chunk_conversion_settings: MapChunk::ConversionSettings,
     ) -> Self {
         let dimensions = layer_data.dimensions();
-        TilemapBuilder::<TileData, MapLayers, ChunkType, MapType> {
+        TilemapBuilder::<TileData, MapLayers, MapChunk, MapType> {
             main_layer: Some(layer_data),
             layer_info: Default::default(),
             chunk_settings,
@@ -148,9 +148,9 @@ where
     pub fn create_new_chunks_from_layer(
         &mut self,
         tilemap_layer: &TilemapLayer<TileData>,
-        chunk_conversion_settings: ChunkType::ConversionSettings,
+        chunk_conversion_settings: MapChunk::ConversionSettings,
         max_chunk_size: UVec2,
-    ) -> Vec<Vec<Chunk<ChunkType, TileData>>>
+    ) -> Vec<Vec<Chunk<MapChunk, TileData>>>
     where
         TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
     {
@@ -190,7 +190,7 @@ where
     pub fn add_layer_to_chunks(
         &mut self,
         map_layer: u32,
-        chunks: &mut Vec<Vec<Chunk<ChunkType, TileData>>>,
+        chunks: &mut Vec<Vec<Chunk<MapChunk, TileData>>>,
         tilemap_layer: &TilemapLayer<TileData>,
         max_chunk_size: UVec2,
     ) {
@@ -207,7 +207,7 @@ where
                     let chunk = &mut chunks[chunk_pos.y() as usize][chunk_pos.x() as usize];
                     chunk.set_tile_data(
                         map_layer,
-                        ChunkType::into_chunk_cell(*cell, &chunk.cell_conversion_settings),
+                        MapChunk::into_chunk_cell(*cell, &chunk.cell_conversion_settings),
                         tile_data.clone(),
                     );
                 }

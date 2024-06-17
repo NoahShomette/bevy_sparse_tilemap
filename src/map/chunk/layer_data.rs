@@ -22,6 +22,7 @@ pub trait MapChunkLayer<T>: Hash + MapEntities {
 
     fn new(layer_type: LayerType<T>, chunk_dimensions: UVec2) -> Self;
 
+    /// Returns the dimensions of this specific chunk
     fn get_chunk_dimensions(&self) -> UVec2;
 
     fn get_tile_data_mut(&mut self, chunk_tile_pos: ChunkCell) -> Option<&mut T>;

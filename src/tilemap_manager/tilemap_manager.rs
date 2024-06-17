@@ -20,11 +20,11 @@ use std::ops::Deref;
 /// - Query<(Entity, &mut Tilemap, Option<&'static Children>)>
 /// - Query<(Entity, &mut Chunk<TileData>, Option<&'static Children>)>,
 #[derive(SystemParam)]
-pub struct TilemapManager<'w, 's, TileData, MapLayers, ChunkType>
+pub struct TilemapManager<'w, 's, TileData, MapLayers, MapChunk>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayers: MapLayer + Default + Clone + Copy + Send + Sync + 'static,
-    ChunkType: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
+    MapChunk: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
 {
     tilemap_query: Query<'w, 's, (Entity, &'static mut Tilemap, Option<&'static Children>)>,
     chunk_query: Query<
@@ -32,7 +32,7 @@ where
         's,
         (
             Entity,
-            &'static mut Chunk<ChunkType, TileData>,
+            &'static mut Chunk<MapChunk, TileData>,
             Option<&'static Children>,
         ),
     >,
@@ -41,11 +41,11 @@ where
     map_entity: Local<'s, MapEntity>,
 }
 
-impl<'w, 's, TileData, MapLayers, ChunkType> TilemapManager<'w, 's, TileData, MapLayers, ChunkType>
+impl<'w, 's, TileData, MapLayers, MapChunk> TilemapManager<'w, 's, TileData, MapLayers, MapChunk>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayers: MapLayer + Default + Clone + Copy + Send + Sync + 'static,
-    ChunkType: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
+    MapChunk: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
 {
     /// Returns the [`Tilemap`] entity that this tilemap manager is set to affect
     pub fn tilemap_entity(&self) -> Option<Entity> {
@@ -134,7 +134,7 @@ where
         chunk
             .get_tile_data(
                 self.layer_index.0,
-                ChunkType::into_chunk_cell(cell, &chunk.cell_conversion_settings),
+                MapChunk::into_chunk_cell(cell, &chunk.cell_conversion_settings),
             )
             .ok_or(TilemapManagerError::TileDataDoesNotExist)
     }
@@ -175,7 +175,7 @@ where
         chunk
             .get_tile_entity(
                 self.layer_index.0,
-                ChunkType::into_chunk_cell(cell, &chunk.cell_conversion_settings),
+                MapChunk::into_chunk_cell(cell, &chunk.cell_conversion_settings),
             )
             .ok_or(TilemapManagerError::TileEntityDoesNotExist)
     }
@@ -200,7 +200,7 @@ where
         let chunk_conversion_settings = chunk.cell_conversion_settings;
         chunk.set_tile_entity(
             self.layer_index.0.to_bits(),
-            ChunkType::into_chunk_cell(cell, &chunk_conversion_settings),
+            MapChunk::into_chunk_cell(cell, &chunk_conversion_settings),
             entity,
         );
 
@@ -225,7 +225,7 @@ where
         let entity = chunk
             .get_tile_entity(
                 self.layer_index.0,
-                ChunkType::into_chunk_cell(cell, &chunk.cell_conversion_settings),
+                MapChunk::into_chunk_cell(cell, &chunk.cell_conversion_settings),
             )
             .unwrap_or_else(|| {
                 let entity = self.commands.spawn_empty().id();
@@ -253,7 +253,7 @@ where
 
         if let Some(entity) = chunk.get_tile_entity(
             self.layer_index.0,
-            ChunkType::into_chunk_cell(cell, &chunk.cell_conversion_settings),
+            MapChunk::into_chunk_cell(cell, &chunk.cell_conversion_settings),
         ) {
             self.commands.entity(entity).despawn_recursive();
         };
@@ -265,7 +265,7 @@ where
     pub fn get_chunk(
         &self,
         chunk_pos: ChunkPos,
-    ) -> Result<&Chunk<ChunkType, TileData>, TilemapManagerError> {
+    ) -> Result<&Chunk<MapChunk, TileData>, TilemapManagerError> {
         let (_, tilemap, _) = self.tilemap_query.get(
             self.map_entity
                 .deref()

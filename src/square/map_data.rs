@@ -72,17 +72,17 @@ impl MapData for SquareMapData {
         vec
     }
 
-    fn break_data_vecs_into_chunks<TileData, ChunkType>(
+    fn break_data_vecs_into_chunks<TileData, MapChunk>(
         &self,
         data: &Vec<Vec<TileData>>,
         max_chunk_size: UVec2,
-        chunk_conversion_settings: ChunkType::ConversionSettings,
-    ) -> Vec<Vec<crate::map::chunk::Chunk<ChunkType, TileData>>>
+        chunk_conversion_settings: MapChunk::ConversionSettings,
+    ) -> Vec<Vec<crate::map::chunk::Chunk<MapChunk, TileData>>>
     where
         TileData: std::hash::Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
-        ChunkType: crate::map::chunk::MapChunkLayer<TileData> + Send + Sync + 'static + Default,
+        MapChunk: crate::map::chunk::MapChunkLayer<TileData> + Send + Sync + 'static + Default,
     {
-        let mut chunks: Vec<Vec<Chunk<ChunkType, TileData>>> = vec![];
+        let mut chunks: Vec<Vec<Chunk<MapChunk, TileData>>> = vec![];
         let map_x = data[0].len() as f32;
         let map_y = data.len() as f32;
 
@@ -90,14 +90,14 @@ impl MapData for SquareMapData {
         let chunks_on_y = (map_y / max_chunk_size.y as f32).ceil() as i32;
 
         for y in 0..chunks_on_y {
-            let mut chunks_rows: Vec<Chunk<ChunkType, TileData>> = vec![];
+            let mut chunks_rows: Vec<Chunk<MapChunk, TileData>> = vec![];
             for x in 0..chunks_on_x {
                 let vec = self.break_data_vecs_down_into_chunk_data(
                     &data,
                     ChunkPos::new(x, y),
                     max_chunk_size,
                 );
-                let chunk = Chunk::<ChunkType, TileData>::new(
+                let chunk = Chunk::<MapChunk, TileData>::new(
                     ChunkPos::new(x, y),
                     UVec2::new(vec.len() as u32, vec[0].len() as u32),
                     LayerType::Dense(vec),
@@ -111,19 +111,19 @@ impl MapData for SquareMapData {
         chunks
     }
 
-    fn break_hashmap_into_chunks<TileData, ChunkType>(
+    fn break_hashmap_into_chunks<TileData, MapChunk>(
         &self,
         map_layer: impl MapLayer,
         data: &bevy::utils::HashMap<lettuces::cell::Cell, TileData>,
         map_size: UVec2,
         max_chunk_size: UVec2,
-        chunk_conversion_settings: ChunkType::ConversionSettings,
-    ) -> Vec<Vec<crate::map::chunk::Chunk<ChunkType, TileData>>>
+        chunk_conversion_settings: MapChunk::ConversionSettings,
+    ) -> Vec<Vec<crate::map::chunk::Chunk<MapChunk, TileData>>>
     where
         TileData: std::hash::Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
-        ChunkType: crate::map::chunk::MapChunkLayer<TileData> + Send + Sync + 'static + Default,
+        MapChunk: crate::map::chunk::MapChunkLayer<TileData> + Send + Sync + 'static + Default,
     {
-        let mut chunks: Vec<Vec<Chunk<ChunkType, TileData>>> = vec![];
+        let mut chunks: Vec<Vec<Chunk<MapChunk, TileData>>> = vec![];
         // Get the chunks with the remainder for making chunks
         let max_chunks_floats = vec2(
             (f64::from(map_size.x) / f64::from(max_chunk_size.x)) as f32,
@@ -137,7 +137,7 @@ impl MapData for SquareMapData {
         );
 
         for y in 0..max_chunks.y as i32 {
-            let mut chunks_rows: Vec<Chunk<ChunkType, TileData>> = vec![];
+            let mut chunks_rows: Vec<Chunk<MapChunk, TileData>> = vec![];
             for x in 0..max_chunks.x as i32 {
                 // Gets the actual chunk size of the given chunk
                 let mut chunk_size = max_chunk_size;
@@ -164,7 +164,7 @@ impl MapData for SquareMapData {
             let chunk = &mut chunks[chunk_pos.y() as usize][chunk_pos.x() as usize];
             chunk.set_tile_data(
                 map_layer.to_bits(),
-                ChunkType::into_chunk_cell(*cell, &chunk.cell_conversion_settings),
+                MapChunk::into_chunk_cell(*cell, &chunk.cell_conversion_settings),
                 *tile_data,
             );
         }
