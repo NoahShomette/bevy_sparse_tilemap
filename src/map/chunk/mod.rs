@@ -8,7 +8,7 @@ use crate::map::MapLayer;
 use bevy::ecs::entity::{EntityMapper, MapEntities};
 use bevy::prelude::{Component, Entity, UVec2};
 use bevy::utils::hashbrown::HashMap;
-pub use layer_data::{LayerType, MapChunkLayer};
+pub use layer_data::{ChunkLayer, LayerType};
 use lettuces::cell::Cell;
 use lettuces::storage::grid::Grid;
 use std::hash::{Hash, Hasher};
@@ -128,17 +128,17 @@ impl Chunks {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "reflect", derive(Reflect))]
 #[cfg_attr(feature = "reflect", reflect(Component, Hash, MapEntities))]
-pub struct Chunk<MapChunk, TileData>
+pub struct Chunk<Chunklayer, TileData>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync,
-    MapChunk: MapChunkLayer<TileData> + Send + Sync + Default,
+    Chunklayer: ChunkLayer<TileData> + Send + Sync + Default,
 {
     /// The position of the Chunk in the map
     pub chunk_pos: ChunkPos,
     /// Chunk tile data mapped to layers
-    pub data: HashMap<u32, MapChunk>,
+    pub data: HashMap<u32, Chunklayer>,
     /// Conversion Settings used to convert a cell into a position in the chunk
-    pub cell_conversion_settings: MapChunk::ConversionSettings,
+    pub cell_conversion_settings: Chunklayer::ConversionSettings,
     #[cfg_attr(feature = "reflect", reflect(ignore))]
     ph: PhantomData<TileData>,
 }
@@ -146,7 +146,7 @@ where
 impl<MapChunk, TileData> MapEntities for Chunk<MapChunk, TileData>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync,
-    MapChunk: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
+    MapChunk: ChunkLayer<TileData> + Send + Sync + 'static + Default,
 {
     fn map_entities<M: EntityMapper>(&mut self, entity_mapper: &mut M) {
         for datum in self.data.iter_mut() {
@@ -158,7 +158,7 @@ where
 impl<MapChunk, TileData> Hash for Chunk<MapChunk, TileData>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync,
-    MapChunk: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
+    MapChunk: ChunkLayer<TileData> + Send + Sync + 'static + Default,
 {
     fn hash<H: Hasher>(&self, h: &mut H) {
         let mut pairs: Vec<_> = self.data.iter().collect();
@@ -171,7 +171,7 @@ where
 impl<MapChunk, TileData> Default for Chunk<MapChunk, TileData>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync,
-    MapChunk: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
+    MapChunk: ChunkLayer<TileData> + Send + Sync + 'static + Default,
 {
     fn default() -> Self {
         Self {
@@ -186,7 +186,7 @@ where
 impl<MapChunk, TileData> Chunk<MapChunk, TileData>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync,
-    MapChunk: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
+    MapChunk: ChunkLayer<TileData> + Send + Sync + 'static + Default,
 {
     /// Creates a new chunk with the given data. chunk size represents the actual size of the chunk object.
     pub fn new(
@@ -220,7 +220,7 @@ where
 impl<MapChunk, TileData> Chunk<MapChunk, TileData>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync,
-    MapChunk: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
+    MapChunk: ChunkLayer<TileData> + Send + Sync + 'static + Default,
 {
     /// Returns the actual dimensions for the given [`MapLayer`] in the [`Chunk`].
     ///

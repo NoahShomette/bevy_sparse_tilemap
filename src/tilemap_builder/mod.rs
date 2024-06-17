@@ -1,6 +1,6 @@
 pub mod tilemap_layer_builder;
 
-use crate::map::chunk::{Chunk, ChunkSettings, Chunks, LayerType, MapChunkLayer};
+use crate::map::chunk::{Chunk, ChunkLayer, ChunkSettings, Chunks, LayerType};
 use crate::map::{MapData, MapLayer, Tilemap};
 use crate::tilemap_builder::tilemap_layer_builder::TilemapLayer;
 use bevy::prelude::{BuildChildren, Commands, Entity, UVec2};
@@ -9,11 +9,11 @@ use std::hash::Hash;
 use std::marker::PhantomData;
 
 /// Information to construct a Tilemap
-pub struct TilemapBuilder<TileData, MapLayers, MapChunk, MapType>
+pub struct TilemapBuilder<TileData, MapLayers, Chunk, MapType>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayers: MapLayer + Clone + Copy + Send + Sync + 'static,
-    MapChunk: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
+    Chunk: ChunkLayer<TileData> + Send + Sync + 'static + Default,
     MapType: MapData + Default,
 {
     main_layer: Option<TilemapLayer<TileData>>,
@@ -21,11 +21,11 @@ where
     chunk_settings: ChunkSettings,
     map_size: UVec2,
     map_type: MapType,
-    chunk_conversion_settings: MapChunk::ConversionSettings,
+    chunk_conversion_settings: Chunk::ConversionSettings,
     // All phantom data below
     td_phantom: PhantomData<TileData>,
     ml_phantom: PhantomData<MapLayers>,
-    ct_phantom: PhantomData<MapChunk>,
+    ct_phantom: PhantomData<Chunk>,
 }
 
 impl<TileData, MapLayers, MapChunk, MapType> Default
@@ -33,7 +33,7 @@ impl<TileData, MapLayers, MapChunk, MapType> Default
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayers: MapLayer + Clone + Copy + Send + Sync + 'static,
-    MapChunk: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
+    MapChunk: ChunkLayer<TileData> + Send + Sync + 'static + Default,
 
     MapType: MapData + Default,
 {
@@ -54,12 +54,11 @@ where
     }
 }
 
-impl<TileData, MapLayers, MapChunk, MapType>
-    TilemapBuilder<TileData, MapLayers, MapChunk, MapType>
+impl<TileData, MapLayers, MapChunk, MapType> TilemapBuilder<TileData, MapLayers, MapChunk, MapType>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayers: MapLayer + Clone + Copy + Send + Sync + 'static,
-    MapChunk: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
+    MapChunk: ChunkLayer<TileData> + Send + Sync + 'static + Default,
     MapType: MapData + Default,
 {
     /// Converts all the data from the [`SystemParam`] and spawns the

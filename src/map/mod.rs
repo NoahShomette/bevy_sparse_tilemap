@@ -10,7 +10,7 @@ use bevy::{
     reflect::Reflect,
     utils::HashMap,
 };
-use chunk::{Chunk, ChunkPos, MapChunkLayer};
+use chunk::{Chunk, ChunkLayer, ChunkPos};
 use lettuces::cell::Cell;
 use serde::{Deserialize, Serialize};
 use std::hash::Hash;
@@ -74,7 +74,7 @@ pub trait MapData {
     ) -> Vec<Vec<Chunk<MapChunk, TileData>>>
     where
         TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
-        MapChunk: MapChunkLayer<TileData> + Send + Sync + 'static + Default;
+        MapChunk: ChunkLayer<TileData> + Send + Sync + 'static + Default;
 
     /// Function that breaks a [`HashMap<TilePos, TileData>`] into [`Vec<Vec<Chunk<TileData>>>`]
     fn break_hashmap_into_chunks<TileData, MapChunk>(
@@ -87,7 +87,7 @@ pub trait MapData {
     ) -> Vec<Vec<Chunk<MapChunk, TileData>>>
     where
         TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
-        MapChunk: MapChunkLayer<TileData> + Send + Sync + 'static + Default;
+        MapChunk: ChunkLayer<TileData> + Send + Sync + 'static + Default;
 
     fn add_entities_to_layer<TileData, MapChunk>(
         &self,
@@ -96,7 +96,7 @@ pub trait MapData {
         entities: &HashMap<Cell, Entity>,
     ) where
         TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
-        MapChunk: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
+        MapChunk: ChunkLayer<TileData> + Send + Sync + 'static + Default,
     {
         for (cell, entity) in entities.iter() {
             let chunk_pos = Self::into_chunk_pos(*cell, self.conversion_settings());

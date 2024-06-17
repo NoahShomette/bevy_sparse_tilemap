@@ -80,7 +80,7 @@ impl MapData for SquareMapData {
     ) -> Vec<Vec<crate::map::chunk::Chunk<MapChunk, TileData>>>
     where
         TileData: std::hash::Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
-        MapChunk: crate::map::chunk::MapChunkLayer<TileData> + Send + Sync + 'static + Default,
+        MapChunk: crate::map::chunk::ChunkLayer<TileData> + Send + Sync + 'static + Default,
     {
         let mut chunks: Vec<Vec<Chunk<MapChunk, TileData>>> = vec![];
         let map_x = data[0].len() as f32;
@@ -121,7 +121,7 @@ impl MapData for SquareMapData {
     ) -> Vec<Vec<crate::map::chunk::Chunk<MapChunk, TileData>>>
     where
         TileData: std::hash::Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
-        MapChunk: crate::map::chunk::MapChunkLayer<TileData> + Send + Sync + 'static + Default,
+        MapChunk: crate::map::chunk::ChunkLayer<TileData> + Send + Sync + 'static + Default,
     {
         let mut chunks: Vec<Vec<Chunk<MapChunk, TileData>>> = vec![];
         // Get the chunks with the remainder for making chunks

@@ -1,4 +1,4 @@
-use crate::map::chunk::{Chunk, ChunkPos, MapChunkLayer};
+use crate::map::chunk::{Chunk, ChunkLayer, ChunkPos};
 use crate::map::{MapLayer, Tilemap};
 use crate::tilemap_manager::TilemapManagerError;
 use crate::tilemap_manager::{LayerIndex, MapEntity};
@@ -24,7 +24,7 @@ pub struct TilemapManager<'w, 's, TileData, MapLayers, MapChunk>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayers: MapLayer + Default + Clone + Copy + Send + Sync + 'static,
-    MapChunk: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
+    MapChunk: ChunkLayer<TileData> + Send + Sync + 'static + Default,
 {
     tilemap_query: Query<'w, 's, (Entity, &'static mut Tilemap, Option<&'static Children>)>,
     chunk_query: Query<
@@ -45,7 +45,7 @@ impl<'w, 's, TileData, MapLayers, MapChunk> TilemapManager<'w, 's, TileData, Map
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayers: MapLayer + Default + Clone + Copy + Send + Sync + 'static,
-    MapChunk: MapChunkLayer<TileData> + Send + Sync + 'static + Default,
+    MapChunk: ChunkLayer<TileData> + Send + Sync + 'static + Default,
 {
     /// Returns the [`Tilemap`] entity that this tilemap manager is set to affect
     pub fn tilemap_entity(&self) -> Option<Entity> {
@@ -286,6 +286,7 @@ mod tests {
     use crate as bevy_sparse_tilemap;
     use crate::square::map_chunk_layer::{SquareChunkLayer, SquareChunkLayerConversionSettings};
     use crate::square::map_data::{SquareMapData, SquareMapDataConversionSettings};
+    use crate::square::{SquareTilemapBuilder, SquareTilemapManager};
 
     use crate::map::chunk::ChunkSettings;
     use crate::tilemap_builder::tilemap_layer_builder::TilemapLayer;
@@ -490,10 +491,8 @@ mod tests {
     fn tilemap_manager_dimensions() {
         let mut world = World::new();
 
-        let mut system_state: SystemState<(
-            Commands,
-            TilemapManager<(i32, i32), MapLayers, SquareChunkLayer<(i32, i32)>>,
-        )> = SystemState::new(&mut world);
+        let mut system_state: SystemState<(Commands, SquareTilemapManager<(i32, i32), MapLayers>)> =
+            SystemState::new(&mut world);
         let (mut commands, _) = system_state.get_mut(&mut world);
 
         #[rustfmt::skip]
@@ -513,12 +512,7 @@ mod tests {
             max_chunk_dimensions: UVec2 { x: 5, y: 5 },
         };
 
-        let tilemap_builder = TilemapBuilder::<
-            (i32, i32),
-            MapLayers,
-            SquareChunkLayer<(i32, i32)>,
-            SquareMapData,
-        >::new(
+        let tilemap_builder = SquareTilemapBuilder::<(i32, i32), MapLayers>::new(
             TilemapLayer::new_dense_from_vecs(vecs),
             SquareMapData {
                 conversion_settings: SquareMapDataConversionSettings {

@@ -1,6 +1,6 @@
 //! This module is for data structures to store and interact with a Chunks Layers.
 
-use crate::map::chunk::{ChunkCell, LayerType, MapChunkLayer};
+use crate::map::chunk::{ChunkCell, LayerType, ChunkLayer};
 use bevy::ecs::entity::{EntityMapper, MapEntities};
 use bevy::ecs::reflect::ReflectMapEntities;
 use bevy::math::UVec2;
@@ -60,7 +60,7 @@ where
         Hash::hash(&self.layer_type_data, h);
     }
 }
-impl<T> MapChunkLayer<T> for SquareChunkLayer<T>
+impl<T> ChunkLayer<T> for SquareChunkLayer<T>
 where
     T: Hash + Clone + Copy + Sized + Default + Send + Sync,
 {

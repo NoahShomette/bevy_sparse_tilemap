@@ -22,15 +22,52 @@ bevy_sparse_tilemap includes a `TilemapBuilder` SystemParam that is used to spaw
 correctly in the world.
 
 ```rust
-fn spawn_tilemap(mut tilemap_builder: TilemapBuilder<TileData, MapLayers>, mut commands: Commands) {
-    tilemap_builder.new_tilemap_with_main_layer(
-        TilemapLayer::new_dense_default(5000,5000),
-        ChunkSettings {
-            max_chunk_size: UVec2::new(100, 100),
-        },
-    );
-    let tilemap = tilemap_builder.spawn_tilemap();
-}
+
+ # use bevy::prelude::{Commands, Entity, Reflect, UVec2};
+ # use bevy_sparse_tilemap::map::chunk::ChunkSettings;
+ # use bevy_sparse_tilemap::tilemap_builder::tilemap_layer_builder::TilemapLayer;
+ # use bevy_sparse_tilemap::tilemap_builder::TilemapBuilder;
+ # use bst_map_layer_derive::MapLayer;
+ #    use bevy_sparse_tilemap::square::{
+ # map_chunk_layer::SquareChunkLayer, map_data::SquareMapData, map_data::SquareMapDataConversionSettings, map_chunk_layer::SquareChunkLayerConversionSettings
+ # };
+ #
+ # #[derive(MapLayer, Clone, Copy, Default)]
+ # pub enum MapLayers {
+ #     #[default]
+ #     Main,
+ #     Secondary,
+ # }
+ #
+ # #[derive(Default, Copy, Clone, Reflect, Hash)]
+ # struct TileData(u8, u8);
+ #
+ #
+
+ fn spawn_tilemap(mut commands: Commands) {
+     let chunk_conversion_settings = SquareChunkLayerConversionSettings {
+         max_chunk_dimensions: UVec2 { x: 100, y: 100 },
+     };
+
+     let mut tilemap_builder = TilemapBuilder::<TileData, MapLayers, SquareChunkLayer<TileData>, SquareMapData,
+         >::new(
+         TilemapLayer::new_dense_default(10000, 10000),
+         SquareMapData {
+             conversion_settings: SquareMapDataConversionSettings {
+                 max_chunk_dimensions: UVec2::new(100, 100),
+                 },
+             },
+         ChunkSettings {
+             max_chunk_size: UVec2::new(100, 100),
+         },
+         chunk_conversion_settings,
+     );
+
+     let Some(tilemap) = tilemap_builder.spawn_tilemap(&mut commands)
+         else {
+             return;
+     };
+ }
 ```
 
 ## Tilemap Access
@@ -40,13 +77,34 @@ param that has a bevy of helper functions to make accessing, editing, and intera
 that much easier.
 
 ```rust
-fn access(mut tilemap_manager: TilemapManager<TileData, MapLayers>, mut commands: Commands, resource_holding_target_tilemap: Res<TargetTilemap>) {
-   tilemap_manager.set_tilemap_entity(resource_holding_target_tilemap.tilemap_entity);
-    let tile_data = tilemap_manager.get_tile_data(TilePos::new(9,16)).unwrap();
+ # use bevy::prelude::{Commands, Entity, Reflect, UVec2};
+ # use bevy_sparse_tilemap::map::chunk::ChunkSettings;
+ # use bevy_sparse_tilemap::tilemap_builder::tilemap_layer_builder::TilemapLayer;
+ # use bevy_sparse_tilemap::tilemap_builder::TilemapBuilder;
+ # use bevy_sparse_tilemap::tilemap_manager::TilemapManager;
+ # use lettuces::cell::Cell;
+ # use bst_map_layer_derive::MapLayer;
+     use bevy_sparse_tilemap::square::map_chunk_layer::{
+ SquareChunkLayer,
+ };
+ #
+ # #[derive(MapLayer, Clone, Copy, Default)]
+ # pub enum MapLayers {
+ #     #[default]
+ #     Main,
+ #     Secondary,
+ # }
+ #
+ # #[derive(Default, Copy, Clone, Reflect, Hash)]
+ # struct TileData(u8, u8);
+ #
 
-    // do something with the tilemap data
+ fn access(tilemap_manager: TilemapManager<TileData, MapLayers, SquareChunkLayer<TileData>>, mut commands: Commands) {
+     let tile_data = tilemap_manager.get_tile_data(Cell::new(9,16)).unwrap();
 
-}
+     //
+
+ }
 ```
 
 ## What about `bevy_ecs_tilemap`?
@@ -71,7 +129,7 @@ You should use `bevy_sparse_tilemap` if:
 ## Bevy Version
 
 | BST Version | Bevy Version |
-| :----------: | :----------: |
-|     0.3      |     0.14     |
-|     0.2      |     0.13     |
-|     0.1      |     0.13     |
+| :---------: | :----------: |
+|     0.3     |     0.14     |
+|     0.2     |     0.13     |
+|     0.1     |     0.13     |
