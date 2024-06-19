@@ -359,6 +359,7 @@ mod tests {
                 max_chunk_size: UVec2::new(5, 5),
             },
             chunk_conversion_settings,
+            (),
         );
 
         let Some(map_entity) = tilemap_builder.spawn_tilemap(&mut commands) else {
@@ -453,6 +454,7 @@ mod tests {
                 max_chunk_size: UVec2::new(5, 5),
             },
             chunk_conversion_settings,
+            (),
         );
 
         let Some(map_entity) = tilemap_builder.spawn_tilemap(&mut commands) else {
@@ -526,6 +528,7 @@ mod tests {
                 max_chunk_size: UVec2::new(5, 5),
             },
             chunk_conversion_settings,
+            (),
         );
 
         let Some(map_entity) = tilemap_builder.spawn_tilemap(&mut commands) else {

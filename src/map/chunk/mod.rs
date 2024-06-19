@@ -132,6 +132,8 @@ where
     pub data: HashMap<u32, Chunklayer>,
     /// Conversion Settings used to convert a cell into a position in the chunk
     pub cell_conversion_settings: Chunklayer::ConversionSettings,
+    /// Map Settings that defines information on the map
+    pub map_settings: Chunklayer::MapSettings,
     #[cfg_attr(feature = "reflect", reflect(ignore))]
     ph: PhantomData<TileData>,
 }
@@ -171,6 +173,7 @@ where
             chunk_pos: Default::default(),
             data: HashMap::default(),
             cell_conversion_settings: MapChunk::ConversionSettings::default(),
+            map_settings: MapChunk::MapSettings::default(),
             ph: Default::default(),
         }
     }
@@ -187,13 +190,15 @@ where
         chunk_size: UVec2,
         tile_data: LayerType<TileData>,
         cell_conversion_settings: MapChunk::ConversionSettings,
+        map_settings: MapChunk::MapSettings,
     ) -> Chunk<MapChunk, TileData> {
         let mut hashmap = HashMap::new();
-        hashmap.insert(1u32, MapChunk::new(tile_data, chunk_size));
+        hashmap.insert(1u32, MapChunk::new(tile_data, chunk_size, &map_settings));
         Self {
             chunk_pos,
             data: hashmap,
             cell_conversion_settings,
+            map_settings,
             ph: Default::default(),
         }
     }
@@ -205,7 +210,7 @@ where
     pub fn add_layer(&mut self, map_layer: u32, tile_data: LayerType<TileData>) {
         self.data.insert(
             map_layer,
-            MapChunk::new(tile_data, self.get_chunk_dimensions()),
+            MapChunk::new(tile_data, self.get_chunk_dimensions(), &self.map_settings),
         );
     }
 }
@@ -393,6 +398,7 @@ mod tests {
             SquareChunkLayerConversionSettings {
                 max_chunk_size: UVec2 { x: 2, y: 2 },
             },
+            (),
         );
         assert_eq!(
             chunk
@@ -414,6 +420,7 @@ mod tests {
             SquareChunkLayerConversionSettings {
                 max_chunk_size: UVec2 { x: 2, y: 2 },
             },
+            (),
         );
         assert_eq!(
             chunk
@@ -441,6 +448,7 @@ mod tests {
             SquareChunkLayerConversionSettings {
                 max_chunk_size: UVec2 { x: 2, y: 2 },
             },
+            (),
         );
         assert_eq!(
             chunk
@@ -472,6 +480,7 @@ mod tests {
             SquareChunkLayerConversionSettings {
                 max_chunk_size: UVec2 { x: 2, y: 2 },
             },
+            (),
         );
     }
 
@@ -489,6 +498,7 @@ mod tests {
             SquareChunkLayerConversionSettings {
                 max_chunk_size: UVec2 { x: 2, y: 2 },
             },
+            (),
         );
         assert_eq!(
             chunk
@@ -512,6 +522,7 @@ mod tests {
             SquareChunkLayerConversionSettings {
                 max_chunk_size: UVec2 { x: 2, y: 2 },
             },
+            (),
         );
         chunk.set_tile_data(MapLayers::Main.to_bits(), ChunkCell::new(0, 0), (50, 60));
         assert_eq!(
@@ -533,6 +544,7 @@ mod tests {
             SquareChunkLayerConversionSettings {
                 max_chunk_size: UVec2 { x: 2, y: 2 },
             },
+            (),
         );
         chunk.add_layer(
             MapLayers::Secondary.to_bits(),
@@ -555,6 +567,7 @@ mod tests {
             SquareChunkLayerConversionSettings {
                 max_chunk_size: UVec2 { x: 2, y: 2 },
             },
+            (),
         );
         let vecs = vec![
             vec![(0, 0), (1, 2), (2, 0), (3, 0)],
@@ -603,6 +616,7 @@ mod tests {
                 SquareChunkLayerConversionSettings {
                     max_chunk_dimensions: UVec2 { x: 2, y: 2 },
                 },
+                (),
             );
             let mut registry = TypeRegistry::default();
             registry.register::<Chunk<SquareChunkLayer<(u32, u32)>, (u32, u32)>>();

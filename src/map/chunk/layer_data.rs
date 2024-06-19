@@ -1,8 +1,6 @@
 use std::hash::Hash;
 
-use bevy::{
-    ecs::entity::MapEntities, math::UVec2, prelude::Entity, reflect::Reflect, utils::HashMap,
-};
+use bevy::{ecs::entity::MapEntities, math::UVec2, prelude::Entity, utils::HashMap};
 use lettuces::cell::Cell;
 
 use super::ChunkCell;
@@ -15,12 +13,19 @@ pub enum LayerType<T> {
 /// Trait that controls access to a specific layer of a tilemap chunk.
 pub trait ChunkLayer<T>: Hash + MapEntities {
     /// Information needed to convert a [`Cell`] into a [`ChunkCell`].
-    type ConversionSettings: Send + Sync + Default + Reflect + Clone + Copy + Hash;
+    type ConversionSettings: Send + Sync + Default + Clone + Copy + Hash;
+
+    /// Settings about the map used to construct new ones
+    type MapSettings: Send + Sync + Default + Clone + Copy + Hash;
 
     /// Converts a [`Cell`] into a [`ChunkCell`]
     fn into_chunk_cell(cell: Cell, conversion_settings: &Self::ConversionSettings) -> ChunkCell;
 
-    fn new(layer_type: LayerType<T>, chunk_dimensions: UVec2) -> Self;
+    fn new(
+        layer_type: LayerType<T>,
+        chunk_dimensions: UVec2,
+        map_settings: &Self::MapSettings,
+    ) -> Self;
 
     /// Returns the dimensions of this specific chunk
     fn get_chunk_dimensions(&self) -> UVec2;

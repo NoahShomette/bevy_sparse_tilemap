@@ -22,6 +22,7 @@ where
     map_size: UVec2,
     map_type: MapType,
     chunk_conversion_settings: Chunk::ConversionSettings,
+    map_settings: Chunk::MapSettings,
     map_conversion_settings: MapType::ConversionSettings,
     // All phantom data below
     td_phantom: PhantomData<TileData>,
@@ -48,6 +49,7 @@ where
             map_size: Default::default(),
             map_type: Default::default(),
             chunk_conversion_settings: MapChunk::ConversionSettings::default(),
+            map_settings: MapChunk::MapSettings::default(),
             map_conversion_settings: MapType::ConversionSettings::default(),
             td_phantom: PhantomData::default(),
             ml_phantom: PhantomData::default(),
@@ -74,6 +76,7 @@ where
         let mut chunks = self.create_new_chunks_from_layer(
             &layer,
             self.chunk_conversion_settings,
+            self.map_settings,
             self.chunk_settings.max_chunk_size,
         );
 
@@ -123,6 +126,7 @@ where
         map_type: MapType,
         chunk_settings: ChunkSettings,
         chunk_conversion_settings: MapChunk::ConversionSettings,
+        map_settings: MapChunk::MapSettings,
     ) -> Self {
         let dimensions = layer_data.dimensions();
         TilemapBuilder::<TileData, MapLayers, MapChunk, MapType> {
@@ -133,6 +137,7 @@ where
             map_conversion_settings: map_type.conversion_settings().clone(),
             map_type,
             chunk_conversion_settings,
+            map_settings,
             td_phantom: Default::default(),
             ml_phantom: Default::default(),
             ct_phantom: PhantomData::default(),
@@ -154,6 +159,7 @@ where
         &mut self,
         tilemap_layer: &TilemapLayer<TileData>,
         chunk_conversion_settings: MapChunk::ConversionSettings,
+        map_settings: MapChunk::MapSettings,
         max_chunk_size: UVec2,
     ) -> Vec<Vec<Chunk<MapChunk, TileData>>>
     where
@@ -167,6 +173,7 @@ where
                     map_size.clone(),
                     max_chunk_size,
                     chunk_conversion_settings,
+                    map_settings,
                 );
                 self.map_type.add_entities_to_layer(
                     MapLayers::default().to_bits(),
@@ -180,6 +187,7 @@ where
                     data,
                     max_chunk_size,
                     chunk_conversion_settings,
+                    map_settings,
                 );
                 self.map_type.add_entities_to_layer(
                     MapLayers::default().to_bits(),

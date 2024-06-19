@@ -2,18 +2,30 @@
 
 use crate::map::chunk::{ChunkCell, ChunkLayer, LayerType};
 use bevy::ecs::entity::{EntityMapper, MapEntities};
-use bevy::ecs::reflect::ReflectMapEntities;
 use bevy::math::UVec2;
 use bevy::prelude::{Component, Entity, Reflect};
 use bevy::utils::HashMap;
 use lettuces::cell::Cell;
-use lettuces::storage::grid::Grid;
 use lettuces::storage::hex::HexRectangleStorage;
 use lettuces::HexOrientation;
 use std::hash::{Hash, Hasher};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+
+#[cfg(feature = "reflect")]
+use bevy::ecs::reflect::ReflectMapEntities;
+#[cfg(feature = "reflect")]
+use bevy::prelude::{Reflect, ReflectComponent};
+
+#[derive(Clone, Copy, Hash, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "reflect", derive(Reflect))]
+#[cfg_attr(feature = "reflect", reflect(Hash, Component))]
+/// Settings for a hexagonal map
+pub struct HexagonMapSettings {
+    pub orientation: HexOrientation,
+}
 
 #[derive(Reflect, Clone, Copy, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -30,9 +42,10 @@ impl Default for HexChunkLayerConversionSettings {
 }
 
 /// A struct that holds the chunk map data for the given layer
-#[derive(Component, Default, Reflect)]
+#[derive(Component, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[reflect(Hash, MapEntities)]
+#[cfg_attr(feature = "reflect", derive(Reflect))]
+#[cfg_attr(feature = "reflect", reflect(Hash, Component, MapEntities))]
 pub struct HexChunkLayer<T>
 where
     T: Hash + Clone + Copy + Sized + Default + Send + Sync,
@@ -69,6 +82,8 @@ where
 {
     type ConversionSettings = HexChunkLayerConversionSettings;
 
+    type MapSettings = HexagonMapSettings;
+
     fn into_chunk_cell(
         cell: lettuces::cell::Cell,
         conversion_settings: &Self::ConversionSettings,
@@ -81,12 +96,16 @@ where
         )
     }
 
-    fn new(layer_type: LayerType<T>, chunk_dimensions: UVec2) -> Self {
+    fn new(
+        layer_type: LayerType<T>,
+        chunk_dimensions: UVec2,
+        settings: &HexagonMapSettings,
+    ) -> Self {
         match layer_type {
             LayerType::Dense(dense_data) => Self {
                 layer_type_data: HexChunkLayerData::new_dense_from_vecs(
                     &dense_data,
-                    HexOrientation::Pointy,
+                    settings.orientation.clone(),
                 ),
                 tile_entities: Default::default(),
             },

@@ -9,6 +9,9 @@ use bevy::utils::HashMap;
 use lettuces::storage::grid::Grid;
 use std::hash::{Hash, Hasher};
 
+#[cfg(feature = "reflect")]
+use bevy::prelude::{Reflect, ReflectComponent};
+
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
@@ -65,6 +68,7 @@ where
     T: Hash + Clone + Copy + Sized + Default + Send + Sync,
 {
     type ConversionSettings = SquareChunkLayerConversionSettings;
+    type MapSettings = ();
 
     fn into_chunk_cell(
         cell: lettuces::cell::Cell,
@@ -78,7 +82,7 @@ where
         )
     }
 
-    fn new(layer_type: LayerType<T>, chunk_dimensions: UVec2) -> Self {
+    fn new(layer_type: LayerType<T>, chunk_dimensions: UVec2, _: &()) -> Self {
         match layer_type {
             LayerType::Dense(dense_data) => Self {
                 layer_type_data: SquareChunkLayerData::new_dense_from_vecs(&dense_data),

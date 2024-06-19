@@ -3,9 +3,6 @@ use bevy::{
     utils::hashbrown::HashMap,
 };
 
-#[cfg(not(feature = "reflect"))]
-use bevy::prelude::Reflect;
-
 #[cfg(feature = "reflect")]
 use bevy::ecs::reflect::ReflectMapEntities;
 #[cfg(feature = "reflect")]
@@ -18,7 +15,7 @@ use crate::map::{
     MapData, MapLayer,
 };
 
-#[derive(Reflect, Clone, Hash)]
+#[derive(Clone, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "reflect", reflect(Hash))]
 pub struct SquareMapDataConversionSettings {
@@ -91,6 +88,7 @@ impl MapData for SquareMapData {
         data: &Vec<Vec<TileData>>,
         max_chunk_size: UVec2,
         chunk_conversion_settings: MapChunk::ConversionSettings,
+        map_settings: MapChunk::MapSettings,
     ) -> Vec<Vec<crate::map::chunk::Chunk<MapChunk, TileData>>>
     where
         TileData: std::hash::Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
@@ -116,6 +114,7 @@ impl MapData for SquareMapData {
                     UVec2::new(vec.len() as u32, vec[0].len() as u32),
                     LayerType::Dense(vec),
                     chunk_conversion_settings,
+                    map_settings,
                 );
                 chunks_rows.push(chunk);
             }
@@ -132,6 +131,7 @@ impl MapData for SquareMapData {
         map_size: UVec2,
         max_chunk_size: UVec2,
         chunk_conversion_settings: MapChunk::ConversionSettings,
+        map_settings: MapChunk::MapSettings,
     ) -> Vec<Vec<crate::map::chunk::Chunk<MapChunk, TileData>>>
     where
         TileData: std::hash::Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
@@ -168,6 +168,7 @@ impl MapData for SquareMapData {
                     chunk_size,
                     LayerType::Sparse(HashMap::new()),
                     chunk_conversion_settings,
+                    map_settings,
                 ));
             }
             chunks.push(chunks_rows);
@@ -369,6 +370,7 @@ mod tests {
                 UVec2::new(32, 32),
                 mcs,
                 chunk_conversion_settings,
+                (),
             );
 
         assert_eq!(chunks.len(), 4);

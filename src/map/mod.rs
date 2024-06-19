@@ -3,13 +3,7 @@
 pub mod chunk;
 mod tilemap;
 
-use bevy::{
-    ecs::{component::Component, reflect::ReflectComponent},
-    math::UVec2,
-    prelude::Entity,
-    reflect::Reflect,
-    utils::HashMap,
-};
+use bevy::{ecs::component::Component, math::UVec2, prelude::Entity, utils::HashMap};
 use chunk::{Chunk, ChunkLayer, ChunkPos};
 use lettuces::cell::Cell;
 use serde::{Deserialize, Serialize};
@@ -40,9 +34,10 @@ where
 }
 
 /// Specifices the type of map
-#[derive(Component, Default, Hash, Clone, Debug, Eq, PartialEq, Reflect)]
+#[derive(Component, Default, Hash, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[reflect(Component, Hash)]
+#[cfg_attr(feature = "reflect", derive(Reflect))]
+#[cfg_attr(feature = "reflect", reflect(Hash, Component))]
 pub enum MapType {
     #[default]
     Square,
@@ -50,7 +45,7 @@ pub enum MapType {
 }
 
 pub trait MapData: Hash {
-    type ConversionSettings: Send + Sync + Default + Reflect + Clone + Hash;
+    type ConversionSettings: Send + Sync + Default + Clone + Hash;
     fn into_chunk_pos(cell: Cell, conversion_settings: &Self::ConversionSettings) -> ChunkPos;
 
     fn conversion_settings(&self) -> &Self::ConversionSettings;
@@ -71,6 +66,7 @@ pub trait MapData: Hash {
         data: &Vec<Vec<TileData>>,
         max_chunk_size: UVec2,
         chunk_conversion_settings: MapChunk::ConversionSettings,
+        map_settings: MapChunk::MapSettings,
     ) -> Vec<Vec<Chunk<MapChunk, TileData>>>
     where
         TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
@@ -84,6 +80,7 @@ pub trait MapData: Hash {
         map_size: UVec2,
         max_chunk_size: UVec2,
         chunk_conversion_settings: MapChunk::ConversionSettings,
+        map_settings: MapChunk::MapSettings,
     ) -> Vec<Vec<Chunk<MapChunk, TileData>>>
     where
         TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,

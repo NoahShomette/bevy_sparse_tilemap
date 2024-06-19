@@ -83,6 +83,7 @@ fn startup(mut commands: Commands) {
                 max_chunk_size: max_chunk_size,
             },
             chunk_conversion_settings,
+            (),
         );
 
     let Some(tilemap) = tilemap_builder.spawn_tilemap(&mut commands) else {
