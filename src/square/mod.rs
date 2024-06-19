@@ -24,4 +24,4 @@ pub type SquareTilemapBuilder<TileData, MapLayers> =
     TilemapBuilder<TileData, MapLayers, SquareChunkLayer<TileData>, SquareMapData>;
 
 /// Type alias for [`Tilemap`] for the built in square map tilemap
-pub type SquareTilemap<MapData> = Tilemap<MapData>;
+pub type SquareTilemap = Tilemap<SquareMapData>;
