@@ -1,8 +1,10 @@
 use bevy::{
     math::{vec2, UVec2},
-    reflect::Reflect,
     utils::hashbrown::HashMap,
 };
+
+#[cfg(not(feature = "reflect"))]
+use bevy::prelude::Reflect;
 
 #[cfg(feature = "reflect")]
 use bevy::ecs::reflect::ReflectMapEntities;
