@@ -4,12 +4,21 @@ use bevy::{
     utils::hashbrown::HashMap,
 };
 
+#[cfg(feature = "reflect")]
+use bevy::ecs::reflect::ReflectMapEntities;
+#[cfg(feature = "reflect")]
+use bevy::prelude::{Reflect, ReflectComponent};
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::map::{
     chunk::{Chunk, ChunkPos, LayerType},
     MapData, MapLayer,
 };
 
 #[derive(Reflect, Clone, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "reflect", reflect(Component, Hash, MapEntities))]
 pub struct SquareMapDataConversionSettings {
     pub max_chunk_dimensions: UVec2,
 }
@@ -23,6 +32,9 @@ impl Default for SquareMapDataConversionSettings {
 }
 
 #[derive(Default, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "reflect", derive(Reflect))]
+#[cfg_attr(feature = "reflect", reflect(Component, Hash, MapEntities))]
 pub struct SquareMapData {
     pub conversion_settings: SquareMapDataConversionSettings,
 }
