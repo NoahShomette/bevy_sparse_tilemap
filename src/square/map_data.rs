@@ -18,7 +18,7 @@ use crate::map::{
 
 #[derive(Reflect, Clone, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "reflect", reflect(Component, Hash))]
+#[cfg_attr(feature = "reflect", reflect(Hash))]
 pub struct SquareMapDataConversionSettings {
     pub max_chunk_dimensions: UVec2,
 }
@@ -34,7 +34,7 @@ impl Default for SquareMapDataConversionSettings {
 #[derive(Default, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "reflect", derive(Reflect))]
-#[cfg_attr(feature = "reflect", reflect(Component, Hash))]
+#[cfg_attr(feature = "reflect", reflect(Hash))]
 pub struct SquareMapData {
     pub conversion_settings: SquareMapDataConversionSettings,
 }
