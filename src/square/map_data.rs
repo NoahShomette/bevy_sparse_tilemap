@@ -9,7 +9,7 @@ use crate::map::{
     MapData, MapLayer,
 };
 
-#[derive(Reflect, Clone)]
+#[derive(Reflect, Clone, Hash)]
 pub struct SquareMapDataConversionSettings {
     pub max_chunk_dimensions: UVec2,
 }

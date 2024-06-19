@@ -50,7 +50,7 @@ pub enum MapType {
 }
 
 pub trait MapData {
-    type ConversionSettings: Send + Sync + Default + Reflect + Clone;
+    type ConversionSettings: Send + Sync + Default + Reflect + Clone + Hash;
     fn into_chunk_pos(cell: Cell, conversion_settings: &Self::ConversionSettings) -> ChunkPos;
 
     fn conversion_settings(&self) -> &Self::ConversionSettings;

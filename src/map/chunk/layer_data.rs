@@ -15,7 +15,7 @@ pub enum LayerType<T> {
 /// Trait that controls access to a specific layer of a tilemap.
 pub trait ChunkLayer<T>: Hash + MapEntities {
     /// Information needed to convert a [`Cell`] into a [`ChunkCell`].
-    type ConversionSettings: Send + Sync + Default + Reflect + Clone + Copy;
+    type ConversionSettings: Send + Sync + Default + Reflect + Clone + Copy + Hash;
 
     /// Converts a [`Cell`] into a [`ChunkCell`]
     fn into_chunk_cell(cell: Cell, conversion_settings: &Self::ConversionSettings) -> ChunkCell;
