@@ -65,13 +65,10 @@ pub struct ChunkMapSpawned;
 fn startup(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
     let map_size = UVec2::new(15000, 15000);
+    let max_chunk_size = UVec2::new(100, 100);
 
     let chunk_conversion_settings = SquareChunkLayerConversionSettings {
-        max_chunk_dimensions: UVec2 { x: 5, y: 5 },
-    };
-
-    let map_conversion_settings = SquareMapDataConversionSettings {
-        max_chunk_dimensions: UVec2 { x: 5, y: 5 },
+        max_chunk_size: max_chunk_size,
     };
 
     let tilemap_builder =
@@ -79,14 +76,13 @@ fn startup(mut commands: Commands) {
             TilemapLayer::new_dense_from_vecs(generate_random_tile_data(map_size.clone())),
             SquareMapData {
                 conversion_settings: SquareMapDataConversionSettings {
-                    max_chunk_dimensions: UVec2::new(100, 100),
+                    max_chunk_dimensions: max_chunk_size,
                 },
             },
             ChunkSettings {
-                max_chunk_size: UVec2::new(100, 100),
+                max_chunk_size: max_chunk_size,
             },
             chunk_conversion_settings,
-            map_conversion_settings,
         );
 
     let Some(tilemap) = tilemap_builder.spawn_tilemap(&mut commands) else {

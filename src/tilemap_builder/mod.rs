@@ -123,7 +123,6 @@ where
         map_type: MapType,
         chunk_settings: ChunkSettings,
         chunk_conversion_settings: MapChunk::ConversionSettings,
-        map_conversion_settings: MapType::ConversionSettings,
     ) -> Self {
         let dimensions = layer_data.dimensions();
         TilemapBuilder::<TileData, MapLayers, MapChunk, MapType> {
@@ -131,9 +130,9 @@ where
             layer_info: Default::default(),
             chunk_settings,
             map_size: dimensions,
+            map_conversion_settings: map_type.conversion_settings().clone(),
             map_type,
             chunk_conversion_settings,
-            map_conversion_settings,
             td_phantom: Default::default(),
             ml_phantom: Default::default(),
             ct_phantom: PhantomData::default(),

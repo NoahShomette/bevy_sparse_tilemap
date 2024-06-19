@@ -9,7 +9,7 @@ use crate::map::{
     MapData, MapLayer,
 };
 
-#[derive(Reflect)]
+#[derive(Reflect, Clone)]
 pub struct SquareMapDataConversionSettings {
     pub max_chunk_dimensions: UVec2,
 }
@@ -330,7 +330,7 @@ mod tests {
         };
 
         let chunk_conversion_settings = SquareChunkLayerConversionSettings {
-            max_chunk_dimensions: UVec2 { x: 10, y: 10 },
+            max_chunk_size: UVec2 { x: 10, y: 10 },
         };
 
         // Tests basic i32

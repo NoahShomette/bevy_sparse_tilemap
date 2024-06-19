@@ -15,13 +15,13 @@ use serde::{Deserialize, Serialize};
 #[derive(Reflect, Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct SquareChunkLayerConversionSettings {
-    pub max_chunk_dimensions: UVec2,
+    pub max_chunk_size: UVec2,
 }
 
 impl Default for SquareChunkLayerConversionSettings {
     fn default() -> Self {
         Self {
-            max_chunk_dimensions: UVec2 { x: 10, y: 10 },
+            max_chunk_size: UVec2 { x: 10, y: 10 },
         }
     }
 }
@@ -70,11 +70,11 @@ where
         cell: lettuces::cell::Cell,
         conversion_settings: &Self::ConversionSettings,
     ) -> ChunkCell {
-        let chunk_pos_x = cell.x / conversion_settings.max_chunk_dimensions.x as i32;
-        let chunk_pos_y = cell.y / conversion_settings.max_chunk_dimensions.y as i32;
+        let chunk_pos_x = cell.x / conversion_settings.max_chunk_size.x as i32;
+        let chunk_pos_y = cell.y / conversion_settings.max_chunk_size.y as i32;
         ChunkCell::new(
-            cell.x - (chunk_pos_x * conversion_settings.max_chunk_dimensions.x as i32),
-            cell.y - (chunk_pos_y * conversion_settings.max_chunk_dimensions.y as i32),
+            cell.x - (chunk_pos_x * conversion_settings.max_chunk_size.x as i32),
+            cell.y - (chunk_pos_y * conversion_settings.max_chunk_size.y as i32),
         )
     }
 

@@ -340,11 +340,7 @@ mod tests {
         ];
 
         let chunk_conversion_settings = SquareChunkLayerConversionSettings {
-            max_chunk_dimensions: UVec2 { x: 5, y: 5 },
-        };
-
-        let map_conversion_settings = SquareMapDataConversionSettings {
-            max_chunk_dimensions: UVec2 { x: 5, y: 5 },
+            max_chunk_size: UVec2 { x: 5, y: 5 },
         };
 
         let tilemap_builder = TilemapBuilder::<
@@ -363,7 +359,6 @@ mod tests {
                 max_chunk_size: UVec2::new(5, 5),
             },
             chunk_conversion_settings,
-            map_conversion_settings,
         );
 
         let Some(map_entity) = tilemap_builder.spawn_tilemap(&mut commands) else {
@@ -439,11 +434,7 @@ mod tests {
         hashmap.insert(Cell::new(31, 31), (31, 31));
 
         let chunk_conversion_settings = SquareChunkLayerConversionSettings {
-            max_chunk_dimensions: UVec2 { x: 5, y: 5 },
-        };
-
-        let map_conversion_settings = SquareMapDataConversionSettings {
-            max_chunk_dimensions: UVec2 { x: 5, y: 5 },
+            max_chunk_size: UVec2 { x: 5, y: 5 },
         };
 
         let tilemap_builder = TilemapBuilder::<
@@ -462,7 +453,6 @@ mod tests {
                 max_chunk_size: UVec2::new(5, 5),
             },
             chunk_conversion_settings,
-            map_conversion_settings,
         );
 
         let Some(map_entity) = tilemap_builder.spawn_tilemap(&mut commands) else {
@@ -522,11 +512,7 @@ mod tests {
         ];
 
         let chunk_conversion_settings = SquareChunkLayerConversionSettings {
-            max_chunk_dimensions: UVec2 { x: 5, y: 5 },
-        };
-
-        let map_conversion_settings = SquareMapDataConversionSettings {
-            max_chunk_dimensions: UVec2 { x: 5, y: 5 },
+            max_chunk_size: UVec2 { x: 5, y: 5 },
         };
 
         let tilemap_builder = SquareTilemapBuilder::<(i32, i32), MapLayers>::new(
@@ -540,7 +526,6 @@ mod tests {
                 max_chunk_size: UVec2::new(5, 5),
             },
             chunk_conversion_settings,
-            map_conversion_settings,
         );
 
         let Some(map_entity) = tilemap_builder.spawn_tilemap(&mut commands) else {

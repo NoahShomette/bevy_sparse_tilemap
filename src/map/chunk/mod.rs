@@ -391,7 +391,7 @@ mod tests {
             UVec2 { x: 2, y: 2 },
             crate::map::chunk::LayerType::Dense(vecs),
             SquareChunkLayerConversionSettings {
-                max_chunk_dimensions: UVec2 { x: 2, y: 2 },
+                max_chunk_size: UVec2 { x: 2, y: 2 },
             },
         );
         assert_eq!(
@@ -412,7 +412,7 @@ mod tests {
             bevy::math::UVec2 { x: 2, y: 2 },
             crate::map::chunk::LayerType::Dense(vecs),
             SquareChunkLayerConversionSettings {
-                max_chunk_dimensions: UVec2 { x: 2, y: 2 },
+                max_chunk_size: UVec2 { x: 2, y: 2 },
             },
         );
         assert_eq!(
@@ -439,7 +439,7 @@ mod tests {
             bevy::math::UVec2 { x: 2, y: 2 },
             crate::map::chunk::LayerType::Dense(vecs),
             SquareChunkLayerConversionSettings {
-                max_chunk_dimensions: UVec2 { x: 2, y: 2 },
+                max_chunk_size: UVec2 { x: 2, y: 2 },
             },
         );
         assert_eq!(
@@ -470,7 +470,7 @@ mod tests {
             bevy::math::UVec2 { x: 2, y: 2 },
             crate::map::chunk::LayerType::Dense(vecs),
             SquareChunkLayerConversionSettings {
-                max_chunk_dimensions: UVec2 { x: 2, y: 2 },
+                max_chunk_size: UVec2 { x: 2, y: 2 },
             },
         );
     }
@@ -487,7 +487,7 @@ mod tests {
             bevy::math::UVec2 { x: 2, y: 2 },
             crate::map::chunk::LayerType::Dense(vecs),
             SquareChunkLayerConversionSettings {
-                max_chunk_dimensions: UVec2 { x: 2, y: 2 },
+                max_chunk_size: UVec2 { x: 2, y: 2 },
             },
         );
         assert_eq!(
@@ -510,7 +510,7 @@ mod tests {
             bevy::math::UVec2 { x: 2, y: 2 },
             crate::map::chunk::LayerType::Dense(vecs),
             SquareChunkLayerConversionSettings {
-                max_chunk_dimensions: UVec2 { x: 2, y: 2 },
+                max_chunk_size: UVec2 { x: 2, y: 2 },
             },
         );
         chunk.set_tile_data(MapLayers::Main.to_bits(), ChunkCell::new(0, 0), (50, 60));
@@ -531,7 +531,7 @@ mod tests {
             bevy::math::UVec2 { x: 2, y: 2 },
             crate::map::chunk::LayerType::Sparse(HashMap::new()),
             SquareChunkLayerConversionSettings {
-                max_chunk_dimensions: UVec2 { x: 2, y: 2 },
+                max_chunk_size: UVec2 { x: 2, y: 2 },
             },
         );
         chunk.add_layer(
@@ -553,7 +553,7 @@ mod tests {
             bevy::math::UVec2 { x: 2, y: 2 },
             crate::map::chunk::LayerType::Sparse(HashMap::new()),
             SquareChunkLayerConversionSettings {
-                max_chunk_dimensions: UVec2 { x: 2, y: 2 },
+                max_chunk_size: UVec2 { x: 2, y: 2 },
             },
         );
         let vecs = vec![

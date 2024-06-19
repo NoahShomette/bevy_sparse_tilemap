@@ -46,12 +46,8 @@ correctly in the world.
 
  fn spawn_tilemap(mut commands: Commands) {
      let chunk_conversion_settings = SquareChunkLayerConversionSettings {
-         max_chunk_dimensions: UVec2 { x: 100, y: 100 },
+         max_chunk_size: UVec2 { x: 100, y: 100 },
      };
-
-    let map_conversion_settings = SquareMapDataConversionSettings {
-        max_chunk_dimensions: UVec2 { x: 100, y: 100 },
-    };
 
      let mut tilemap_builder = TilemapBuilder::<TileData, MapLayers, SquareChunkLayer<TileData>, SquareMapData,
          >::new(
@@ -65,7 +61,6 @@ correctly in the world.
              max_chunk_size: UVec2::new(100, 100),
          },
          chunk_conversion_settings,
-         map_conversion_settings,
      );
 
      let Some(tilemap) = tilemap_builder.spawn_tilemap(&mut commands)
