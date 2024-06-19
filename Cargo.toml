@@ -14,10 +14,12 @@ members = ["crates/bst_map_layer_derive"]
 resolver = "2"
 
 [features]
-default = ["serde", "lettuces/bevy"]
+default = ["serde", "lettuces/bevy", "hex", "square"]
 # bevy_fast_tilemap = ["dep:bevy_fast_tilemap"]
 serde = ["dep:serde", "serde/default", "bevy/serialize", "lettuces/serde"]
 reflect = ["lettuces/bevy_reflect"]
+hex = []
+square = []
 
 [badges]
 maintenance = { status = "actively-developed" }
@@ -34,7 +36,7 @@ opt-level = 3
 bevy = { version = "0.13", default-features = false, features = [] }
 bst_map_layer_derive = { version = "0.1.0" }
 thiserror = "1.0.44"
-lettuces = { version = "0.0.2" }
+lettuces = { version = "0.0.6" }
 
 # Optional feature based dependencies
 # Rendering with bevy_fast_tilemap - Removed for now since we dont actually do anything with it

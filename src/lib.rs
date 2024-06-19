@@ -1,6 +1,9 @@
-#[doc = include_str!("../README.md")]
+#![doc = include_str!("../README.md")]
+#[cfg(feature = "hex")]
+pub mod hex;
 pub mod integrations;
 pub mod map;
+#[cfg(feature = "square")]
 pub mod square;
 pub mod tilemap_builder;
 pub mod tilemap_manager;
