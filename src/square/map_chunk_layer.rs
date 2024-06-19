@@ -1,6 +1,6 @@
 //! This module is for data structures to store and interact with a Chunks Layers.
 
-use crate::map::chunk::{ChunkCell, LayerType, ChunkLayer};
+use crate::map::chunk::{ChunkCell, ChunkLayer, LayerType};
 use bevy::ecs::entity::{EntityMapper, MapEntities};
 use bevy::ecs::reflect::ReflectMapEntities;
 use bevy::math::UVec2;
@@ -12,7 +12,7 @@ use std::hash::{Hash, Hasher};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Reflect, Clone, Copy)]
+#[derive(Reflect, Clone, Copy, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct SquareChunkLayerConversionSettings {
     pub max_chunk_size: UVec2,
