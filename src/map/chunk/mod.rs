@@ -105,13 +105,6 @@ impl Chunks {
             .cloned()
     }
 
-    /// Gets the chunk entity for the given [`Cell`] if it exists
-    pub fn get_chunk_from_cell(&self, cell: Cell) -> Option<Entity> {
-        let chunk_pos_x: usize = (cell.x / self.max_chunk_size.x as i32) as usize;
-        let chunk_pos_y: usize = (cell.y / self.max_chunk_size.y as i32) as usize;
-        self.chunk_entities.get(chunk_pos_y, chunk_pos_x).cloned()
-    }
-
     /// Returns the x and y count of chunks
     pub fn chunk_counts(&self) -> UVec2 {
         UVec2::new(

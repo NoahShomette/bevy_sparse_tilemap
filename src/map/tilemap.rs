@@ -21,6 +21,8 @@ use lettuces::cell::Cell;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+use super::MapData;
+
 /// The data structure containing information for each chunk.
 ///
 /// Each tile should only contain the bare minimum data needed for you to figure out what it is. Any
@@ -30,26 +32,42 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "reflect", derive(Reflect))]
 #[cfg_attr(feature = "reflect", reflect(Component, Hash, MapEntities))]
-pub struct Tilemap {
+pub struct Tilemap<Map>
+where
+    Map: MapData,
+{
     /// Struct containing [`Entity`] mappings to the [`Chunk`](super::chunk::Chunk)s that hold tile data
     chunks: Chunks,
+    chunk_pos_conversion_settings: Map::ConversionSettings,
 }
 
-impl MapEntities for Tilemap {
+impl<Map> MapEntities for Tilemap<Map>
+where
+    Map: MapData,
+{
     fn map_entities<M: EntityMapper>(&mut self, entity_mapper: &mut M) {
         self.chunks.map_entities(entity_mapper);
     }
 }
 
-impl Tilemap {
+impl<Map> Tilemap<Map>
+where
+    Map: MapData,
+{
     /// Creates a new [`Tilemap`] out of the given chunks struct
-    pub fn new(chunks: Chunks) -> Tilemap {
-        Self { chunks }
+    pub fn new(chunks: Chunks, conversion_settings: Map::ConversionSettings) -> Tilemap<Map> {
+        Self {
+            chunks,
+            chunk_pos_conversion_settings: conversion_settings,
+        }
     }
 
-    /// Gets the chunk entity that has the tile_info for the given TilePos
-    pub fn get_chunk_for_tile_pos(&self, cell: Cell) -> Option<Entity> {
-        self.chunks.get_chunk_from_cell(cell)
+    /// Gets the chunk entity that contains this cell
+    pub fn get_chunk_for_cell(&self, cell: Cell) -> Option<Entity> {
+        self.get_chunk(Map::into_chunk_pos(
+            cell,
+            &self.chunk_pos_conversion_settings,
+        ))
     }
 
     /// Gets the chunk entity that has the tile_info for the given TilePos

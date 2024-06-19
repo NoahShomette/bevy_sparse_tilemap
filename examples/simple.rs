@@ -58,6 +58,10 @@ fn spawn_map(mut commands: Commands) {
         max_chunk_dimensions: UVec2 { x: 5, y: 5 },
     };
 
+    let map_conversion_settings = SquareMapDataConversionSettings {
+        max_chunk_dimensions: UVec2 { x: 5, y: 5 },
+    };
+
     let mut tilemap_builder =
         TilemapBuilder::<TileData, MapLayers, SquareChunkLayer<TileData>, SquareMapData>::new(
             TilemapLayer::new_dense_from_vecs(generate_random_tile_data(map_size.clone())),
@@ -70,6 +74,7 @@ fn spawn_map(mut commands: Commands) {
                 max_chunk_size: UVec2::new(100, 100),
             },
             chunk_conversion_settings,
+            map_conversion_settings,
         );
     tilemap_builder.add_layer(
         TilemapLayer::new_dense_from_vecs(generate_random_tile_data(map_size.clone())),

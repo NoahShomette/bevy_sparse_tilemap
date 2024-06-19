@@ -49,6 +49,10 @@ correctly in the world.
          max_chunk_dimensions: UVec2 { x: 100, y: 100 },
      };
 
+    let map_conversion_settings = SquareMapDataConversionSettings {
+        max_chunk_dimensions: UVec2 { x: 100, y: 100 },
+    };
+
      let mut tilemap_builder = TilemapBuilder::<TileData, MapLayers, SquareChunkLayer<TileData>, SquareMapData,
          >::new(
          TilemapLayer::new_dense_default(10000, 10000),
@@ -61,6 +65,7 @@ correctly in the world.
              max_chunk_size: UVec2::new(100, 100),
          },
          chunk_conversion_settings,
+         map_conversion_settings,
      );
 
      let Some(tilemap) = tilemap_builder.spawn_tilemap(&mut commands)
@@ -77,32 +82,33 @@ param that has a bevy of helper functions to make accessing, editing, and intera
 that much easier.
 
 ```rust
- # use bevy::prelude::{Commands, Entity, Reflect, UVec2};
- # use bevy_sparse_tilemap::map::chunk::ChunkSettings;
- # use bevy_sparse_tilemap::tilemap_builder::tilemap_layer_builder::TilemapLayer;
- # use bevy_sparse_tilemap::tilemap_builder::TilemapBuilder;
- # use bevy_sparse_tilemap::tilemap_manager::TilemapManager;
- # use lettuces::cell::Cell;
- # use bst_map_layer_derive::MapLayer;
-     use bevy_sparse_tilemap::square::map_chunk_layer::{
- SquareChunkLayer,
+# use bevy::prelude::{Commands, Entity, Reflect, UVec2};
+# use bevy_sparse_tilemap::map::chunk::ChunkSettings;
+# use bevy_sparse_tilemap::tilemap_builder::tilemap_layer_builder::TilemapLayer;
+# use bevy_sparse_tilemap::tilemap_builder::TilemapBuilder;
+# use bevy_sparse_tilemap::tilemap_manager::TilemapManager;
+# use lettuces::cell::Cell;
+# use bst_map_layer_derive::MapLayer;
+# use bevy_sparse_tilemap::square::{
+    map_data::SquareMapData,
+ map_chunk_layer::SquareChunkLayer,
  };
- #
- # #[derive(MapLayer, Clone, Copy, Default)]
- # pub enum MapLayers {
- #     #[default]
- #     Main,
- #     Secondary,
- # }
- #
- # #[derive(Default, Copy, Clone, Reflect, Hash)]
- # struct TileData(u8, u8);
- #
+#
+# #[derive(MapLayer, Clone, Copy, Default)]
+# pub enum MapLayers {
+#     #[default]
+#     Main,
+#     Secondary,
+# }
+#
+# #[derive(Default, Copy, Clone, Reflect, Hash)]
+# struct TileData(u8, u8);
+#
 
- fn access(tilemap_manager: TilemapManager<TileData, MapLayers, SquareChunkLayer<TileData>>, mut commands: Commands) {
+ fn access(tilemap_manager: TilemapManager<TileData, MapLayers, SquareChunkLayer<TileData>, SquareMapData>, mut commands: Commands) {
      let tile_data = tilemap_manager.get_tile_data(Cell::new(9,16)).unwrap();
 
-     //
+     // do something with the tilemap access here
 
  }
 ```

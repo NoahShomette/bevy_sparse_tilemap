@@ -10,7 +10,7 @@ pub mod map_data;
 
 /// Type alias for [`TilemapManager`] for the built in square map types.
 pub type SquareTilemapManager<'w, 's, TileData, MapLayers> =
-    TilemapManager<'w, 's, TileData, MapLayers, SquareChunkLayer<TileData>>;
+    TilemapManager<'w, 's, TileData, MapLayers, SquareChunkLayer<TileData>, SquareMapData>;
 
 /// Type alias for [`Chunk`] using the built in [`SquareChunkLayer`]
 pub type SquareChunk<TileData> = Chunk<SquareChunkLayer<TileData>, TileData>;

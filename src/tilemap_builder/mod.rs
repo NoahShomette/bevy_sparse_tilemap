@@ -22,6 +22,7 @@ where
     map_size: UVec2,
     map_type: MapType,
     chunk_conversion_settings: Chunk::ConversionSettings,
+    map_conversion_settings: MapType::ConversionSettings,
     // All phantom data below
     td_phantom: PhantomData<TileData>,
     ml_phantom: PhantomData<MapLayers>,
@@ -46,10 +47,11 @@ where
             },
             map_size: Default::default(),
             map_type: Default::default(),
+            chunk_conversion_settings: MapChunk::ConversionSettings::default(),
+            map_conversion_settings: MapType::ConversionSettings::default(),
             td_phantom: PhantomData::default(),
             ml_phantom: PhantomData::default(),
             ct_phantom: PhantomData::default(),
-            chunk_conversion_settings: MapChunk::ConversionSettings::default(),
         }
     }
 }
@@ -59,7 +61,7 @@ where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayers: MapLayer + Clone + Copy + Send + Sync + 'static,
     MapChunk: ChunkLayer<TileData> + Send + Sync + 'static + Default,
-    MapType: MapData + Default,
+    MapType: MapData + Default + Send + Sync + 'static,
 {
     /// Converts all the data from the [`SystemParam`] and spawns the
     /// tilemap returning the Tilemaps [`Entity`]
@@ -106,7 +108,10 @@ where
         );
 
         let tilemap_entity = commands
-            .spawn(Tilemap::new(chunks))
+            .spawn(Tilemap::<MapType>::new(
+                chunks,
+                self.map_conversion_settings,
+            ))
             .push_children(flattened_chunk_entities.as_slice())
             .id();
         Some(tilemap_entity)
@@ -118,6 +123,7 @@ where
         map_type: MapType,
         chunk_settings: ChunkSettings,
         chunk_conversion_settings: MapChunk::ConversionSettings,
+        map_conversion_settings: MapType::ConversionSettings,
     ) -> Self {
         let dimensions = layer_data.dimensions();
         TilemapBuilder::<TileData, MapLayers, MapChunk, MapType> {
@@ -126,10 +132,11 @@ where
             chunk_settings,
             map_size: dimensions,
             map_type,
+            chunk_conversion_settings,
+            map_conversion_settings,
             td_phantom: Default::default(),
             ml_phantom: Default::default(),
             ct_phantom: PhantomData::default(),
-            chunk_conversion_settings,
         }
     }
 
