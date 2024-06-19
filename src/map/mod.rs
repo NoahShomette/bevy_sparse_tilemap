@@ -49,7 +49,7 @@ pub enum MapType {
     Hexagon,
 }
 
-pub trait MapData {
+pub trait MapData: Hash {
     type ConversionSettings: Send + Sync + Default + Reflect + Clone + Hash;
     fn into_chunk_pos(cell: Cell, conversion_settings: &Self::ConversionSettings) -> ChunkPos;
 

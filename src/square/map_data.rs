@@ -22,7 +22,7 @@ impl Default for SquareMapDataConversionSettings {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Hash)]
 pub struct SquareMapData {
     pub conversion_settings: SquareMapDataConversionSettings,
 }
