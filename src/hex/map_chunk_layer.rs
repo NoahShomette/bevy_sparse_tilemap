@@ -80,13 +80,13 @@ impl<T> ChunkLayer<T> for HexChunkLayer<T>
 where
     T: Hash + Clone + Copy + Sized + Default + Send + Sync,
 {
-    type ConversionSettings = HexChunkLayerConversionSettings;
+    type ConversionInfo = HexChunkLayerConversionSettings;
 
     type MapSettings = HexagonMapSettings;
 
     fn into_chunk_cell(
         cell: lettuces::cell::Cell,
-        conversion_settings: &Self::ConversionSettings,
+        conversion_settings: &Self::ConversionInfo,
     ) -> ChunkCell {
         let chunk_pos_x = cell.x / conversion_settings.max_chunk_size.x as i32;
         let chunk_pos_y = cell.y / conversion_settings.max_chunk_size.y as i32;

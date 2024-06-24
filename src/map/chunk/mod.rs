@@ -131,7 +131,7 @@ where
     /// Chunk tile data mapped to layers
     pub data: HashMap<u32, Chunklayer>,
     /// Conversion Settings used to convert a cell into a position in the chunk
-    pub cell_conversion_settings: Chunklayer::ConversionSettings,
+    pub cell_conversion_settings: Chunklayer::ConversionInfo,
     /// Map Settings that defines information on the map
     pub map_settings: Chunklayer::MapSettings,
     #[cfg_attr(feature = "reflect", reflect(ignore))]
@@ -172,7 +172,7 @@ where
         Self {
             chunk_pos: Default::default(),
             data: HashMap::default(),
-            cell_conversion_settings: MapChunk::ConversionSettings::default(),
+            cell_conversion_settings: MapChunk::ConversionInfo::default(),
             map_settings: MapChunk::MapSettings::default(),
             ph: Default::default(),
         }
@@ -189,7 +189,7 @@ where
         chunk_pos: ChunkPos,
         chunk_size: UVec2,
         tile_data: LayerType<TileData>,
-        cell_conversion_settings: MapChunk::ConversionSettings,
+        cell_conversion_settings: MapChunk::ConversionInfo,
         map_settings: MapChunk::MapSettings,
     ) -> Chunk<MapChunk, TileData> {
         let mut hashmap = HashMap::new();

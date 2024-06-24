@@ -21,7 +21,7 @@ where
     chunk_settings: ChunkSettings,
     map_size: UVec2,
     map_type: MapType,
-    chunk_conversion_settings: Chunk::ConversionSettings,
+    chunk_conversion_settings: Chunk::ConversionInfo,
     map_settings: Chunk::MapSettings,
     map_conversion_settings: MapType::ChunkPosConversionInfo,
     // All phantom data below
@@ -48,7 +48,7 @@ where
             },
             map_size: Default::default(),
             map_type: Default::default(),
-            chunk_conversion_settings: MapChunk::ConversionSettings::default(),
+            chunk_conversion_settings: MapChunk::ConversionInfo::default(),
             map_settings: MapChunk::MapSettings::default(),
             map_conversion_settings: MapType::ChunkPosConversionInfo::default(),
             td_phantom: PhantomData::default(),
@@ -125,7 +125,7 @@ where
         layer_data: TilemapLayer<TileData>,
         map_type: MapType,
         chunk_settings: ChunkSettings,
-        chunk_conversion_settings: MapChunk::ConversionSettings,
+        chunk_conversion_settings: MapChunk::ConversionInfo,
         map_settings: MapChunk::MapSettings,
     ) -> Self {
         let dimensions = layer_data.dimensions();
@@ -134,7 +134,7 @@ where
             layer_info: Default::default(),
             chunk_settings,
             map_size: dimensions,
-            map_conversion_settings: map_type.conversion_settings().clone(),
+            map_conversion_settings: map_type.conversion_info().clone(),
             map_type,
             chunk_conversion_settings,
             map_settings,
@@ -158,7 +158,7 @@ where
     pub fn create_new_chunks_from_layer(
         &mut self,
         tilemap_layer: &TilemapLayer<TileData>,
-        chunk_conversion_settings: MapChunk::ConversionSettings,
+        chunk_conversion_settings: MapChunk::ConversionInfo,
         map_settings: MapChunk::MapSettings,
         max_chunk_size: UVec2,
     ) -> Vec<Vec<Chunk<MapChunk, TileData>>>
@@ -216,7 +216,7 @@ where
                 }
                 for (cell, tile_data) in data.iter() {
                     let chunk_pos =
-                        MapType::into_chunk_pos(*cell, self.map_type.conversion_settings());
+                        MapType::into_chunk_pos(*cell, self.map_type.conversion_info());
                     let chunk = &mut chunks[chunk_pos.y() as usize][chunk_pos.x() as usize];
                     chunk.set_tile_data(
                         map_layer,

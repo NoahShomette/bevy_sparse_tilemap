@@ -51,7 +51,7 @@ impl MapData for SquareMapData {
         )
     }
 
-    fn conversion_settings(&self) -> &Self::ChunkPosConversionInfo {
+    fn conversion_info(&self) -> &Self::ChunkPosConversionInfo {
         &self.conversion_settings
     }
 
@@ -87,7 +87,7 @@ impl MapData for SquareMapData {
         &self,
         data: &Vec<Vec<TileData>>,
         max_chunk_size: UVec2,
-        chunk_conversion_settings: MapChunk::ConversionSettings,
+        chunk_conversion_settings: MapChunk::ConversionInfo,
         map_settings: MapChunk::MapSettings,
     ) -> Vec<Vec<crate::map::chunk::Chunk<MapChunk, TileData>>>
     where
@@ -130,7 +130,7 @@ impl MapData for SquareMapData {
         data: &bevy::utils::HashMap<lettuces::cell::Cell, TileData>,
         map_size: UVec2,
         max_chunk_size: UVec2,
-        chunk_conversion_settings: MapChunk::ConversionSettings,
+        chunk_conversion_settings: MapChunk::ConversionInfo,
         map_settings: MapChunk::MapSettings,
     ) -> Vec<Vec<crate::map::chunk::Chunk<MapChunk, TileData>>>
     where

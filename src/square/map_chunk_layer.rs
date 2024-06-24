@@ -67,12 +67,12 @@ impl<T> ChunkLayer<T> for SquareChunkLayer<T>
 where
     T: Hash + Clone + Copy + Sized + Default + Send + Sync,
 {
-    type ConversionSettings = SquareChunkLayerConversionSettings;
+    type ConversionInfo = SquareChunkLayerConversionSettings;
     type MapSettings = ();
 
     fn into_chunk_cell(
         cell: lettuces::cell::Cell,
-        conversion_settings: &Self::ConversionSettings,
+        conversion_settings: &Self::ConversionInfo,
     ) -> ChunkCell {
         let chunk_pos_x = cell.x / conversion_settings.max_chunk_size.x as i32;
         let chunk_pos_y = cell.y / conversion_settings.max_chunk_size.y as i32;

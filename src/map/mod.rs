@@ -3,10 +3,9 @@
 pub mod chunk;
 mod tilemap;
 
-use bevy::{ecs::component::Component, math::UVec2, prelude::Entity, utils::HashMap};
+use bevy::{math::UVec2, prelude::Entity, utils::HashMap};
 use chunk::{Chunk, ChunkLayer, ChunkPos};
 use lettuces::cell::Cell;
-use serde::{Deserialize, Serialize};
 use std::hash::Hash;
 pub use tilemap::Tilemap;
 
@@ -40,7 +39,7 @@ pub trait MapData: Hash {
     fn into_chunk_pos(cell: Cell, conversion_settings: &Self::ChunkPosConversionInfo) -> ChunkPos;
 
     /// Returns the [`Self::ChunkPosConversionInfo`]
-    fn conversion_settings(&self) -> &Self::ChunkPosConversionInfo;
+    fn conversion_info(&self) -> &Self::ChunkPosConversionInfo;
 
     /// Function that breaks a [`Vec<Vec<TileData>>`] down into a [`Vec<Vec<TileData>>`] of the given [`ChunkPos`] chunks data
     fn break_data_vecs_down_into_chunk_data<TileData>(
@@ -63,7 +62,7 @@ pub trait MapData: Hash {
         &self,
         data: &Vec<Vec<TileData>>,
         max_chunk_size: UVec2,
-        chunk_conversion_settings: MapChunk::ConversionSettings,
+        chunk_conversion_settings: MapChunk::ConversionInfo,
         map_settings: MapChunk::MapSettings,
     ) -> Vec<Vec<Chunk<MapChunk, TileData>>>
     where
@@ -77,7 +76,7 @@ pub trait MapData: Hash {
         data: &HashMap<Cell, TileData>,
         map_size: UVec2,
         max_chunk_size: UVec2,
-        chunk_conversion_settings: MapChunk::ConversionSettings,
+        chunk_conversion_settings: MapChunk::ConversionInfo,
         map_settings: MapChunk::MapSettings,
     ) -> Vec<Vec<Chunk<MapChunk, TileData>>>
     where
@@ -95,7 +94,7 @@ pub trait MapData: Hash {
         MapChunk: ChunkLayer<TileData> + Send + Sync + 'static + Default,
     {
         for (cell, entity) in entities.iter() {
-            let chunk_pos = Self::into_chunk_pos(*cell, self.conversion_settings());
+            let chunk_pos = Self::into_chunk_pos(*cell, self.conversion_info());
             let chunk = &mut chunks[chunk_pos.y() as usize][chunk_pos.x() as usize];
             chunk.set_tile_entity(
                 map_layer,
