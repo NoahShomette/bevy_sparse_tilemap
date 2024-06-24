@@ -23,7 +23,7 @@ where
     map_type: MapType,
     chunk_conversion_settings: Chunk::ConversionSettings,
     map_settings: Chunk::MapSettings,
-    map_conversion_settings: MapType::ConversionSettings,
+    map_conversion_settings: MapType::ChunkPosConversionInfo,
     // All phantom data below
     td_phantom: PhantomData<TileData>,
     ml_phantom: PhantomData<MapLayers>,
@@ -50,7 +50,7 @@ where
             map_type: Default::default(),
             chunk_conversion_settings: MapChunk::ConversionSettings::default(),
             map_settings: MapChunk::MapSettings::default(),
-            map_conversion_settings: MapType::ConversionSettings::default(),
+            map_conversion_settings: MapType::ChunkPosConversionInfo::default(),
             td_phantom: PhantomData::default(),
             ml_phantom: PhantomData::default(),
             ct_phantom: PhantomData::default(),

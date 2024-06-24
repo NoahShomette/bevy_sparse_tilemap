@@ -39,11 +39,11 @@ pub struct SquareMapData {
 }
 
 impl MapData for SquareMapData {
-    type ConversionSettings = SquareMapDataConversionSettings;
+    type ChunkPosConversionInfo = SquareMapDataConversionSettings;
 
     fn into_chunk_pos(
         cell: lettuces::cell::Cell,
-        conversion_settings: &Self::ConversionSettings,
+        conversion_settings: &Self::ChunkPosConversionInfo,
     ) -> crate::map::chunk::ChunkPos {
         ChunkPos::new(
             cell.x / conversion_settings.max_chunk_dimensions.x as i32,
@@ -51,7 +51,7 @@ impl MapData for SquareMapData {
         )
     }
 
-    fn conversion_settings(&self) -> &Self::ConversionSettings {
+    fn conversion_settings(&self) -> &Self::ChunkPosConversionInfo {
         &self.conversion_settings
     }
 

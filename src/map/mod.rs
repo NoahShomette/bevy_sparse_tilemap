@@ -33,24 +33,16 @@ where
     }
 }
 
-/// Specifices the type of map
-#[derive(Component, Default, Hash, Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "reflect", derive(Reflect))]
-#[cfg_attr(feature = "reflect", reflect(Hash, Component))]
-pub enum MapType {
-    #[default]
-    Square,
-    Hexagon,
-}
-
+/// Trait that must be implemented for a map type. It consists of mandatory functions used in building new maps as well as implementing a way to convert a given [`Cell`] into a chunk pos
 pub trait MapData: Hash {
-    type ConversionSettings: Send + Sync + Default + Clone + Hash;
-    fn into_chunk_pos(cell: Cell, conversion_settings: &Self::ConversionSettings) -> ChunkPos;
+    /// Information needed to convert a [`Cell`] into a chunk position.
+    type ChunkPosConversionInfo: Send + Sync + Default + Clone + Hash;
+    fn into_chunk_pos(cell: Cell, conversion_settings: &Self::ChunkPosConversionInfo) -> ChunkPos;
 
-    fn conversion_settings(&self) -> &Self::ConversionSettings;
+    /// Returns the [`Self::ChunkPosConversionInfo`]
+    fn conversion_settings(&self) -> &Self::ChunkPosConversionInfo;
 
-    /// Function that breaks a [`Vec<Vec<TileData>>`] down into a [`Vec<Vec<TileData>>`] of a specific chunks data
+    /// Function that breaks a [`Vec<Vec<TileData>>`] down into a [`Vec<Vec<TileData>>`] of the given [`ChunkPos`] chunks data
     fn break_data_vecs_down_into_chunk_data<TileData>(
         &self,
         data: &Vec<Vec<TileData>>,
@@ -61,6 +53,12 @@ pub trait MapData: Hash {
         TileData: Clone + Copy + Sized + Default + Send + Sync + 'static;
 
     /// Function that breaks a [`Vec<Vec<TileData>>`] into [`Vec<Vec<Chunk<TileData>>>`]
+    ///
+    /// This function should:
+    /// - Create new chunks
+    /// - Insert the correct data for each chunk
+    /// - Return a [`Vec<Vec<Chunk<TileData>>>`] where each chunk is correctly positioned.
+    ///     - Correctly positioned meaning chunk 0:0 contains the tiles for cell positions 0:0 -> 0:max chunk size and max chunk size:0 and so forth for each chunk in order
     fn break_data_vecs_into_chunks<TileData, MapChunk>(
         &self,
         data: &Vec<Vec<TileData>>,
@@ -86,6 +84,7 @@ pub trait MapData: Hash {
         TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
         MapChunk: ChunkLayer<TileData> + Send + Sync + 'static + Default;
 
+    /// Adds the given hashmap of entities to the map
     fn add_entities_to_layer<TileData, MapChunk>(
         &self,
         map_layer: u32,

@@ -38,7 +38,7 @@ where
 {
     /// Struct containing [`Entity`] mappings to the [`Chunk`](super::chunk::Chunk)s that hold tile data
     chunks: Chunks,
-    chunk_pos_conversion_settings: Map::ConversionSettings,
+    chunk_pos_conversion_settings: Map::ChunkPosConversionInfo,
 }
 
 impl<Map> MapEntities for Tilemap<Map>
@@ -55,7 +55,7 @@ where
     Map: MapData,
 {
     /// Creates a new [`Tilemap`] out of the given chunks struct
-    pub fn new(chunks: Chunks, conversion_settings: Map::ConversionSettings) -> Tilemap<Map> {
+    pub fn new(chunks: Chunks, conversion_settings: Map::ChunkPosConversionInfo) -> Tilemap<Map> {
         Self {
             chunks,
             chunk_pos_conversion_settings: conversion_settings,
