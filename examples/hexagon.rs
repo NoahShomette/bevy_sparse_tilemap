@@ -3,7 +3,8 @@ use bevy::asset::{Assets, Handle};
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::math::UVec2;
 use bevy::prelude::{
-    apply_deferred, default, App, Camera2dBundle, Commands, Entity, IntoSystemConfigs, PluginGroup, Reflect, RegularPolygon, Res, ResMut, Resource, Startup, Window, WindowPlugin
+    apply_deferred, default, App, Camera2dBundle, Commands, Entity, IntoSystemConfigs, PluginGroup,
+    Reflect, RegularPolygon, Res, ResMut, Resource, Startup, Window, WindowPlugin,
 };
 use bevy::render::color::Color;
 use bevy::render::mesh::Mesh;
@@ -16,13 +17,15 @@ use bevy_sparse_tilemap::hex::map_chunk_layer::{
     HexChunkLayerConversionSettings, HexagonMapSettings,
 };
 use bevy_sparse_tilemap::hex::map_data::{HexMapData, HexMapDataConversionInfo};
-use bevy_sparse_tilemap::hex::{HexTilemapBuilder, HexTilemapManager};
+use bevy_sparse_tilemap::hex::{
+    hex_offset_from_orientation, hex_rotation, HexTilemapBuilder, HexTilemapManager,
+};
 use bevy_sparse_tilemap::map::chunk::ChunkSettings;
 
 use bevy_sparse_tilemap::tilemap_builder::tilemap_layer_builder::TilemapLayer;
 use bst_map_layer_derive::MapLayer;
 use lettuces::cell::Cell;
-use lettuces::{Hex, HexLayout, HexOrientation, Quat, Vec2, Vec3};
+use lettuces::{Hex, HexLayout, HexOrientation, Vec2, Vec3};
 use rand::Rng;
 
 fn main() {
@@ -47,7 +50,9 @@ fn main() {
         .run();
 }
 
+/// Change circumference to change the hexagon tiles sizes
 const HEXAGON_CIRCUMFERENCE: f32 = 15.0;
+/// Change orientation to see the difference between flat and pointy topped hexagons
 const HEXAGON_ORIENTATION: HexOrientation = HexOrientation::Pointy;
 
 #[derive(MapLayer, Clone, Copy, Default)]
@@ -156,10 +161,7 @@ fn spawn_tiles(
         for x in 0..dimensions.x as i32 {
             let axial_coords = Cell::from_offset_coordinates(
                 [x, y],
-                match HEXAGON_ORIENTATION {
-                    HexOrientation::Pointy => lettuces::OffsetHexMode::OddRows,
-                    HexOrientation::Flat => lettuces::OffsetHexMode::OddColumns,
-                },
+                hex_offset_from_orientation(HEXAGON_ORIENTATION),
             );
 
             let color = Color::hsl(360. * x as f32 / y as f32, 0.95, 0.7);
@@ -174,12 +176,7 @@ fn spawn_tiles(
                             .hex_to_world_pos(Hex::new(axial_coords.x, axial_coords.y))
                             .extend(1.0),
                     )
-                    .with_rotation(Quat::from_rotation_z(
-                        match HEXAGON_ORIENTATION {
-                            HexOrientation::Pointy => 0.0,
-                            HexOrientation::Flat => 0.52359878,
-                        },
-                    )),
+                    .with_rotation(hex_rotation(HEXAGON_ORIENTATION)),
                     ..default()
                 })
                 .id();
@@ -205,13 +202,8 @@ fn change_random_tile_color(
     let x = rng.gen_range(0..dimensions.x as i32);
     let y = rng.gen_range(0..dimensions.y as i32);
 
-    let axial_coords = Cell::from_offset_coordinates(
-        [x, y],
-        match HEXAGON_ORIENTATION {
-            HexOrientation::Pointy => lettuces::OffsetHexMode::OddRows,
-            HexOrientation::Flat => lettuces::OffsetHexMode::OddColumns,
-        },
-    );
+    let axial_coords =
+        Cell::from_offset_coordinates([x, y], hex_offset_from_orientation(HEXAGON_ORIENTATION));
 
     let Some(color_handle) = colors.0.get(rng.gen_range(0..colors.0.len())) else {
         return;
