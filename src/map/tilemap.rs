@@ -32,42 +32,26 @@ use super::MapData;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "reflect", derive(Reflect))]
 #[cfg_attr(feature = "reflect", reflect(Component, Hash, MapEntities))]
-pub struct Tilemap<Map>
-where
-    Map: MapData,
-{
+pub struct Tilemap {
     /// Struct containing [`Entity`] mappings to the [`Chunk`](super::chunk::Chunk)s that hold tile data
     chunks: Chunks,
-    chunk_pos_conversion_settings: Map::ChunkPosConversionInfo,
 }
 
-impl<Map> MapEntities for Tilemap<Map>
-where
-    Map: MapData,
-{
+impl MapEntities for Tilemap {
     fn map_entities<M: EntityMapper>(&mut self, entity_mapper: &mut M) {
         self.chunks.map_entities(entity_mapper);
     }
 }
 
-impl<Map> Tilemap<Map>
-where
-    Map: MapData,
-{
+impl Tilemap {
     /// Creates a new [`Tilemap`] out of the given chunks struct
-    pub fn new(chunks: Chunks, conversion_settings: Map::ChunkPosConversionInfo) -> Tilemap<Map> {
-        Self {
-            chunks,
-            chunk_pos_conversion_settings: conversion_settings,
-        }
+    pub fn new(chunks: Chunks) -> Tilemap {
+        Self { chunks }
     }
 
     /// Gets the chunk entity that contains this cell
-    pub fn get_chunk_for_cell(&self, cell: Cell) -> Option<Entity> {
-        self.get_chunk(Map::into_chunk_pos(
-            cell,
-            &self.chunk_pos_conversion_settings,
-        ))
+    pub fn get_chunk_for_cell(&self, cell: Cell, map: &impl MapData) -> Option<Entity> {
+        self.get_chunk(map.into_chunk_pos(cell))
     }
 
     /// Gets the chunk entity that has the tile_info for the given TilePos

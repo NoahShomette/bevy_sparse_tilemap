@@ -329,43 +329,6 @@ where
     }
 }
 
-/// Settings for the chunks in a [`Chunks`] object
-#[derive(Hash)]
-#[cfg_attr(feature = "reflect", derive(Reflect))]
-#[cfg_attr(feature = "reflect", reflect(Hash))]
-pub struct ChunkSettings {
-    /// The max size that a chunk can be
-    pub max_chunk_size: UVec2,
-}
-
-impl Default for ChunkSettings {
-    fn default() -> Self {
-        Self {
-            max_chunk_size: UVec2::new(25, 25),
-        }
-    }
-}
-
-impl ChunkSettings {
-    pub fn new(x: u32, y: u32) -> ChunkSettings {
-        Self {
-            max_chunk_size: UVec2::new(x, y),
-        }
-    }
-
-    pub fn max_chunk_size(&self) -> UVec2 {
-        self.max_chunk_size
-    }
-
-    pub fn max_chunk_size_x(&self) -> u32 {
-        self.max_chunk_size.x
-    }
-
-    pub fn max_chunk_size_y(&self) -> u32 {
-        self.max_chunk_size.y
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use crate::square::map_chunk_layer::{SquareChunkLayer, SquareChunkLayerConversionSettings};

@@ -1,6 +1,6 @@
 pub mod tilemap_layer_builder;
 
-use crate::map::chunk::{Chunk, ChunkLayer, ChunkSettings, Chunks, LayerType};
+use crate::map::chunk::{Chunk, ChunkLayer, Chunks, LayerType};
 use crate::map::{MapData, MapLayer, Tilemap};
 use crate::tilemap_builder::tilemap_layer_builder::TilemapLayer;
 use bevy::prelude::{BuildChildren, Commands, Entity, UVec2};
@@ -18,12 +18,10 @@ where
 {
     main_layer: Option<TilemapLayer<TileData>>,
     layer_info: HashMap<u32, TilemapLayer<TileData>>,
-    chunk_settings: ChunkSettings,
     map_size: UVec2,
     map_type: MapType,
     chunk_conversion_settings: Chunk::ConversionInfo,
     map_settings: Chunk::MapSettings,
-    map_conversion_settings: MapType::ChunkPosConversionInfo,
     // All phantom data below
     td_phantom: PhantomData<TileData>,
     ml_phantom: PhantomData<MapLayers>,
@@ -36,21 +34,16 @@ where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayers: MapLayer + Clone + Copy + Send + Sync + 'static,
     MapChunk: ChunkLayer<TileData> + Send + Sync + 'static + Default,
-
     MapType: MapData + Default,
 {
     fn default() -> Self {
         Self {
             main_layer: None,
             layer_info: Default::default(),
-            chunk_settings: ChunkSettings {
-                max_chunk_size: UVec2::new(50, 50),
-            },
             map_size: Default::default(),
             map_type: Default::default(),
             chunk_conversion_settings: MapChunk::ConversionInfo::default(),
             map_settings: MapChunk::MapSettings::default(),
-            map_conversion_settings: MapType::ChunkPosConversionInfo::default(),
             td_phantom: PhantomData::default(),
             ml_phantom: PhantomData::default(),
             ct_phantom: PhantomData::default(),
@@ -77,13 +70,13 @@ where
             &layer,
             self.chunk_conversion_settings,
             self.map_settings,
-            self.chunk_settings.max_chunk_size,
+            self.map_type.max_chunk_size(),
         );
 
         let layers: Vec<(u32, TilemapLayer<TileData>)> = self.layer_info.drain().collect();
 
         for (id, layer) in layers {
-            self.add_layer_to_chunks(id, &mut chunks, &layer, self.chunk_settings.max_chunk_size)
+            self.add_layer_to_chunks(id, &mut chunks, &layer, self.map_type.max_chunk_size())
         }
 
         let mut chunk_entities: Vec<Vec<Entity>> = vec![];
@@ -107,14 +100,11 @@ where
 
         let chunks = Chunks::new(
             Chunks::new_chunk_entity_grid(chunk_entities),
-            self.chunk_settings.max_chunk_size,
+            self.map_type.max_chunk_size(),
         );
 
         let tilemap_entity = commands
-            .spawn(Tilemap::<MapType>::new(
-                chunks,
-                self.map_conversion_settings,
-            ))
+            .spawn(Tilemap::new(chunks))
             .push_children(flattened_chunk_entities.as_slice())
             .id();
         Some(tilemap_entity)
@@ -124,7 +114,6 @@ where
     pub fn new(
         layer_data: TilemapLayer<TileData>,
         map_type: MapType,
-        chunk_settings: ChunkSettings,
         chunk_conversion_settings: MapChunk::ConversionInfo,
         map_settings: MapChunk::MapSettings,
     ) -> Self {
@@ -132,9 +121,7 @@ where
         TilemapBuilder::<TileData, MapLayers, MapChunk, MapType> {
             main_layer: Some(layer_data),
             layer_info: Default::default(),
-            chunk_settings,
             map_size: dimensions,
-            map_conversion_settings: map_type.conversion_info().clone(),
             map_type,
             chunk_conversion_settings,
             map_settings,
@@ -215,8 +202,7 @@ where
                     }
                 }
                 for (cell, tile_data) in data.iter() {
-                    let chunk_pos =
-                        MapType::into_chunk_pos(*cell, self.map_type.conversion_info());
+                    let chunk_pos = self.map_type.into_chunk_pos(*cell);
                     let chunk = &mut chunks[chunk_pos.y() as usize][chunk_pos.x() as usize];
                     chunk.set_tile_data(
                         map_layer,
@@ -249,7 +235,6 @@ where
 mod tests {
     use crate as bevy_sparse_tilemap;
 
-    use crate::map::chunk::ChunkSettings;
     use crate::tilemap_builder::tilemap_layer_builder::TilemapLayer;
     use crate::tilemap_builder::TilemapBuilder;
     use crate::tilemap_manager::TilemapManager;

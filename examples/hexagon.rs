@@ -16,11 +16,10 @@ use bevy::DefaultPlugins;
 use bevy_sparse_tilemap::hex::map_chunk_layer::{
     HexChunkLayerConversionSettings, HexagonMapSettings,
 };
-use bevy_sparse_tilemap::hex::map_data::{HexMapData, HexMapDataConversionInfo};
+use bevy_sparse_tilemap::hex::map_data::HexMapData;
 use bevy_sparse_tilemap::hex::{
     hex_offset_from_orientation, hex_rotation, HexTilemapBuilder, HexTilemapManager,
 };
-use bevy_sparse_tilemap::map::chunk::ChunkSettings;
 
 use bevy_sparse_tilemap::tilemap_builder::tilemap_layer_builder::TilemapLayer;
 use bst_map_layer_derive::MapLayer;
@@ -84,11 +83,6 @@ fn spawn_map(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
     let mut tilemap_builder = HexTilemapBuilder::new(
         TilemapLayer::new_dense_from_vecs(generate_random_tile_data(map_size.clone())),
         HexMapData {
-            conversion_info: HexMapDataConversionInfo {
-                max_chunk_dimensions: max_chunk_size,
-            },
-        },
-        ChunkSettings {
             max_chunk_size: max_chunk_size,
         },
         chunk_conversion_settings,

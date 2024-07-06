@@ -5,11 +5,11 @@ use bevy::prelude::*;
 use bevy::window::PresentMode;
 use bevy::DefaultPlugins;
 use bevy_fast_tilemap::{FastTileMapPlugin, Map, MapBundleManaged};
-use bevy_sparse_tilemap::map::chunk::{Chunk, ChunkSettings};
+use bevy_sparse_tilemap::map::chunk::Chunk;
 use bevy_sparse_tilemap::square::map_chunk_layer::{
     SquareChunkLayer, SquareChunkLayerConversionSettings,
 };
-use bevy_sparse_tilemap::square::map_data::{SquareMapData, SquareMapDataConversionSettings};
+use bevy_sparse_tilemap::square::map_data::SquareMapData;
 use bevy_sparse_tilemap::tilemap_builder::tilemap_layer_builder::TilemapLayer;
 use bevy_sparse_tilemap::tilemap_builder::TilemapBuilder;
 use bevy_sparse_tilemap::SparseTilemapPlugin;
@@ -74,14 +74,7 @@ fn startup(mut commands: Commands) {
     let tilemap_builder =
         TilemapBuilder::<TileData, MapLayers, SquareChunkLayer<TileData>, SquareMapData>::new(
             TilemapLayer::new_dense_from_vecs(generate_random_tile_data(map_size.clone())),
-            SquareMapData {
-                conversion_settings: SquareMapDataConversionSettings {
-                    max_chunk_dimensions: max_chunk_size,
-                },
-            },
-            ChunkSettings {
-                max_chunk_size: max_chunk_size,
-            },
+            SquareMapData { max_chunk_size },
             chunk_conversion_settings,
             (),
         );

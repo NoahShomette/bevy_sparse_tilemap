@@ -3,7 +3,11 @@
 pub mod chunk;
 mod tilemap;
 
-use bevy::{math::UVec2, prelude::Entity, utils::HashMap};
+use bevy::{
+    math::UVec2,
+    prelude::{Component, Entity},
+    utils::HashMap,
+};
 use chunk::{Chunk, ChunkLayer, ChunkPos};
 use lettuces::cell::Cell;
 use std::hash::Hash;
@@ -33,13 +37,10 @@ where
 }
 
 /// Trait that must be implemented for a map type. It consists of mandatory functions used in building new maps as well as implementing a way to convert a given [`Cell`] into a chunk pos
-pub trait MapData: Hash {
-    /// Information needed to convert a [`Cell`] into a chunk position.
-    type ChunkPosConversionInfo: Send + Sync + Default + Clone + Hash;
-    fn into_chunk_pos(cell: Cell, conversion_settings: &Self::ChunkPosConversionInfo) -> ChunkPos;
+pub trait MapData: Hash + Component {
+    fn into_chunk_pos(&self, cell: Cell) -> ChunkPos;
 
-    /// Returns the [`Self::ChunkPosConversionInfo`]
-    fn conversion_info(&self) -> &Self::ChunkPosConversionInfo;
+    fn max_chunk_size(&self) -> UVec2;
 
     /// Function that breaks a [`Vec<Vec<TileData>>`] down into a [`Vec<Vec<TileData>>`] of the given [`ChunkPos`] chunks data
     fn break_data_vecs_down_into_chunk_data<TileData>(
@@ -94,7 +95,7 @@ pub trait MapData: Hash {
         MapChunk: ChunkLayer<TileData> + Send + Sync + 'static + Default,
     {
         for (cell, entity) in entities.iter() {
-            let chunk_pos = Self::into_chunk_pos(*cell, self.conversion_info());
+            let chunk_pos = self.into_chunk_pos(*cell);
             let chunk = &mut chunks[chunk_pos.y() as usize][chunk_pos.x() as usize];
             chunk.set_tile_entity(
                 map_layer,

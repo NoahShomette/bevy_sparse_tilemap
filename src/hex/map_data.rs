@@ -1,5 +1,6 @@
 use bevy::{
     math::{vec2, UVec2},
+    prelude::Component,
     utils::hashbrown::HashMap,
 };
 
@@ -15,45 +16,25 @@ use crate::map::{
     MapData, MapLayer,
 };
 
-#[derive(Clone, Hash)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "reflect", reflect(Hash))]
-pub struct HexMapDataConversionInfo {
-    pub max_chunk_dimensions: UVec2,
-}
-
-impl Default for HexMapDataConversionInfo {
-    fn default() -> Self {
-        Self {
-            max_chunk_dimensions: UVec2 { x: 10, y: 10 },
-        }
-    }
-}
-
 /// [`MapData`] implementation for a hexagonal map. Uses essentially the same logic as for a square map. Prior to map construction the map is in offset coordinates
-#[derive(Default, Hash)]
+#[derive(Default, Hash, Component)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "reflect", derive(Reflect))]
 #[cfg_attr(feature = "reflect", reflect(Hash))]
 pub struct HexMapData {
-    pub conversion_info: HexMapDataConversionInfo,
+    pub max_chunk_size: UVec2,
 }
 
 impl MapData for HexMapData {
-    type ChunkPosConversionInfo = HexMapDataConversionInfo;
-
-    fn into_chunk_pos(
-        cell: lettuces::cell::Cell,
-        conversion_info: &Self::ChunkPosConversionInfo,
-    ) -> crate::map::chunk::ChunkPos {
+    fn into_chunk_pos(&self, cell: lettuces::cell::Cell) -> crate::map::chunk::ChunkPos {
         ChunkPos::new(
-            cell.x / conversion_info.max_chunk_dimensions.x as i32,
-            cell.y / conversion_info.max_chunk_dimensions.y as i32,
+            cell.x / self.max_chunk_size.x as i32,
+            cell.y / self.max_chunk_size.y as i32,
         )
     }
 
-    fn conversion_info(&self) -> &Self::ChunkPosConversionInfo {
-        &self.conversion_info
+    fn max_chunk_size(&self) -> UVec2 {
+        self.max_chunk_size
     }
 
     fn break_data_vecs_down_into_chunk_data<TileData>(
@@ -176,7 +157,7 @@ impl MapData for HexMapData {
         }
 
         for (cell, tile_data) in data.iter() {
-            let chunk_pos = Self::into_chunk_pos(*cell, &self.conversion_info);
+            let chunk_pos = self.into_chunk_pos(*cell);
             let chunk = &mut chunks[chunk_pos.y() as usize][chunk_pos.x() as usize];
             chunk.set_tile_data(
                 map_layer.to_bits(),

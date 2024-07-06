@@ -25,9 +25,18 @@ where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayers: MapLayer + Default + Clone + Copy + Send + Sync + 'static,
     MapChunk: ChunkLayer<TileData> + Send + Sync + 'static + Default,
-    Map: MapData + Send + Sync + 'static + Default,
+    Map: MapData,
 {
-    tilemap_query: Query<'w, 's, (Entity, &'static mut Tilemap<Map>, Option<&'static Children>)>,
+    tilemap_query: Query<
+        'w,
+        's,
+        (
+            Entity,
+            &'static mut Tilemap,
+            &'static Map,
+            Option<&'static Children>,
+        ),
+    >,
     chunk_query: Query<
         'w,
         's,
@@ -48,7 +57,7 @@ where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
     MapLayers: MapLayer + Default + Clone + Copy + Send + Sync + 'static,
     MapChunk: ChunkLayer<TileData> + Send + Sync + 'static + Default,
-    Map: MapData + Send + Sync + 'static + Default,
+    Map: MapData,
 {
     /// Returns the [`Tilemap`] entity that this tilemap manager is set to affect
     pub fn tilemap_entity(&self) -> Option<Entity> {
@@ -77,7 +86,7 @@ where
 
     /// Returns the [`Tilemap`]s dimensions.
     pub fn dimensions(&self) -> Result<UVec2, TilemapManagerError> {
-        let (_, tilemap, _) = self.tilemap_query.get(
+        let (_, tilemap, _map, _) = self.tilemap_query.get(
             self.map_entity
                 .deref()
                 .0
@@ -123,7 +132,7 @@ where
 
     /// Gets the tile data for the given [`TilePos`] if it exists.
     pub fn get_tile_data(&self, cell: Cell) -> Result<TileData, TilemapManagerError> {
-        let (_, tilemap, _) = self.tilemap_query.get(
+        let (_, tilemap, map, _) = self.tilemap_query.get(
             self.map_entity
                 .deref()
                 .0
@@ -131,7 +140,7 @@ where
         )?;
         let (_, chunk, _) = self.chunk_query.get(
             tilemap
-                .get_chunk_for_cell(cell)
+                .get_chunk_for_cell(cell, map)
                 .ok_or(TilemapManagerError::InvalidChunkPos)?,
         )?;
         chunk
@@ -148,7 +157,7 @@ where
         tile_data: TileData,
         cell: Cell,
     ) -> Result<(), TilemapManagerError> {
-        let (_, tilemap, _) = self.tilemap_query.get(
+        let (_, tilemap, map, _) = self.tilemap_query.get(
             self.map_entity
                 .deref()
                 .0
@@ -156,7 +165,7 @@ where
         )?;
         let (_, mut chunk, _) = self.chunk_query.get_mut(
             tilemap
-                .get_chunk_for_cell(cell)
+                .get_chunk_for_cell(cell, map)
                 .ok_or(TilemapManagerError::InvalidChunkPos)?,
         )?;
         Ok(chunk.set_tile_data_from_cell(self.layer_index.0.to_bits(), cell, tile_data))
@@ -164,7 +173,7 @@ where
 
     /// Gets the [`Entity`] for the given [`TilePos`] if it exists.
     pub fn get_tile_entity(&self, cell: Cell) -> Result<Entity, TilemapManagerError> {
-        let (_, tilemap, _) = self.tilemap_query.get(
+        let (_, tilemap, map, _) = self.tilemap_query.get(
             self.map_entity
                 .deref()
                 .0
@@ -172,7 +181,7 @@ where
         )?;
         let (_, chunk, _) = self.chunk_query.get(
             tilemap
-                .get_chunk_for_cell(cell)
+                .get_chunk_for_cell(cell, map)
                 .ok_or(TilemapManagerError::InvalidChunkPos)?,
         )?;
         chunk
@@ -189,7 +198,7 @@ where
         cell: Cell,
         entity: Entity,
     ) -> Result<(), TilemapManagerError> {
-        let (_, tilemap, _) = self.tilemap_query.get(
+        let (_, tilemap, map, _) = self.tilemap_query.get(
             self.map_entity
                 .deref()
                 .0
@@ -197,7 +206,7 @@ where
         )?;
         let (_, mut chunk, _) = self.chunk_query.get_mut(
             tilemap
-                .get_chunk_for_cell(cell)
+                .get_chunk_for_cell(cell, map)
                 .ok_or(TilemapManagerError::InvalidChunkPos)?,
         )?;
         let chunk_conversion_settings = chunk.cell_conversion_settings;
@@ -213,7 +222,7 @@ where
     /// Gets the [`Entity`] for the given [`TilePos`] if it exists or spawns one and returns that if it
     /// doesn't.
     pub fn get_or_spawn_tile_entity(&mut self, cell: Cell) -> Result<Entity, TilemapManagerError> {
-        let (_, tilemap, _) = self.tilemap_query.get(
+        let (_, tilemap, map, _) = self.tilemap_query.get(
             self.map_entity
                 .deref()
                 .0
@@ -221,7 +230,7 @@ where
         )?;
         let (_, mut chunk, _) = self.chunk_query.get_mut(
             tilemap
-                .get_chunk_for_cell(cell)
+                .get_chunk_for_cell(cell, map)
                 .ok_or(TilemapManagerError::InvalidChunkPos)?,
         )?;
 
@@ -242,7 +251,7 @@ where
     /// Gets the [`Entity`] for the given [`TilePos`] if it exists or spawns one and returns that if it
     /// doesn't.
     pub fn despawn_tile_entity(&mut self, cell: Cell) -> Result<(), TilemapManagerError> {
-        let (_, tilemap, _) = self.tilemap_query.get(
+        let (_, tilemap, map, _) = self.tilemap_query.get(
             self.map_entity
                 .deref()
                 .0
@@ -250,7 +259,7 @@ where
         )?;
         let (_, chunk, _) = self.chunk_query.get(
             tilemap
-                .get_chunk_for_cell(cell)
+                .get_chunk_for_cell(cell, map)
                 .ok_or(TilemapManagerError::InvalidChunkPos)?,
         )?;
 
@@ -269,7 +278,7 @@ where
         &self,
         chunk_pos: ChunkPos,
     ) -> Result<&Chunk<MapChunk, TileData>, TilemapManagerError> {
-        let (_, tilemap, _) = self.tilemap_query.get(
+        let (_, tilemap, _map, _) = self.tilemap_query.get(
             self.map_entity
                 .deref()
                 .0
@@ -288,10 +297,9 @@ where
 mod tests {
     use crate as bevy_sparse_tilemap;
     use crate::square::map_chunk_layer::{SquareChunkLayer, SquareChunkLayerConversionSettings};
-    use crate::square::map_data::{SquareMapData, SquareMapDataConversionSettings};
+    use crate::square::map_data::SquareMapData;
     use crate::square::{SquareTilemapBuilder, SquareTilemapManager};
 
-    use crate::map::chunk::ChunkSettings;
     use crate::tilemap_builder::tilemap_layer_builder::TilemapLayer;
     use crate::tilemap_builder::TilemapBuilder;
     use crate::tilemap_manager::tilemap_manager::TilemapManager;
@@ -351,11 +359,6 @@ mod tests {
         >::new(
             TilemapLayer::new_dense_from_vecs(vecs),
             SquareMapData {
-                conversion_settings: SquareMapDataConversionSettings {
-                    max_chunk_dimensions: UVec2::new(5, 5),
-                },
-            },
-            ChunkSettings {
                 max_chunk_size: UVec2::new(5, 5),
             },
             chunk_conversion_settings,
@@ -446,11 +449,6 @@ mod tests {
         >::new(
             TilemapLayer::new_sparse_from_hashmap(32, 32, hashmap),
             SquareMapData {
-                conversion_settings: SquareMapDataConversionSettings {
-                    max_chunk_dimensions: UVec2::new(5, 5),
-                },
-            },
-            ChunkSettings {
                 max_chunk_size: UVec2::new(5, 5),
             },
             chunk_conversion_settings,
@@ -520,11 +518,6 @@ mod tests {
         let tilemap_builder = SquareTilemapBuilder::<(i32, i32), MapLayers>::new(
             TilemapLayer::new_dense_from_vecs(vecs),
             SquareMapData {
-                conversion_settings: SquareMapDataConversionSettings {
-                    max_chunk_dimensions: UVec2::new(5, 5),
-                },
-            },
-            ChunkSettings {
                 max_chunk_size: UVec2::new(5, 5),
             },
             chunk_conversion_settings,

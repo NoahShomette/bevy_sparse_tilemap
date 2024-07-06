@@ -1,5 +1,6 @@
 use bevy::{
     math::{vec2, UVec2},
+    prelude::Component,
     utils::hashbrown::HashMap,
 };
 
@@ -15,44 +16,24 @@ use crate::map::{
     MapData, MapLayer,
 };
 
-#[derive(Clone, Hash)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "reflect", reflect(Hash))]
-pub struct SquareMapDataConversionSettings {
-    pub max_chunk_dimensions: UVec2,
-}
-
-impl Default for SquareMapDataConversionSettings {
-    fn default() -> Self {
-        Self {
-            max_chunk_dimensions: UVec2 { x: 10, y: 10 },
-        }
-    }
-}
-
-#[derive(Default, Hash)]
+#[derive(Default, Hash, Component)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "reflect", derive(Reflect))]
 #[cfg_attr(feature = "reflect", reflect(Hash))]
 pub struct SquareMapData {
-    pub conversion_settings: SquareMapDataConversionSettings,
+    pub max_chunk_size: UVec2,
 }
 
 impl MapData for SquareMapData {
-    type ChunkPosConversionInfo = SquareMapDataConversionSettings;
-
-    fn into_chunk_pos(
-        cell: lettuces::cell::Cell,
-        conversion_settings: &Self::ChunkPosConversionInfo,
-    ) -> crate::map::chunk::ChunkPos {
+    fn into_chunk_pos(&self, cell: lettuces::cell::Cell) -> crate::map::chunk::ChunkPos {
         ChunkPos::new(
-            cell.x / conversion_settings.max_chunk_dimensions.x as i32,
-            cell.y / conversion_settings.max_chunk_dimensions.y as i32,
+            cell.x / self.max_chunk_size.x as i32,
+            cell.y / self.max_chunk_size.y as i32,
         )
     }
 
-    fn conversion_info(&self) -> &Self::ChunkPosConversionInfo {
-        &self.conversion_settings
+    fn max_chunk_size(&self) -> UVec2 {
+        self.max_chunk_size
     }
 
     fn break_data_vecs_down_into_chunk_data<TileData>(
@@ -175,7 +156,7 @@ impl MapData for SquareMapData {
         }
 
         for (cell, tile_data) in data.iter() {
-            let chunk_pos = Self::into_chunk_pos(*cell, &self.conversion_settings);
+            let chunk_pos = self.into_chunk_pos(*cell);
             let chunk = &mut chunks[chunk_pos.y() as usize][chunk_pos.x() as usize];
             chunk.set_tile_data(
                 map_layer.to_bits(),
@@ -193,7 +174,7 @@ mod tests {
     use crate as bevy_sparse_tilemap;
     use crate::map::MapData;
     use crate::square::map_chunk_layer::{SquareChunkLayer, SquareChunkLayerConversionSettings};
-    use crate::square::map_data::{SquareMapData, SquareMapDataConversionSettings};
+    use crate::square::map_data::SquareMapData;
 
     use crate::tilemap_builder::tilemap_layer_builder::TilemapLayer;
     use bevy::math::UVec2;
@@ -283,9 +264,7 @@ mod tests {
         let max_chunk_size_y = 5;
 
         let map_data = SquareMapData {
-            conversion_settings: SquareMapDataConversionSettings {
-                max_chunk_dimensions: UVec2 { x: 5, y: 5 },
-            },
+            max_chunk_size: UVec2 { x: 5, y: 5 },
         };
 
         let zero_zero = map_data.break_data_vecs_down_into_chunk_data(
@@ -339,9 +318,7 @@ mod tests {
     #[test]
     fn test_hashmap_breakdown() {
         let map_data = SquareMapData {
-            conversion_settings: SquareMapDataConversionSettings {
-                max_chunk_dimensions: UVec2 { x: 10, y: 10 },
-            },
+            max_chunk_size: UVec2 { x: 10, y: 10 },
         };
 
         let chunk_conversion_settings = SquareChunkLayerConversionSettings {
