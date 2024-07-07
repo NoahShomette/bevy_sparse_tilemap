@@ -4,9 +4,9 @@ use map_data::HexMapData;
 
 use crate::{map::chunk::Chunk, tilemap_builder::TilemapBuilder, tilemap_manager::TilemapManager};
 
-/// Implements [`ChunkLayer`] for a hexagonal map
+/// Implements [`ChunkLayer`](crate::map::chunk::ChunkLayer) for a hexagonal map
 pub mod map_chunk_layer;
-/// Implements [`MapData`] for a hexagonal map
+/// Implements [`MapData`](crate::map::MapData) for a hexagonal map
 pub mod map_data;
 
 /// Type alias for [`TilemapManager`] for the built in hexagon map types.

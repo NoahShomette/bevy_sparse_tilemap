@@ -24,7 +24,7 @@ pub trait ChunkLayer<TileData>: Hash + MapEntities {
     /// Converts a [`Cell`] into a [`ChunkCell`]
     fn into_chunk_cell(cell: Cell, chunk_settings: &Self::ChunkSettings) -> ChunkCell;
 
-    /// Creates a new chunk out of the given [`LayerType`]. The [`TileData`] contained in the layer is only the data that this chunk should contain.
+    /// Creates a new chunk out of the given [`ChunkLayerType`]. The `TileData` contained in the layer is only the data that this chunk should contain.
     fn new(
         layer_type: ChunkLayerType<TileData>,
         chunk_dimensions: UVec2,
@@ -34,13 +34,13 @@ pub trait ChunkLayer<TileData>: Hash + MapEntities {
     /// Returns the dimensions of this specific chunk
     fn get_chunk_dimensions(&self) -> UVec2;
 
-    /// Gets mutable access to the [`TileData`] at the given [`ChunkCell`]
+    /// Gets mutable access to the `TileData` at the given [`ChunkCell`]
     fn get_tile_data_mut(&mut self, chunk_cell: ChunkCell) -> Option<&mut TileData>;
 
-    /// Gets immutable access to the [`TileData`] at the given [`ChunkCell`]
+    /// Gets immutable access to the `TileData` at the given [`ChunkCell`]
     fn get_tile_data(&self, chunk_cell: ChunkCell) -> Option<&TileData>;
 
-    /// Sets the [`TileData`] at the given [`ChunkCell`]
+    /// Sets the `TileData` at the given [`ChunkCell`]
     fn set_tile_data(&mut self, chunk_cell: ChunkCell, tile_data: TileData);
 
     /// Gets the [`Entity`] at the given [`ChunkCell`]

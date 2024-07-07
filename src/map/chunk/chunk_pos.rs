@@ -9,10 +9,10 @@ use bevy::ecs::reflect::ReflectMapEntities;
 #[cfg(feature = "reflect")]
 use bevy::prelude::{Reflect, ReflectComponent};
 
-/// The position of a [`Chunk`] in the [`Tilemap`]
+/// The position of a [`Chunk`](crate::map::chunk::Chunk) in the [`Tilemap`](crate::map::Tilemap)
 ///
-/// A [`TilePos`] can be converted into a [`ChunkPos`] using [`TilePos::into_chunk_pos`]
-/// The position of a tile in a [`Tilemap`]
+/// A [`Cell`] can be converted into a [`ChunkPos`] using [`MapData::into_chunk_pos`](crate::map::MapData::into_chunk_pos())
+/// The position of a tile in a [`Tilemap`](crate::map::Tilemap)
 #[derive(Default, Eq, Hash, PartialEq, Copy, Clone, Debug, Component)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "reflect", derive(Reflect))]

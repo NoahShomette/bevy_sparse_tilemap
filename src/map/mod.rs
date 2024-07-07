@@ -1,18 +1,4 @@
-//! # `Bevy Sparse Tilemap`
-//! 
 //! This module contains the features that drive the actual map.
-//! 
-//! ---
-//! 
-//! - [`chunk`]
-//! 
-//! Contains the traits and structures that drive the chunk storage of each map.
-//! 
-//! - [`tilemap`]
-//! 
-//! Contains the actual [`Tilemap`] struct which is the highest level storage of a map. See [`Tilemap`] for more details.
-//! 
-//! ---
 //! 
 //! ## Broad Overview
 //! 

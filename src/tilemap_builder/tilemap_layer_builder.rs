@@ -6,9 +6,9 @@ use bevy::prelude::{Bundle, Commands, Entity};
 use bevy::utils::hashbrown::HashMap;
 use lettuces::cell::Cell;
 
-/// An enum that holds all the data for a tilemap layer. This layer is only used in the [`TilemapBuilder`]
+/// An enum that holds all the data for a tilemap layer. This layer is only used in the [`TilemapBuilder`](crate::tilemap_builder::TilemapBuilder)
 ///
-/// Spawned tilemaps data is separated into [`Chunk`]s as [`ChunkLayerData`](crate::map::chunk::ChunkLayerData)
+/// Spawned tilemaps data is separated into [`Chunk`](crate::map::chunk::Chunk)s as [`ChunkLayerType`](crate::map::chunk::ChunkLayerType)
 #[derive(Clone, Debug)]
 pub enum TilemapLayer<T>
 where
@@ -118,7 +118,7 @@ where
         Self::Dense(y_vec, HashMap::default())
     }
 
-    /// Spawns an entity at the given [`TilePos`] with the given [`Bundle`]
+    /// Spawns an entity at the given [`Cell`] with the given [`Bundle`]
     pub fn spawn_entity_at_tile_pos<B: Bundle>(
         &mut self,
         cell: Cell,

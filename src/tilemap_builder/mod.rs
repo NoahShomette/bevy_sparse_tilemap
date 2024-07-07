@@ -1,6 +1,6 @@
 pub mod tilemap_layer_builder;
 
-use crate::map::chunk::{Chunk, ChunkLayer, Chunks, ChunkLayerType};
+use crate::map::chunk::{Chunk, ChunkLayer, ChunkLayerType, Chunks};
 use crate::map::{MapData, MapLayer, Tilemap};
 use crate::tilemap_builder::tilemap_layer_builder::TilemapLayer;
 use bevy::prelude::{BuildChildren, Commands, Entity, UVec2};
@@ -8,7 +8,7 @@ use bevy::utils::HashMap;
 use std::hash::Hash;
 use std::marker::PhantomData;
 
-/// Information to construct a Tilemap
+/// Helper struct used to construct a new tilemap.
 pub struct TilemapBuilder<TileData, MapLayers, Chunk, MapType>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
@@ -56,8 +56,7 @@ where
     MapChunk: ChunkLayer<TileData> + Send + Sync + 'static + Default,
     MapType: MapData + Default + Send + Sync + 'static,
 {
-    /// Converts all the data from the [`SystemParam`] and spawns the
-    /// tilemap returning the Tilemaps [`Entity`]
+    /// Converts all the data from the tilemap builder and spawns the tilemap returning the Tilemaps [`Entity`]
     #[must_use]
     pub fn spawn_tilemap(mut self, commands: &mut Commands) -> Option<Entity> {
         let Some(layer) = self.main_layer.take() else {
@@ -101,7 +100,7 @@ where
         );
 
         let tilemap_entity = commands
-            .spawn(Tilemap::new(chunks))
+            .spawn((Tilemap::new(chunks), self.map_type))
             .push_children(flattened_chunk_entities.as_slice())
             .id();
         Some(tilemap_entity)
@@ -126,7 +125,7 @@ where
         }
     }
 
-    /// Adds the given [`TilemapLayer`] to the tilemap keyed to the given [`MapLayers`]
+    /// Adds the given [`TilemapLayer`] to the tilemap keyed to the given [`MapLayer`]
     pub fn add_layer(&mut self, layer_data: TilemapLayer<TileData>, map_layer: MapLayers) {
         assert_eq!(
             self.map_size,

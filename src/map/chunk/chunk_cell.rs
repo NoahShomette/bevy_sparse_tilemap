@@ -9,9 +9,9 @@ use bevy::ecs::reflect::ReflectMapEntities;
 #[cfg(feature = "reflect")]
 use bevy::prelude::{Reflect, ReflectComponent};
 
-/// A position inside a [`Chunk`]
+/// A position inside a [`Chunk`](crate::map::chunk::Chunk)
 ///
-/// You can get a [`ChunkCell`] using the method [`MapChunkLayer::into_chunk_cell()`]
+/// You can get a [`ChunkCell`] using the method [`ChunkLayer::into_chunk_cell()`](crate::map::chunk::ChunkLayer::into_chunk_cell())
 #[derive(Default, Eq, Hash, PartialEq, Copy, Clone, Debug, Component)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "reflect", derive(Reflect))]

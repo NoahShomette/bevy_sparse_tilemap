@@ -1,5 +1,3 @@
-//! # `Chunk`
-//! 
 //! A chunk in BST is the meat and potatoes of the map. Access to tile data, entities, and updating information is all driven through the chunks of a map.
 
 mod chunk_cell;
@@ -231,10 +229,10 @@ where
         }
     }
 
-    /// Sets the tile at the given [`TilePos`] to the given tile data.
+    /// Sets the tile at the given [`Cell`] to the given tile data.
     ///
     /// # Panics
-    /// - If the [`ChunkTilePos`] does not exist in the [`Chunk`]
+    /// - If the [`ChunkCell`] does not exist in the [`Chunk`]
     /// - If the [`MapLayer`] does not exist in the chunk
     pub fn set_tile_data_from_cell(&mut self, map_layer: u32, cell: Cell, tile_data: TileData) {
         self.set_tile_data(
@@ -244,10 +242,10 @@ where
         )
     }
 
-    /// Sets the tile at the given [`TilePos`] to the given tile data.
+    /// Sets the tile at the given [`ChunkCell`] to the given tile data.
     ///
     /// # Panics
-    /// - If the [`ChunkTilePos`] does not exist in the [`Chunk`]
+    /// - If the [`ChunkCell`] does not exist in the [`Chunk`]
     /// - If the [`MapLayer`] does not exist in the chunk
     pub fn set_tile_data(&mut self, map_layer: u32, chunk_cell: ChunkCell, tile_data: TileData) {
         if let Some(tiles) = self.data.get_mut(&map_layer) {
@@ -272,7 +270,7 @@ where
         )
     }
 
-    /// Returns a clone of the TileData at the given [`ChunkTilePos`] if it exists
+    /// Returns a clone of the TileData at the given [`ChunkCell`] if it exists
     ///
     /// # Panics
     /// - If the [`MapLayer`] does not exist in the chunk
@@ -312,7 +310,7 @@ where
             .get_tile_entity(chunk_cell)
     }
 
-    /// Sets the [`Entity`] for the given [`ChunkTilePos`] to the given Entity.
+    /// Sets the [`Entity`] for the given [`Cell`] to the given Entity.
     pub fn set_tile_entity_from_cell(&mut self, map_layer: u32, cell: Cell, entity: Entity) {
         self.set_tile_entity(
             map_layer,
@@ -321,7 +319,7 @@ where
         )
     }
 
-    /// Sets the [`Entity`] for the given [`ChunkTilePos`] to the given Entity.
+    /// Sets the [`Entity`] for the given [`ChunkCell`] to the given Entity.
     pub fn set_tile_entity(&mut self, map_layer: u32, chunk_cell: ChunkCell, entity: Entity) {
         self.data
             .get_mut(&map_layer)

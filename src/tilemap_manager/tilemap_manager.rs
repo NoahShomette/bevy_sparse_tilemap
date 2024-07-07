@@ -17,8 +17,8 @@ use std::ops::Deref;
 /// If you don't the functions on this manager will panic.
 ///
 /// # Internal [`SystemParam`]s
-/// - Query<(Entity, &mut Tilemap, Option<&'static Children>)>
-/// - Query<(Entity, &mut Chunk<TileData>, Option<&'static Children>)>,
+/// - `Query<(Entity, &mut Tilemap, Option<&'static Children>)>`
+/// - `Query<(Entity, &mut Chunk<TileData>, Option<&'static Children>)>`
 #[derive(SystemParam)]
 pub struct TilemapManager<'w, 's, TileData, MapLayers, MapChunk, Map>
 where
@@ -70,12 +70,12 @@ where
         *self.map_entity = MapEntity(Some(entity));
     }
 
-    /// Returns the currently set [`MapLayers`]
+    /// Returns the currently set [`MapLayer`]
     pub fn layer(&self) -> MapLayers {
         self.layer_index.0
     }
 
-    /// Sets the [`MapLayers`] that all future operations will be conducted upon.
+    /// Sets the [`MapLayer`] that all future operations will be conducted upon.
     ///
     /// # Note
     ///
@@ -130,7 +130,7 @@ where
         ))
     }
 
-    /// Gets the tile data for the given [`TilePos`] if it exists.
+    /// Gets the tile data for the given [`Cell`] if it exists.
     pub fn get_tile_data(&self, cell: Cell) -> Result<TileData, TilemapManagerError> {
         let (_, tilemap, map, _) = self.tilemap_query.get(
             self.map_entity
@@ -151,7 +151,7 @@ where
             .ok_or(TilemapManagerError::TileDataDoesNotExist)
     }
 
-    /// Sets the tile data for the given [`TilePos`] if it exists.
+    /// Sets the tile data for the given [`Cell`] if it exists.
     pub fn sets_tile_data(
         &mut self,
         tile_data: TileData,
@@ -171,7 +171,7 @@ where
         Ok(chunk.set_tile_data_from_cell(self.layer_index.0.to_bits(), cell, tile_data))
     }
 
-    /// Gets the [`Entity`] for the given [`TilePos`] if it exists.
+    /// Gets the [`Entity`] for the given [`Cell`] if it exists.
     pub fn get_tile_entity(&self, cell: Cell) -> Result<Entity, TilemapManagerError> {
         let (_, tilemap, map, _) = self.tilemap_query.get(
             self.map_entity
@@ -192,7 +192,7 @@ where
             .ok_or(TilemapManagerError::TileEntityDoesNotExist)
     }
 
-    /// Sets the [`Entity`] for the given [`TilePos`]. Prefer to use [`get_or_spawn_tile_entity`](TilemapManager::get_or_spawn_tile_entity).
+    /// Sets the [`Entity`] for the given [`Cell`]. Prefer to use [`get_or_spawn_tile_entity`](TilemapManager::get_or_spawn_tile_entity).
     pub fn set_tile_entity(
         &mut self,
         cell: Cell,
@@ -219,7 +219,7 @@ where
         Ok(())
     }
 
-    /// Gets the [`Entity`] for the given [`TilePos`] if it exists or spawns one and returns that if it
+    /// Gets the [`Entity`] for the given [`Cell`] if it exists or spawns one and returns that if it
     /// doesn't.
     pub fn get_or_spawn_tile_entity(&mut self, cell: Cell) -> Result<Entity, TilemapManagerError> {
         let (_, tilemap, map, _) = self.tilemap_query.get(
@@ -248,7 +248,7 @@ where
         Ok(entity)
     }
 
-    /// Gets the [`Entity`] for the given [`TilePos`] if it exists or spawns one and returns that if it
+    /// Gets the [`Entity`] for the given [`Cell`] if it exists or spawns one and returns that if it
     /// doesn't.
     pub fn despawn_tile_entity(&mut self, cell: Cell) -> Result<(), TilemapManagerError> {
         let (_, tilemap, map, _) = self.tilemap_query.get(
@@ -321,19 +321,22 @@ mod tests {
     }
 
     #[test]
-    fn tilemap_manager_dense_access() {
+    fn tilemap_manager_layer_access() {
         let mut world = World::new();
 
         let mut system_state: SystemState<(
             Commands,
             TilemapManager<(i32, i32), MapLayers, SquareChunkLayer<(i32, i32)>, SquareMapData>,
         )> = SystemState::new(&mut world);
-        let (mut commands, mut tilemap_manager) = system_state.get_mut(&mut world);
+        let (mut _commands, mut tilemap_manager) = system_state.get_mut(&mut world);
         assert_eq!(tilemap_manager.layer(), MapLayers::Main);
         tilemap_manager.set_layer(MapLayers::Secondary);
         assert_eq!(tilemap_manager.layer(), MapLayers::Secondary);
         tilemap_manager.set_layer(MapLayers::Main);
+    }
 
+    #[test]
+    fn tilemap_manager_dense_access() {
         #[rustfmt::skip]
             let vecs = vec![
             vec![(0, 0), (1, 0), (2, 0), (3, 0),(4, 0), (5, 0), (6, 0), (7, 0)],
@@ -347,10 +350,13 @@ mod tests {
             vec![(0, 8), (1, 8), (2, 8), (3, 8),(4, 8), (5, 8), (6, 8), (7, 8)]
         ];
 
-        let chunk_settings = SquareChunkSettings {
-            max_chunk_size: UVec2 { x: 5, y: 5 },
-        };
+        let mut world = World::new();
 
+        let mut system_state: SystemState<(
+            Commands,
+            TilemapManager<(i32, i32), MapLayers, SquareChunkLayer<(i32, i32)>, SquareMapData>,
+        )> = SystemState::new(&mut world);
+        let (mut commands, _) = system_state.get_mut(&mut world);
         let tilemap_builder = TilemapBuilder::<
             (i32, i32),
             MapLayers,
@@ -361,7 +367,9 @@ mod tests {
             SquareMapData {
                 max_chunk_size: UVec2::new(5, 5),
             },
-            chunk_settings,
+            SquareChunkSettings {
+                max_chunk_size: UVec2 { x: 5, y: 5 },
+            },
         );
 
         let Some(map_entity) = tilemap_builder.spawn_tilemap(&mut commands) else {

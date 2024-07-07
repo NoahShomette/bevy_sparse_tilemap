@@ -192,7 +192,7 @@ impl<T> HexChunkLayerData<T>
 where
     T: Hash + Clone + Copy + Sized + Default + Send + Sync,
 {
-    /// Creates a new [`SquareChunkLayerData::Dense`] with all the tiles having the same data as the default
+    /// Creates a new [`HexChunkLayerData::Dense`] with all the tiles having the same data as the default
     /// for T
     pub fn new_dense_default(
         chunk_size_x: usize,
@@ -203,7 +203,7 @@ where
         Self::Dense(grid)
     }
 
-    /// Creates a new [`SquareChunkLayerData::Dense`] with all the tiles having the same data as the given
+    /// Creates a new [`HexChunkLayerData::Dense`] with all the tiles having the same data as the given
     /// tile_data
     pub fn new_dense_uniform(
         chunk_size_x: usize,
@@ -216,7 +216,7 @@ where
         Self::Dense(grid)
     }
 
-    /// Creates a new [`SquareChunkLayerData::Dense`]from the given vectors of vectors of T
+    /// Creates a new [`HexChunkLayerData::Dense`]from the given vectors of vectors of T
     pub fn new_dense_from_vecs(tile_data: &Vec<Vec<T>>, orientation: HexOrientation) -> Self {
         let mut given_tile_count = 0u64;
 
