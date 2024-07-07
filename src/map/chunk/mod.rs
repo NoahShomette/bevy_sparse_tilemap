@@ -121,19 +121,19 @@ impl Chunks {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "reflect", derive(Reflect))]
 #[cfg_attr(feature = "reflect", reflect(Component, Hash, MapEntities))]
-pub struct Chunk<Chunklayer, TileData>
+pub struct Chunk<MapChunk, TileData>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync,
-    Chunklayer: ChunkLayer<TileData> + Send + Sync + Default,
+    MapChunk: ChunkLayer<TileData> + Send + Sync + Default,
 {
     /// The position of the Chunk in the map
     pub chunk_pos: ChunkPos,
     /// Chunk tile data mapped to layers
-    pub data: HashMap<u32, Chunklayer>,
+    pub data: HashMap<u32, MapChunk>,
     /// Conversion Settings used to convert a cell into a position in the chunk
-    pub cell_conversion_settings: Chunklayer::ConversionInfo,
+    pub cell_conversion_settings: MapChunk::ConversionInfo,
     /// Map Settings that defines information on the map
-    pub map_settings: Chunklayer::MapSettings,
+    pub map_settings: MapChunk::MapSettings,
     #[cfg_attr(feature = "reflect", reflect(ignore))]
     ph: PhantomData<TileData>,
 }
