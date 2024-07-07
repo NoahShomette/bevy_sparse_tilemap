@@ -18,25 +18,21 @@ use bevy::ecs::reflect::ReflectMapEntities;
 #[cfg(feature = "reflect")]
 use bevy::prelude::{Reflect, ReflectComponent};
 
-#[derive(Clone, Copy, Hash, Default)]
+#[derive(Clone, Copy, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "reflect", derive(Reflect))]
 #[cfg_attr(feature = "reflect", reflect(Hash, Component))]
 /// Settings for a hexagonal map
-pub struct HexagonMapSettings {
+pub struct HexagonChunkSettings {
     pub orientation: HexOrientation,
-}
-
-#[derive(Reflect, Clone, Copy, Hash)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct HexChunkLayerConversionSettings {
     pub max_chunk_size: UVec2,
 }
 
-impl Default for HexChunkLayerConversionSettings {
+impl Default for HexagonChunkSettings {
     fn default() -> Self {
         Self {
             max_chunk_size: UVec2 { x: 10, y: 10 },
+            orientation: HexOrientation::default(),
         }
     }
 }
@@ -80,26 +76,24 @@ impl<TileData> ChunkLayer<TileData> for HexChunkLayer<TileData>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync,
 {
-    type ConversionInfo = HexChunkLayerConversionSettings;
-
-    type MapSettings = HexagonMapSettings;
+    type ChunkSettings = HexagonChunkSettings;
 
     fn into_chunk_cell(
         cell: lettuces::cell::Cell,
-        conversion_settings: &Self::ConversionInfo,
+        chunk_settings: &Self::ChunkSettings,
     ) -> ChunkCell {
-        let chunk_pos_x = cell.x / conversion_settings.max_chunk_size.x as i32;
-        let chunk_pos_y = cell.y / conversion_settings.max_chunk_size.y as i32;
+        let chunk_pos_x = cell.x / chunk_settings.max_chunk_size.x as i32;
+        let chunk_pos_y = cell.y / chunk_settings.max_chunk_size.y as i32;
         ChunkCell::new(
-            cell.x - (chunk_pos_x * conversion_settings.max_chunk_size.x as i32),
-            cell.y - (chunk_pos_y * conversion_settings.max_chunk_size.y as i32),
+            cell.x - (chunk_pos_x * chunk_settings.max_chunk_size.x as i32),
+            cell.y - (chunk_pos_y * chunk_settings.max_chunk_size.y as i32),
         )
     }
 
     fn new(
         layer_type: LayerType<TileData>,
         chunk_dimensions: UVec2,
-        settings: &HexagonMapSettings,
+        settings: &Self::ChunkSettings,
     ) -> Self {
         match layer_type {
             LayerType::Dense(dense_data) => Self {

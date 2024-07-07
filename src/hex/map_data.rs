@@ -69,8 +69,7 @@ impl MapData for HexMapData {
         &self,
         data: &Vec<Vec<TileData>>,
         max_chunk_size: UVec2,
-        chunk_conversion_info: MapChunk::ConversionInfo,
-        map_settings: MapChunk::MapSettings,
+        chunk_settings: MapChunk::ChunkSettings,
     ) -> Vec<Vec<crate::map::chunk::Chunk<MapChunk, TileData>>>
     where
         TileData: std::hash::Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
@@ -95,8 +94,7 @@ impl MapData for HexMapData {
                     ChunkPos::new(x, y),
                     UVec2::new(vec.len() as u32, vec[0].len() as u32),
                     LayerType::Dense(vec),
-                    chunk_conversion_info,
-                    map_settings,
+                    chunk_settings,
                 );
                 chunks_rows.push(chunk);
             }
@@ -112,8 +110,7 @@ impl MapData for HexMapData {
         data: &bevy::utils::HashMap<lettuces::cell::Cell, TileData>,
         map_size: UVec2,
         max_chunk_size: UVec2,
-        chunk_conversion_settings: MapChunk::ConversionInfo,
-        map_settings: MapChunk::MapSettings,
+        chunk_settings: MapChunk::ChunkSettings,
     ) -> Vec<Vec<crate::map::chunk::Chunk<MapChunk, TileData>>>
     where
         TileData: std::hash::Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
@@ -149,8 +146,7 @@ impl MapData for HexMapData {
                     ChunkPos::new(x, y),
                     chunk_size,
                     LayerType::Sparse(HashMap::new()),
-                    chunk_conversion_settings,
-                    map_settings,
+                    chunk_settings,
                 ));
             }
             chunks.push(chunks_rows);
@@ -161,7 +157,7 @@ impl MapData for HexMapData {
             let chunk = &mut chunks[chunk_pos.y() as usize][chunk_pos.x() as usize];
             chunk.set_tile_data(
                 map_layer.to_bits(),
-                MapChunk::into_chunk_cell(*cell, &chunk.cell_conversion_settings),
+                MapChunk::into_chunk_cell(*cell, &chunk.chunk_settings),
                 *tile_data,
             );
         }

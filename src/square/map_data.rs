@@ -68,8 +68,7 @@ impl MapData for SquareMapData {
         &self,
         data: &Vec<Vec<TileData>>,
         max_chunk_size: UVec2,
-        chunk_conversion_settings: MapChunk::ConversionInfo,
-        map_settings: MapChunk::MapSettings,
+        chunk_settings: MapChunk::ChunkSettings,
     ) -> Vec<Vec<crate::map::chunk::Chunk<MapChunk, TileData>>>
     where
         TileData: std::hash::Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
@@ -94,8 +93,7 @@ impl MapData for SquareMapData {
                     ChunkPos::new(x, y),
                     UVec2::new(vec.len() as u32, vec[0].len() as u32),
                     LayerType::Dense(vec),
-                    chunk_conversion_settings,
-                    map_settings,
+                    chunk_settings,
                 );
                 chunks_rows.push(chunk);
             }
@@ -111,8 +109,7 @@ impl MapData for SquareMapData {
         data: &bevy::utils::HashMap<lettuces::cell::Cell, TileData>,
         map_size: UVec2,
         max_chunk_size: UVec2,
-        chunk_conversion_settings: MapChunk::ConversionInfo,
-        map_settings: MapChunk::MapSettings,
+        chunk_settings: MapChunk::ChunkSettings,
     ) -> Vec<Vec<crate::map::chunk::Chunk<MapChunk, TileData>>>
     where
         TileData: std::hash::Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
@@ -148,8 +145,7 @@ impl MapData for SquareMapData {
                     ChunkPos::new(x, y),
                     chunk_size,
                     LayerType::Sparse(HashMap::new()),
-                    chunk_conversion_settings,
-                    map_settings,
+                    chunk_settings,
                 ));
             }
             chunks.push(chunks_rows);
@@ -160,7 +156,7 @@ impl MapData for SquareMapData {
             let chunk = &mut chunks[chunk_pos.y() as usize][chunk_pos.x() as usize];
             chunk.set_tile_data(
                 map_layer.to_bits(),
-                MapChunk::into_chunk_cell(*cell, &chunk.cell_conversion_settings),
+                MapChunk::into_chunk_cell(*cell, &chunk.chunk_settings),
                 *tile_data,
             );
         }
@@ -173,7 +169,7 @@ impl MapData for SquareMapData {
 mod tests {
     use crate as bevy_sparse_tilemap;
     use crate::map::MapData;
-    use crate::square::map_chunk_layer::{SquareChunkLayer, SquareChunkLayerConversionSettings};
+    use crate::square::map_chunk_layer::{SquareChunkLayer, SquareChunkSettings};
     use crate::square::map_data::SquareMapData;
 
     use crate::tilemap_builder::tilemap_layer_builder::TilemapLayer;
@@ -321,7 +317,7 @@ mod tests {
             max_chunk_size: UVec2 { x: 10, y: 10 },
         };
 
-        let chunk_conversion_settings = SquareChunkLayerConversionSettings {
+        let chunk_settings = SquareChunkSettings {
             max_chunk_size: UVec2 { x: 10, y: 10 },
         };
 
@@ -346,8 +342,7 @@ mod tests {
                 &hashmap,
                 UVec2::new(32, 32),
                 mcs,
-                chunk_conversion_settings,
-                (),
+                chunk_settings,
             );
 
         assert_eq!(chunks.len(), 4);

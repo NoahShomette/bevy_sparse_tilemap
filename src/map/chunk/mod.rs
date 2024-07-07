@@ -130,10 +130,8 @@ where
     pub chunk_pos: ChunkPos,
     /// Chunk tile data mapped to layers
     pub data: HashMap<u32, MapChunk>,
-    /// Conversion Settings used to convert a cell into a position in the chunk
-    pub cell_conversion_settings: MapChunk::ConversionInfo,
-    /// Map Settings that defines information on the map
-    pub map_settings: MapChunk::MapSettings,
+    /// Settings related to the chunk
+    pub chunk_settings: MapChunk::ChunkSettings,
     #[cfg_attr(feature = "reflect", reflect(ignore))]
     ph: PhantomData<TileData>,
 }
@@ -172,8 +170,7 @@ where
         Self {
             chunk_pos: Default::default(),
             data: HashMap::default(),
-            cell_conversion_settings: MapChunk::ConversionInfo::default(),
-            map_settings: MapChunk::MapSettings::default(),
+            chunk_settings: MapChunk::ChunkSettings::default(),
             ph: Default::default(),
         }
     }
@@ -189,16 +186,14 @@ where
         chunk_pos: ChunkPos,
         chunk_size: UVec2,
         tile_data: LayerType<TileData>,
-        cell_conversion_settings: MapChunk::ConversionInfo,
-        map_settings: MapChunk::MapSettings,
+        chunk_settings: MapChunk::ChunkSettings,
     ) -> Chunk<MapChunk, TileData> {
         let mut hashmap = HashMap::new();
-        hashmap.insert(1u32, MapChunk::new(tile_data, chunk_size, &map_settings));
+        hashmap.insert(1u32, MapChunk::new(tile_data, chunk_size, &chunk_settings));
         Self {
             chunk_pos,
             data: hashmap,
-            cell_conversion_settings,
-            map_settings,
+            chunk_settings,
             ph: Default::default(),
         }
     }
@@ -210,7 +205,7 @@ where
     pub fn add_layer(&mut self, map_layer: u32, tile_data: LayerType<TileData>) {
         self.data.insert(
             map_layer,
-            MapChunk::new(tile_data, self.get_chunk_dimensions(), &self.map_settings),
+            MapChunk::new(tile_data, self.get_chunk_dimensions(), &self.chunk_settings),
         );
     }
 }
@@ -240,7 +235,7 @@ where
     pub fn set_tile_data_from_cell(&mut self, map_layer: u32, cell: Cell, tile_data: TileData) {
         self.set_tile_data(
             map_layer,
-            MapChunk::into_chunk_cell(cell, &self.cell_conversion_settings),
+            MapChunk::into_chunk_cell(cell, &self.chunk_settings),
             tile_data,
         )
     }
@@ -269,7 +264,7 @@ where
     ) -> Option<TileData> {
         self.get_tile_data(
             map_layer,
-            MapChunk::into_chunk_cell(cell, &self.cell_conversion_settings),
+            MapChunk::into_chunk_cell(cell, &self.chunk_settings),
         )
     }
 
@@ -296,7 +291,7 @@ where
     ) -> Option<Entity> {
         self.get_tile_entity(
             map_layer,
-            MapChunk::into_chunk_cell(cell, &self.cell_conversion_settings),
+            MapChunk::into_chunk_cell(cell, &self.chunk_settings),
         )
     }
 
@@ -315,7 +310,7 @@ where
     pub fn set_tile_entity_from_cell(&mut self, map_layer: u32, cell: Cell, entity: Entity) {
         self.set_tile_entity(
             map_layer,
-            MapChunk::into_chunk_cell(cell, &self.cell_conversion_settings),
+            MapChunk::into_chunk_cell(cell, &self.chunk_settings),
             entity,
         )
     }
@@ -331,7 +326,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::square::map_chunk_layer::{SquareChunkLayer, SquareChunkLayerConversionSettings};
+    use crate::square::map_chunk_layer::{SquareChunkLayer, SquareChunkSettings};
     use crate::{self as bevy_sparse_tilemap};
     use crate::{
         map::chunk::chunk_cell::ChunkCell, map::chunk::chunk_pos::ChunkPos, map::chunk::Chunk,
@@ -358,10 +353,9 @@ mod tests {
             ChunkPos::new(0, 0),
             UVec2 { x: 2, y: 2 },
             crate::map::chunk::LayerType::Dense(vecs),
-            SquareChunkLayerConversionSettings {
+            SquareChunkSettings {
                 max_chunk_size: UVec2 { x: 2, y: 2 },
             },
-            (),
         );
         assert_eq!(
             chunk
@@ -380,10 +374,9 @@ mod tests {
             ChunkPos::new(0, 0),
             bevy::math::UVec2 { x: 2, y: 2 },
             crate::map::chunk::LayerType::Dense(vecs),
-            SquareChunkLayerConversionSettings {
+            SquareChunkSettings {
                 max_chunk_size: UVec2 { x: 2, y: 2 },
             },
-            (),
         );
         assert_eq!(
             chunk
@@ -408,10 +401,9 @@ mod tests {
             ChunkPos::new(0, 0),
             bevy::math::UVec2 { x: 2, y: 2 },
             crate::map::chunk::LayerType::Dense(vecs),
-            SquareChunkLayerConversionSettings {
+            SquareChunkSettings {
                 max_chunk_size: UVec2 { x: 2, y: 2 },
             },
-            (),
         );
         assert_eq!(
             chunk
@@ -440,10 +432,9 @@ mod tests {
             ChunkPos::new(0, 0),
             bevy::math::UVec2 { x: 2, y: 2 },
             crate::map::chunk::LayerType::Dense(vecs),
-            SquareChunkLayerConversionSettings {
+            SquareChunkSettings {
                 max_chunk_size: UVec2 { x: 2, y: 2 },
             },
-            (),
         );
     }
 
@@ -458,10 +449,9 @@ mod tests {
             ChunkPos::new(0, 0),
             bevy::math::UVec2 { x: 2, y: 2 },
             crate::map::chunk::LayerType::Dense(vecs),
-            SquareChunkLayerConversionSettings {
+            SquareChunkSettings {
                 max_chunk_size: UVec2 { x: 2, y: 2 },
             },
-            (),
         );
         assert_eq!(
             chunk
@@ -482,10 +472,9 @@ mod tests {
             ChunkPos::new(0, 0),
             bevy::math::UVec2 { x: 2, y: 2 },
             crate::map::chunk::LayerType::Dense(vecs),
-            SquareChunkLayerConversionSettings {
+            SquareChunkSettings {
                 max_chunk_size: UVec2 { x: 2, y: 2 },
             },
-            (),
         );
         chunk.set_tile_data(MapLayers::Main.to_bits(), ChunkCell::new(0, 0), (50, 60));
         assert_eq!(
@@ -504,10 +493,9 @@ mod tests {
             ChunkPos::new(0, 0),
             bevy::math::UVec2 { x: 2, y: 2 },
             crate::map::chunk::LayerType::Sparse(HashMap::new()),
-            SquareChunkLayerConversionSettings {
+            SquareChunkSettings {
                 max_chunk_size: UVec2 { x: 2, y: 2 },
             },
-            (),
         );
         chunk.add_layer(
             MapLayers::Secondary.to_bits(),
@@ -527,10 +515,9 @@ mod tests {
             ChunkPos::new(0, 0),
             bevy::math::UVec2 { x: 2, y: 2 },
             crate::map::chunk::LayerType::Sparse(HashMap::new()),
-            SquareChunkLayerConversionSettings {
+            SquareChunkSettings {
                 max_chunk_size: UVec2 { x: 2, y: 2 },
             },
-            (),
         );
         let vecs = vec![
             vec![(0, 0), (1, 2), (2, 0), (3, 0)],
@@ -553,7 +540,7 @@ mod tests {
     #[cfg(feature = "reflect")]
     mod reflect_test {
         use crate::square::map_chunk_layer::{
-            SquareChunkLayer, SquareChunkLayerConversionSettings, SquareChunkLayerData,
+            SquareChunkLayer, SquareChunkSettings, SquareChunkLayerData,
         };
         use crate::square::map_data::SquareMapDataConversionSettings;
         use crate::{self as bevy_sparse_tilemap};
@@ -576,10 +563,9 @@ mod tests {
                 ChunkPos::new(0, 0),
                 bevy::math::UVec2 { x: 2, y: 2 },
                 crate::map::chunk::LayerType::Sparse::<(u32, u32)>(HashMap::new()),
-                SquareChunkLayerConversionSettings {
-                    max_chunk_dimensions: UVec2 { x: 2, y: 2 },
+                SquareChunkSettings {
+                    max_chunk_size: UVec2 { x: 2, y: 2 },
                 },
-                (),
             );
             let mut registry = TypeRegistry::default();
             registry.register::<Chunk<SquareChunkLayer<(u32, u32)>, (u32, u32)>>();

@@ -17,11 +17,11 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Reflect, Clone, Copy, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct SquareChunkLayerConversionSettings {
+pub struct SquareChunkSettings {
     pub max_chunk_size: UVec2,
 }
 
-impl Default for SquareChunkLayerConversionSettings {
+impl Default for SquareChunkSettings {
     fn default() -> Self {
         Self {
             max_chunk_size: UVec2 { x: 10, y: 10 },
@@ -67,22 +67,21 @@ impl<T> ChunkLayer<T> for SquareChunkLayer<T>
 where
     T: Hash + Clone + Copy + Sized + Default + Send + Sync,
 {
-    type ConversionInfo = SquareChunkLayerConversionSettings;
-    type MapSettings = ();
+    type ChunkSettings = SquareChunkSettings;
 
     fn into_chunk_cell(
         cell: lettuces::cell::Cell,
-        conversion_settings: &Self::ConversionInfo,
+        chunk_settings: &Self::ChunkSettings,
     ) -> ChunkCell {
-        let chunk_pos_x = cell.x / conversion_settings.max_chunk_size.x as i32;
-        let chunk_pos_y = cell.y / conversion_settings.max_chunk_size.y as i32;
+        let chunk_pos_x = cell.x / chunk_settings.max_chunk_size.x as i32;
+        let chunk_pos_y = cell.y / chunk_settings.max_chunk_size.y as i32;
         ChunkCell::new(
-            cell.x - (chunk_pos_x * conversion_settings.max_chunk_size.x as i32),
-            cell.y - (chunk_pos_y * conversion_settings.max_chunk_size.y as i32),
+            cell.x - (chunk_pos_x * chunk_settings.max_chunk_size.x as i32),
+            cell.y - (chunk_pos_y * chunk_settings.max_chunk_size.y as i32),
         )
     }
 
-    fn new(layer_type: LayerType<T>, chunk_dimensions: UVec2, _: &()) -> Self {
+    fn new(layer_type: LayerType<T>, chunk_dimensions: UVec2, _: &Self::ChunkSettings) -> Self {
         match layer_type {
             LayerType::Dense(dense_data) => Self {
                 layer_type_data: SquareChunkLayerData::new_dense_from_vecs(&dense_data),

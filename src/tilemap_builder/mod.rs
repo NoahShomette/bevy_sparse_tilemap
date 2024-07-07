@@ -20,8 +20,7 @@ where
     layer_info: HashMap<u32, TilemapLayer<TileData>>,
     map_size: UVec2,
     map_type: MapType,
-    chunk_conversion_settings: Chunk::ConversionInfo,
-    map_settings: Chunk::MapSettings,
+    chunk_settings: Chunk::ChunkSettings,
     // All phantom data below
     td_phantom: PhantomData<TileData>,
     ml_phantom: PhantomData<MapLayers>,
@@ -42,8 +41,7 @@ where
             layer_info: Default::default(),
             map_size: Default::default(),
             map_type: Default::default(),
-            chunk_conversion_settings: MapChunk::ConversionInfo::default(),
-            map_settings: MapChunk::MapSettings::default(),
+            chunk_settings: MapChunk::ChunkSettings::default(),
             td_phantom: PhantomData::default(),
             ml_phantom: PhantomData::default(),
             ct_phantom: PhantomData::default(),
@@ -68,8 +66,7 @@ where
 
         let mut chunks = self.create_new_chunks_from_layer(
             &layer,
-            self.chunk_conversion_settings,
-            self.map_settings,
+            self.chunk_settings,
             self.map_type.max_chunk_size(),
         );
 
@@ -114,8 +111,7 @@ where
     pub fn new(
         layer_data: TilemapLayer<TileData>,
         map_type: MapType,
-        chunk_conversion_settings: MapChunk::ConversionInfo,
-        map_settings: MapChunk::MapSettings,
+        chunk_settings: MapChunk::ChunkSettings,
     ) -> Self {
         let dimensions = layer_data.dimensions();
         TilemapBuilder::<TileData, MapLayers, MapChunk, MapType> {
@@ -123,8 +119,7 @@ where
             layer_info: Default::default(),
             map_size: dimensions,
             map_type,
-            chunk_conversion_settings,
-            map_settings,
+            chunk_settings,
             td_phantom: Default::default(),
             ml_phantom: Default::default(),
             ct_phantom: PhantomData::default(),
@@ -145,8 +140,7 @@ where
     pub fn create_new_chunks_from_layer(
         &mut self,
         tilemap_layer: &TilemapLayer<TileData>,
-        chunk_conversion_settings: MapChunk::ConversionInfo,
-        map_settings: MapChunk::MapSettings,
+        chunk_settings: MapChunk::ChunkSettings,
         max_chunk_size: UVec2,
     ) -> Vec<Vec<Chunk<MapChunk, TileData>>>
     where
@@ -159,8 +153,7 @@ where
                     data,
                     map_size.clone(),
                     max_chunk_size,
-                    chunk_conversion_settings,
-                    map_settings,
+                    chunk_settings,
                 );
                 self.map_type.add_entities_to_layer(
                     MapLayers::default().to_bits(),
@@ -170,12 +163,9 @@ where
                 chunks
             }
             TilemapLayer::Dense(data, entities) => {
-                let mut chunks = self.map_type.break_data_vecs_into_chunks(
-                    data,
-                    max_chunk_size,
-                    chunk_conversion_settings,
-                    map_settings,
-                );
+                let mut chunks =
+                    self.map_type
+                        .break_data_vecs_into_chunks(data, max_chunk_size, chunk_settings);
                 self.map_type.add_entities_to_layer(
                     MapLayers::default().to_bits(),
                     &mut chunks,
@@ -206,7 +196,7 @@ where
                     let chunk = &mut chunks[chunk_pos.y() as usize][chunk_pos.x() as usize];
                     chunk.set_tile_data(
                         map_layer,
-                        MapChunk::into_chunk_cell(*cell, &chunk.cell_conversion_settings),
+                        MapChunk::into_chunk_cell(*cell, &chunk.chunk_settings),
                         tile_data.clone(),
                     );
                 }

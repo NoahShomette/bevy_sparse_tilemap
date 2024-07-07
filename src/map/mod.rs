@@ -63,8 +63,7 @@ pub trait MapData: Hash + Component {
         &self,
         data: &Vec<Vec<TileData>>,
         max_chunk_size: UVec2,
-        chunk_conversion_settings: MapChunk::ConversionInfo,
-        map_settings: MapChunk::MapSettings,
+        chunk_settings: MapChunk::ChunkSettings,
     ) -> Vec<Vec<Chunk<MapChunk, TileData>>>
     where
         TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
@@ -77,8 +76,7 @@ pub trait MapData: Hash + Component {
         data: &HashMap<Cell, TileData>,
         map_size: UVec2,
         max_chunk_size: UVec2,
-        chunk_conversion_settings: MapChunk::ConversionInfo,
-        map_settings: MapChunk::MapSettings,
+        chunk_settings: MapChunk::ChunkSettings,
     ) -> Vec<Vec<Chunk<MapChunk, TileData>>>
     where
         TileData: Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
@@ -99,7 +97,7 @@ pub trait MapData: Hash + Component {
             let chunk = &mut chunks[chunk_pos.y() as usize][chunk_pos.x() as usize];
             chunk.set_tile_entity(
                 map_layer,
-                MapChunk::into_chunk_cell(*cell, &chunk.cell_conversion_settings),
+                MapChunk::into_chunk_cell(*cell, &chunk.chunk_settings),
                 *entity,
             );
         }
