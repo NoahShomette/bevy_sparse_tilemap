@@ -1,4 +1,29 @@
-//! Core Tilemap concept and
+//! # `Bevy Sparse Tilemap`
+//! 
+//! This module contains the features that drive the actual map.
+//! 
+//! ---
+//! 
+//! - [`chunk`]
+//! 
+//! Contains the traits and structures that drive the chunk storage of each map.
+//! 
+//! - [`tilemap`]
+//! 
+//! Contains the actual [`Tilemap`] struct which is the highest level storage of a map. See [`Tilemap`] for more details.
+//! 
+//! ---
+//! 
+//! ## Broad Overview
+//! 
+//! There are two main traits that drive bevy sparse tilemap.
+//! 
+//! - [`MapData`]
+//! - [`ChunkLayer`]
+//! 
+//! MapData is the high level implementation that drives map construction and cell -> chunk pos conversion.
+//! 
+//! ChunkLayer is the meat and potatoes of BST and controls all of the access of the map.
 
 pub mod chunk;
 mod tilemap;
@@ -25,7 +50,7 @@ pub trait MapLayer: Default {
 
 impl<L: MapLayer> MapLayer for &L
 where
-    for<'a> &'a L: std::default::Default,
+    for<'a> &'a L: Default,
 {
     fn to_bits(&self) -> u32 {
         L::to_bits(self)
@@ -38,8 +63,10 @@ where
 
 /// Trait that must be implemented for a map type. It consists of mandatory functions used in building new maps as well as implementing a way to convert a given [`Cell`] into a chunk pos
 pub trait MapData: Hash + Component {
+    /// Converts a [`Cell`] (A position on the map) into a [`ChunkPos`] (The position of the chunk that that cell is in)
     fn into_chunk_pos(&self, cell: Cell) -> ChunkPos;
 
+    /// The maximum size that a chunk can be
     fn max_chunk_size(&self) -> UVec2;
 
     /// Function that breaks a [`Vec<Vec<TileData>>`] down into a [`Vec<Vec<TileData>>`] of the given [`ChunkPos`] chunks data

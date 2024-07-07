@@ -1,11 +1,11 @@
-//! Example
-
 use map_chunk_layer::SquareChunkLayer;
 use map_data::SquareMapData;
 
 use crate::{map::chunk::Chunk, tilemap_builder::TilemapBuilder, tilemap_manager::TilemapManager};
 
+/// Implements [`ChunkLayer`] for a square map type
 pub mod map_chunk_layer;
+/// Implements [`MapData`] for a square map type
 pub mod map_data;
 
 /// Type alias for [`TilemapManager`] for the built in square map types.

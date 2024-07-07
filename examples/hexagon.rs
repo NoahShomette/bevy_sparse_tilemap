@@ -134,7 +134,7 @@ fn spawn_tiles(
     mut color_materials: ResMut<ColorHandles>,
 ) {
     map.set_tilemap_entity(map_entity.0);
-    map.on_layer(MapLayers::Base);
+    map.set_layer(MapLayers::Base);
     let Ok(dimensions) = map.dimensions() else {
         return;
     };
@@ -182,7 +182,7 @@ fn change_random_tile_color(
     colors: ResMut<ColorHandles>,
 ) {
     map.set_tilemap_entity(map_entity.0);
-    map.on_layer(MapLayers::Base);
+    map.set_layer(MapLayers::Base);
     let Ok(dimensions) = map.dimensions() else {
         return;
     };

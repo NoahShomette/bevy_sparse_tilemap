@@ -1,13 +1,21 @@
 ﻿use bevy::ecs::query::QueryEntityError;
 
+/// Errors returned by a [`Super::TilemapManager`]
 #[derive(thiserror::Error, Debug)]
 pub enum TilemapManagerError {
+    /// A chunk does not exist for the given [`ChunkPos`]
     #[error("A Chunk does not exist for the given ChunkPos")]
     InvalidChunkPos,
+
+    /// A chunk does not exist for the given [`ChunkPos`]
     #[error("A Chunk entity does not exist for the given ChunkPos")]
     ChunkEntityDoesNotExist(#[from] QueryEntityError),
-    #[error("An Entity does not exist for the given TilePos")]
+
+    /// A tile entity does not exist for the given [`ChunkCell`]
+    #[error("An Entity does not exist for the given ChunkCell")]
     TileEntityDoesNotExist,
-    #[error("TileData does not exist for the given TilePos")]
+
+    /// [`TileData`] does not exist for the given [`ChunkCell`]
+    #[error("TileData does not exist for the given ChunkCell")]
     TileDataDoesNotExist,
 }

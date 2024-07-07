@@ -12,20 +12,22 @@ use bevy::prelude::{Reflect, ReflectComponent};
 use serde::{Deserialize, Serialize};
 
 use crate::map::{
-    chunk::{Chunk, ChunkPos, LayerType},
+    chunk::{Chunk, ChunkLayerType, ChunkPos},
     MapData, MapLayer,
 };
 
+/// An implementation of [`MapData`] for a standard square map.
 #[derive(Default, Hash, Component)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "reflect", derive(Reflect))]
 #[cfg_attr(feature = "reflect", reflect(Hash))]
 pub struct SquareMapData {
+    /// The maximum size that a chunk can be in the map
     pub max_chunk_size: UVec2,
 }
 
 impl MapData for SquareMapData {
-    fn into_chunk_pos(&self, cell: lettuces::cell::Cell) -> crate::map::chunk::ChunkPos {
+    fn into_chunk_pos(&self, cell: lettuces::cell::Cell) -> ChunkPos {
         ChunkPos::new(
             cell.x / self.max_chunk_size.x as i32,
             cell.y / self.max_chunk_size.y as i32,
@@ -69,7 +71,7 @@ impl MapData for SquareMapData {
         data: &Vec<Vec<TileData>>,
         max_chunk_size: UVec2,
         chunk_settings: MapChunk::ChunkSettings,
-    ) -> Vec<Vec<crate::map::chunk::Chunk<MapChunk, TileData>>>
+    ) -> Vec<Vec<Chunk<MapChunk, TileData>>>
     where
         TileData: std::hash::Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
         MapChunk: crate::map::chunk::ChunkLayer<TileData> + Send + Sync + 'static + Default,
@@ -92,7 +94,7 @@ impl MapData for SquareMapData {
                 let chunk = Chunk::<MapChunk, TileData>::new(
                     ChunkPos::new(x, y),
                     UVec2::new(vec.len() as u32, vec[0].len() as u32),
-                    LayerType::Dense(vec),
+                    ChunkLayerType::Dense(vec),
                     chunk_settings,
                 );
                 chunks_rows.push(chunk);
@@ -110,7 +112,7 @@ impl MapData for SquareMapData {
         map_size: UVec2,
         max_chunk_size: UVec2,
         chunk_settings: MapChunk::ChunkSettings,
-    ) -> Vec<Vec<crate::map::chunk::Chunk<MapChunk, TileData>>>
+    ) -> Vec<Vec<Chunk<MapChunk, TileData>>>
     where
         TileData: std::hash::Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
         MapChunk: crate::map::chunk::ChunkLayer<TileData> + Send + Sync + 'static + Default,
@@ -144,7 +146,7 @@ impl MapData for SquareMapData {
                 chunks_rows.push(Chunk::new(
                     ChunkPos::new(x, y),
                     chunk_size,
-                    LayerType::Sparse(HashMap::new()),
+                    ChunkLayerType::Sparse(HashMap::new()),
                     chunk_settings,
                 ));
             }

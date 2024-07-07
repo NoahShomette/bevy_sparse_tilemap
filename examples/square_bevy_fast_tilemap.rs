@@ -10,7 +10,6 @@ use bevy_sparse_tilemap::square::map_chunk_layer::{SquareChunkLayer, SquareChunk
 use bevy_sparse_tilemap::square::map_data::SquareMapData;
 use bevy_sparse_tilemap::tilemap_builder::tilemap_layer_builder::TilemapLayer;
 use bevy_sparse_tilemap::tilemap_builder::TilemapBuilder;
-use bevy_sparse_tilemap::SparseTilemapPlugin;
 use bst_map_layer_derive::MapLayer;
 use rand::Rng;
 
@@ -29,7 +28,7 @@ fn main() {
             LogDiagnosticsPlugin::default(),
             FrameTimeDiagnosticsPlugin::default(),
         ))
-        .add_plugins((SparseTilemapPlugin, FastTileMapPlugin::default()))
+        .add_plugins(FastTileMapPlugin::default())
         .add_systems(Startup, startup)
         .add_systems(
             Update,

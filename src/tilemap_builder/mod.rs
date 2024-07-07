@@ -1,6 +1,6 @@
 pub mod tilemap_layer_builder;
 
-use crate::map::chunk::{Chunk, ChunkLayer, Chunks, LayerType};
+use crate::map::chunk::{Chunk, ChunkLayer, Chunks, ChunkLayerType};
 use crate::map::{MapData, MapLayer, Tilemap};
 use crate::tilemap_builder::tilemap_layer_builder::TilemapLayer;
 use bevy::prelude::{BuildChildren, Commands, Entity, UVec2};
@@ -188,7 +188,7 @@ where
             TilemapLayer::Sparse(data, .., entities) => {
                 for y in chunks.iter_mut() {
                     for chunk in y.iter_mut() {
-                        chunk.add_layer(map_layer, LayerType::Sparse(HashMap::new()));
+                        chunk.add_layer(map_layer, ChunkLayerType::Sparse(HashMap::new()));
                     }
                 }
                 for (cell, tile_data) in data.iter() {
@@ -211,7 +211,7 @@ where
                             chunk.chunk_pos,
                             max_chunk_size,
                         );
-                        chunk.add_layer(map_layer, LayerType::Dense(vec));
+                        chunk.add_layer(map_layer, ChunkLayerType::Dense(vec));
                     }
                 }
                 self.map_type

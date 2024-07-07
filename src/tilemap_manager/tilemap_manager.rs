@@ -14,7 +14,7 @@ use std::ops::Deref;
 /// # IMPORTANT
 ///
 /// You **MUST** set the [TilemapManager] to a specific tilemap using [`set_tilemap_entity()`](TilemapManager::set_tilemap_entity) before you use the Tilemap Manager.
-/// If you don't these functions will panic.
+/// If you don't the functions on this manager will panic.
 ///
 /// # Internal [`SystemParam`]s
 /// - Query<(Entity, &mut Tilemap, Option<&'static Children>)>
@@ -80,7 +80,7 @@ where
     /// # Note
     ///
     /// The selected layer will persist across system runs
-    pub fn on_layer(&mut self, map_layer: MapLayers) {
+    pub fn set_layer(&mut self, map_layer: MapLayers) {
         *self.layer_index = LayerIndex(map_layer)
     }
 
@@ -330,9 +330,9 @@ mod tests {
         )> = SystemState::new(&mut world);
         let (mut commands, mut tilemap_manager) = system_state.get_mut(&mut world);
         assert_eq!(tilemap_manager.layer(), MapLayers::Main);
-        tilemap_manager.on_layer(MapLayers::Secondary);
+        tilemap_manager.set_layer(MapLayers::Secondary);
         assert_eq!(tilemap_manager.layer(), MapLayers::Secondary);
-        tilemap_manager.on_layer(MapLayers::Main);
+        tilemap_manager.set_layer(MapLayers::Main);
 
         #[rustfmt::skip]
             let vecs = vec![
@@ -428,9 +428,9 @@ mod tests {
         )> = SystemState::new(&mut world);
         let (mut commands, mut tilemap_manager) = system_state.get_mut(&mut world);
         assert_eq!(tilemap_manager.layer(), MapLayers::Main);
-        tilemap_manager.on_layer(MapLayers::Secondary);
+        tilemap_manager.set_layer(MapLayers::Secondary);
         assert_eq!(tilemap_manager.layer(), MapLayers::Secondary);
-        tilemap_manager.on_layer(MapLayers::Main);
+        tilemap_manager.set_layer(MapLayers::Main);
 
         let mut hashmap: HashMap<Cell, (i32, i32)> = HashMap::new();
         hashmap.insert(Cell::new(0, 0), (0, 0));
@@ -527,7 +527,7 @@ mod tests {
         system_state.apply(&mut world);
         let (_, mut tilemap_manager) = system_state.get_mut(&mut world);
         tilemap_manager.set_tilemap_entity(map_entity);
-        tilemap_manager.on_layer(MapLayers::Main);
+        tilemap_manager.set_layer(MapLayers::Main);
 
         assert_eq!(tilemap_manager.dimensions().unwrap(), UVec2::new(8, 9));
     }

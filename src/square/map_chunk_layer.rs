@@ -1,6 +1,4 @@
-//! This module is for data structures to store and interact with a Chunks Layers.
-
-use crate::map::chunk::{ChunkCell, ChunkLayer, LayerType};
+use crate::map::chunk::{ChunkCell, ChunkLayer, ChunkLayerType};
 use bevy::ecs::entity::{EntityMapper, MapEntities};
 use bevy::ecs::reflect::ReflectMapEntities;
 use bevy::math::UVec2;
@@ -15,9 +13,11 @@ use bevy::prelude::{Reflect, ReflectComponent};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+/// Settings needed for a square chunk.
 #[derive(Reflect, Clone, Copy, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct SquareChunkSettings {
+    /// The maximum size that a chunk in the map can be
     pub max_chunk_size: UVec2,
 }
 
@@ -81,13 +81,17 @@ where
         )
     }
 
-    fn new(layer_type: LayerType<T>, chunk_dimensions: UVec2, _: &Self::ChunkSettings) -> Self {
+    fn new(
+        layer_type: ChunkLayerType<T>,
+        chunk_dimensions: UVec2,
+        _: &Self::ChunkSettings,
+    ) -> Self {
         match layer_type {
-            LayerType::Dense(dense_data) => Self {
+            ChunkLayerType::Dense(dense_data) => Self {
                 layer_type_data: SquareChunkLayerData::new_dense_from_vecs(&dense_data),
                 tile_entities: Default::default(),
             },
-            LayerType::Sparse(hashmap) => {
+            ChunkLayerType::Sparse(hashmap) => {
                 let sparse_data = hashmap
                     .iter()
                     .map(|(chunk_tile_pos, tile_data)| {
@@ -132,18 +136,7 @@ where
     }
 }
 
-/// The type of layer data arrangement
-///
-/// # Sparse
-///
-/// **A layer where every tile is not filled**
-///
-/// 0. A hashmap of TilePos -> TileData
-/// 1. A UVec2 representing the actual size of the chunk
-///
-/// # Dense
-///
-/// **A layer where every tile has TileData**
+/// The data of a square chunk layer
 #[derive(Clone, Reflect)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[reflect(Hash)]
@@ -151,7 +144,12 @@ pub enum SquareChunkLayerData<T>
 where
     T: Hash + Clone + Copy + Sized + Default + Send + Sync,
 {
+    /// A layer where ***NOT*** every position on the chunk has data
+    ///
+    /// 0. A hashmap of TilePos -> TileData
+    /// 1. A UVec2 representing the actual size of the chunk
     Sparse(HashMap<u64, T>, UVec2),
+    /// A layer where ***EVERY***  position on the chunk must have data
     Dense(Grid<T>),
 }
 
@@ -236,6 +234,7 @@ impl<T> SquareChunkLayerData<T>
 where
     T: Hash + Clone + Copy + Sized + Default + Send + Sync,
 {
+    /// Returns the actual dimensions of the chunk
     pub fn get_dimensions(&self) -> UVec2 {
         match self {
             SquareChunkLayerData::Sparse(_, dimensions) => *dimensions,
@@ -245,6 +244,7 @@ where
         }
     }
 
+    /// Sets the tile data at the given [`ChunkCell`]. Can fail if the given cell is not a valid position in the chunk
     pub fn set_tile_data(&mut self, chunk_tile_pos: ChunkCell, tile_data: T) {
         match self {
             SquareChunkLayerData::Sparse(layer_data, ..) => {
@@ -261,6 +261,7 @@ where
         };
     }
 
+    /// Gets mutable access to the tile data at the given [`ChunkCell`]. Can fail if the given cell is not a valid position in the chunk
     pub fn get_tile_data_mut(&mut self, chunk_tile_pos: ChunkCell) -> Option<&mut T> {
         return match self {
             SquareChunkLayerData::Sparse(layer_data, ..) => {
@@ -273,6 +274,7 @@ where
         };
     }
 
+    /// Gets immutable access to the tile data at the given [`ChunkCell`]. Can fail if the given cell is not a valid position in the chunk
     pub fn get_tile_data(&self, chunk_tile_pos: ChunkCell) -> Option<&T> {
         return match self {
             SquareChunkLayerData::Sparse(layer_data, ..) => {

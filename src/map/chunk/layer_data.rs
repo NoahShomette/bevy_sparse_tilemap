@@ -5,8 +5,11 @@ use lettuces::cell::Cell;
 
 use super::ChunkCell;
 
-pub enum LayerType<T> {
+/// The data for a specific chunk. Contains only the data for that chunk
+pub enum ChunkLayerType<T> {
+    /// A layer where ***NOT*** every position on the chunk has data
     Dense(Vec<Vec<T>>),
+    /// A layer where ***EVERY***  position on the chunk must have data
     Sparse(HashMap<ChunkCell, T>),
 }
 
@@ -23,7 +26,7 @@ pub trait ChunkLayer<TileData>: Hash + MapEntities {
 
     /// Creates a new chunk out of the given [`LayerType`]. The [`TileData`] contained in the layer is only the data that this chunk should contain.
     fn new(
-        layer_type: LayerType<TileData>,
+        layer_type: ChunkLayerType<TileData>,
         chunk_dimensions: UVec2,
         map_settings: &Self::ChunkSettings,
     ) -> Self;
