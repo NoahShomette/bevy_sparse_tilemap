@@ -12,7 +12,7 @@ use bevy::prelude::{Reflect, ReflectComponent};
 use serde::{Deserialize, Serialize};
 
 use crate::map::{
-    chunk::{Chunk, ChunkPos, LayerType},
+    chunk::{Chunk, ChunkLayerType, ChunkPos},
     MapData, MapLayer,
 };
 
@@ -22,11 +22,12 @@ use crate::map::{
 #[cfg_attr(feature = "reflect", derive(Reflect))]
 #[cfg_attr(feature = "reflect", reflect(Hash))]
 pub struct HexMapData {
+    /// The maximum size that chunk can be
     pub max_chunk_size: UVec2,
 }
 
 impl MapData for HexMapData {
-    fn into_chunk_pos(&self, cell: lettuces::cell::Cell) -> crate::map::chunk::ChunkPos {
+    fn into_chunk_pos(&self, cell: lettuces::cell::Cell) -> ChunkPos {
         ChunkPos::new(
             cell.x / self.max_chunk_size.x as i32,
             cell.y / self.max_chunk_size.y as i32,
@@ -69,9 +70,8 @@ impl MapData for HexMapData {
         &self,
         data: &Vec<Vec<TileData>>,
         max_chunk_size: UVec2,
-        chunk_conversion_info: MapChunk::ConversionInfo,
-        map_settings: MapChunk::MapSettings,
-    ) -> Vec<Vec<crate::map::chunk::Chunk<MapChunk, TileData>>>
+        chunk_settings: MapChunk::ChunkSettings,
+    ) -> Vec<Vec<Chunk<MapChunk, TileData>>>
     where
         TileData: std::hash::Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
         MapChunk: crate::map::chunk::ChunkLayer<TileData> + Send + Sync + 'static + Default,
@@ -94,9 +94,8 @@ impl MapData for HexMapData {
                 let chunk = Chunk::<MapChunk, TileData>::new(
                     ChunkPos::new(x, y),
                     UVec2::new(vec.len() as u32, vec[0].len() as u32),
-                    LayerType::Dense(vec),
-                    chunk_conversion_info,
-                    map_settings,
+                    ChunkLayerType::Dense(vec),
+                    chunk_settings,
                 );
                 chunks_rows.push(chunk);
             }
@@ -112,9 +111,8 @@ impl MapData for HexMapData {
         data: &bevy::utils::HashMap<lettuces::cell::Cell, TileData>,
         map_size: UVec2,
         max_chunk_size: UVec2,
-        chunk_conversion_settings: MapChunk::ConversionInfo,
-        map_settings: MapChunk::MapSettings,
-    ) -> Vec<Vec<crate::map::chunk::Chunk<MapChunk, TileData>>>
+        chunk_settings: MapChunk::ChunkSettings,
+    ) -> Vec<Vec<Chunk<MapChunk, TileData>>>
     where
         TileData: std::hash::Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
         MapChunk: crate::map::chunk::ChunkLayer<TileData> + Send + Sync + 'static + Default,
@@ -148,9 +146,8 @@ impl MapData for HexMapData {
                 chunks_rows.push(Chunk::new(
                     ChunkPos::new(x, y),
                     chunk_size,
-                    LayerType::Sparse(HashMap::new()),
-                    chunk_conversion_settings,
-                    map_settings,
+                    ChunkLayerType::Sparse(HashMap::new()),
+                    chunk_settings,
                 ));
             }
             chunks.push(chunks_rows);
@@ -161,7 +158,7 @@ impl MapData for HexMapData {
             let chunk = &mut chunks[chunk_pos.y() as usize][chunk_pos.x() as usize];
             chunk.set_tile_data(
                 map_layer.to_bits(),
-                MapChunk::into_chunk_cell(*cell, &chunk.cell_conversion_settings),
+                MapChunk::into_chunk_cell(*cell, &chunk.chunk_settings),
                 *tile_data,
             );
         }

@@ -1,6 +1,4 @@
-//! This module is for data structures to store and interact with a Chunks Layers.
-
-use crate::map::chunk::{ChunkCell, ChunkLayer, LayerType};
+use crate::map::chunk::{ChunkCell, ChunkLayer, ChunkLayerType};
 use bevy::ecs::entity::{EntityMapper, MapEntities};
 use bevy::math::UVec2;
 use bevy::prelude::{Component, Entity, Reflect};
@@ -18,25 +16,23 @@ use bevy::ecs::reflect::ReflectMapEntities;
 #[cfg(feature = "reflect")]
 use bevy::prelude::{Reflect, ReflectComponent};
 
-#[derive(Clone, Copy, Hash, Default)]
+#[derive(Clone, Copy, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "reflect", derive(Reflect))]
 #[cfg_attr(feature = "reflect", reflect(Hash, Component))]
 /// Settings for a hexagonal map
-pub struct HexagonMapSettings {
+pub struct HexagonChunkSettings {
+    /// The hex orientation of the map
     pub orientation: HexOrientation,
-}
-
-#[derive(Reflect, Clone, Copy, Hash)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct HexChunkLayerConversionSettings {
+    /// The maximum size that a chunk can be
     pub max_chunk_size: UVec2,
 }
 
-impl Default for HexChunkLayerConversionSettings {
+impl Default for HexagonChunkSettings {
     fn default() -> Self {
         Self {
             max_chunk_size: UVec2 { x: 10, y: 10 },
+            orientation: HexOrientation::default(),
         }
     }
 }
@@ -80,36 +76,31 @@ impl<TileData> ChunkLayer<TileData> for HexChunkLayer<TileData>
 where
     TileData: Hash + Clone + Copy + Sized + Default + Send + Sync,
 {
-    type ConversionInfo = HexChunkLayerConversionSettings;
+    type ChunkSettings = HexagonChunkSettings;
 
-    type MapSettings = HexagonMapSettings;
-
-    fn into_chunk_cell(
-        cell: lettuces::cell::Cell,
-        conversion_settings: &Self::ConversionInfo,
-    ) -> ChunkCell {
-        let chunk_pos_x = cell.x / conversion_settings.max_chunk_size.x as i32;
-        let chunk_pos_y = cell.y / conversion_settings.max_chunk_size.y as i32;
+    fn into_chunk_cell(cell: Cell, chunk_settings: &Self::ChunkSettings) -> ChunkCell {
+        let chunk_pos_x = cell.x / chunk_settings.max_chunk_size.x as i32;
+        let chunk_pos_y = cell.y / chunk_settings.max_chunk_size.y as i32;
         ChunkCell::new(
-            cell.x - (chunk_pos_x * conversion_settings.max_chunk_size.x as i32),
-            cell.y - (chunk_pos_y * conversion_settings.max_chunk_size.y as i32),
+            cell.x - (chunk_pos_x * chunk_settings.max_chunk_size.x as i32),
+            cell.y - (chunk_pos_y * chunk_settings.max_chunk_size.y as i32),
         )
     }
 
     fn new(
-        layer_type: LayerType<TileData>,
+        layer_type: ChunkLayerType<TileData>,
         chunk_dimensions: UVec2,
-        settings: &HexagonMapSettings,
+        settings: &Self::ChunkSettings,
     ) -> Self {
         match layer_type {
-            LayerType::Dense(dense_data) => Self {
+            ChunkLayerType::Dense(dense_data) => Self {
                 layer_type_data: HexChunkLayerData::new_dense_from_vecs(
                     &dense_data,
                     settings.orientation.clone(),
                 ),
                 tile_entities: Default::default(),
             },
-            LayerType::Sparse(hashmap) => {
+            ChunkLayerType::Sparse(hashmap) => {
                 let sparse_data = hashmap
                     .iter()
                     .map(|(chunk_tile_pos, tile_data)| {
@@ -152,18 +143,7 @@ where
     }
 }
 
-/// The type of layer data arrangement
-///
-/// # Sparse
-///
-/// **A layer where every tile is not filled**
-///
-/// 0. A hashmap of TilePos -> TileData
-/// 1. A UVec2 representing the actual size of the chunk
-///
-/// # Dense
-///
-/// **A layer where every tile has TileData**
+/// The data of a hex chunk layer
 #[derive(Clone, Reflect)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[reflect(Hash)]
@@ -171,7 +151,12 @@ pub enum HexChunkLayerData<T>
 where
     T: Hash + Clone + Copy + Sized + Default + Send + Sync,
 {
+    /// A layer where ***NOT*** every position on the chunk has data
+    ///
+    /// 0. A hashmap of TilePos -> TileData
+    /// 1. A UVec2 representing the actual size of the chunk
     Sparse(HashMap<(i32, i32), T>, UVec2),
+    /// A layer where ***EVERY***  position on the chunk must have data
     Dense(HexRectangleStorage<T>),
 }
 
@@ -271,15 +256,17 @@ impl<T> HexChunkLayerData<T>
 where
     T: Hash + Clone + Copy + Sized + Default + Send + Sync,
 {
+    /// Returns the actual dimensions of the chunk
     pub fn get_dimensions(&self) -> UVec2 {
         match self {
             HexChunkLayerData::Sparse(_, dimensions) => *dimensions,
             HexChunkLayerData::Dense(grid) => {
-                UVec2::new(grid.dimensions().y as u32, grid.dimensions().x as u32)
+                UVec2::new(grid.dimensions().y.into(), grid.dimensions().x.into())
             }
         }
     }
 
+    /// Sets the tile data at the given [`ChunkCell`]. Can fail if the given cell is not a valid position in the chunk
     pub fn set_tile_data(&mut self, chunk_tile_pos: ChunkCell, tile_data: T) {
         match self {
             HexChunkLayerData::Sparse(layer_data, ..) => {
@@ -295,6 +282,7 @@ where
         };
     }
 
+    /// Gets mutable access to the tile data at the given [`ChunkCell`]. Can fail if the given cell is not a valid position in the chunk
     pub fn get_tile_data_mut(&mut self, chunk_tile_pos: ChunkCell) -> Option<&mut T> {
         return match self {
             HexChunkLayerData::Sparse(layer_data, ..) => {
@@ -306,6 +294,7 @@ where
         };
     }
 
+    /// Gets immutable access to the tile data at the given [`ChunkCell`]. Can fail if the given cell is not a valid position in the chunk
     pub fn get_tile_data(&self, chunk_tile_pos: ChunkCell) -> Option<&T> {
         return match self {
             HexChunkLayerData::Sparse(layer_data, ..) => {

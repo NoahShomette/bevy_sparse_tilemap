@@ -12,20 +12,22 @@ use bevy::prelude::{Reflect, ReflectComponent};
 use serde::{Deserialize, Serialize};
 
 use crate::map::{
-    chunk::{Chunk, ChunkPos, LayerType},
+    chunk::{Chunk, ChunkLayerType, ChunkPos},
     MapData, MapLayer,
 };
 
+/// An implementation of [`MapData`] for a standard square map.
 #[derive(Default, Hash, Component)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "reflect", derive(Reflect))]
 #[cfg_attr(feature = "reflect", reflect(Hash))]
 pub struct SquareMapData {
+    /// The maximum size that a chunk can be in the map
     pub max_chunk_size: UVec2,
 }
 
 impl MapData for SquareMapData {
-    fn into_chunk_pos(&self, cell: lettuces::cell::Cell) -> crate::map::chunk::ChunkPos {
+    fn into_chunk_pos(&self, cell: lettuces::cell::Cell) -> ChunkPos {
         ChunkPos::new(
             cell.x / self.max_chunk_size.x as i32,
             cell.y / self.max_chunk_size.y as i32,
@@ -68,9 +70,8 @@ impl MapData for SquareMapData {
         &self,
         data: &Vec<Vec<TileData>>,
         max_chunk_size: UVec2,
-        chunk_conversion_settings: MapChunk::ConversionInfo,
-        map_settings: MapChunk::MapSettings,
-    ) -> Vec<Vec<crate::map::chunk::Chunk<MapChunk, TileData>>>
+        chunk_settings: MapChunk::ChunkSettings,
+    ) -> Vec<Vec<Chunk<MapChunk, TileData>>>
     where
         TileData: std::hash::Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
         MapChunk: crate::map::chunk::ChunkLayer<TileData> + Send + Sync + 'static + Default,
@@ -93,9 +94,8 @@ impl MapData for SquareMapData {
                 let chunk = Chunk::<MapChunk, TileData>::new(
                     ChunkPos::new(x, y),
                     UVec2::new(vec.len() as u32, vec[0].len() as u32),
-                    LayerType::Dense(vec),
-                    chunk_conversion_settings,
-                    map_settings,
+                    ChunkLayerType::Dense(vec),
+                    chunk_settings,
                 );
                 chunks_rows.push(chunk);
             }
@@ -111,9 +111,8 @@ impl MapData for SquareMapData {
         data: &bevy::utils::HashMap<lettuces::cell::Cell, TileData>,
         map_size: UVec2,
         max_chunk_size: UVec2,
-        chunk_conversion_settings: MapChunk::ConversionInfo,
-        map_settings: MapChunk::MapSettings,
-    ) -> Vec<Vec<crate::map::chunk::Chunk<MapChunk, TileData>>>
+        chunk_settings: MapChunk::ChunkSettings,
+    ) -> Vec<Vec<Chunk<MapChunk, TileData>>>
     where
         TileData: std::hash::Hash + Clone + Copy + Sized + Default + Send + Sync + 'static,
         MapChunk: crate::map::chunk::ChunkLayer<TileData> + Send + Sync + 'static + Default,
@@ -147,9 +146,8 @@ impl MapData for SquareMapData {
                 chunks_rows.push(Chunk::new(
                     ChunkPos::new(x, y),
                     chunk_size,
-                    LayerType::Sparse(HashMap::new()),
-                    chunk_conversion_settings,
-                    map_settings,
+                    ChunkLayerType::Sparse(HashMap::new()),
+                    chunk_settings,
                 ));
             }
             chunks.push(chunks_rows);
@@ -160,7 +158,7 @@ impl MapData for SquareMapData {
             let chunk = &mut chunks[chunk_pos.y() as usize][chunk_pos.x() as usize];
             chunk.set_tile_data(
                 map_layer.to_bits(),
-                MapChunk::into_chunk_cell(*cell, &chunk.cell_conversion_settings),
+                MapChunk::into_chunk_cell(*cell, &chunk.chunk_settings),
                 *tile_data,
             );
         }
@@ -173,7 +171,7 @@ impl MapData for SquareMapData {
 mod tests {
     use crate as bevy_sparse_tilemap;
     use crate::map::MapData;
-    use crate::square::map_chunk_layer::{SquareChunkLayer, SquareChunkLayerConversionSettings};
+    use crate::square::map_chunk_layer::{SquareChunkLayer, SquareChunkSettings};
     use crate::square::map_data::SquareMapData;
 
     use crate::tilemap_builder::tilemap_layer_builder::TilemapLayer;
@@ -321,7 +319,7 @@ mod tests {
             max_chunk_size: UVec2 { x: 10, y: 10 },
         };
 
-        let chunk_conversion_settings = SquareChunkLayerConversionSettings {
+        let chunk_settings = SquareChunkSettings {
             max_chunk_size: UVec2 { x: 10, y: 10 },
         };
 
@@ -346,8 +344,7 @@ mod tests {
                 &hashmap,
                 UVec2::new(32, 32),
                 mcs,
-                chunk_conversion_settings,
-                (),
+                chunk_settings,
             );
 
         assert_eq!(chunks.len(), 4);

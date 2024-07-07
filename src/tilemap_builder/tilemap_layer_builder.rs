@@ -9,29 +9,21 @@ use lettuces::cell::Cell;
 /// An enum that holds all the data for a tilemap layer. This layer is only used in the [`TilemapBuilder`]
 ///
 /// Spawned tilemaps data is separated into [`Chunk`]s as [`ChunkLayerData`](crate::map::chunk::ChunkLayerData)
-///
-/// # Tilemaps can have two types of layers
-///
-/// ## Sparse
-///
-/// *A layer where not every tile exists*
-///
-/// Consists of three parts:
-///
-/// 0. A hashmap of TilePos -> TileData
-/// 1. A UVec2 representing the size of the Tilemap
-/// 2. A hashmap of TilePos -> Entity
-///     - The optional entities that hold the extra information when a tile needs it
-///
-/// ## Dense-
-///
-/// *A layer where every tile has TileData*
 #[derive(Clone, Debug)]
 pub enum TilemapLayer<T>
 where
     T: Clone + Copy + Sized + Default + Send + Sync,
 {
+    /// A layer where ***NOT*** every position on the chunk has data
+    ///
+    /// Consists of three parts:
+    ///
+    /// 0. A hashmap of TilePos -> TileData
+    /// 1. A UVec2 representing the size of the Tilemap
+    /// 2. A hashmap of TilePos -> Entity
+    ///     - The optional entities that hold the extra information when a tile needs it
     Sparse(HashMap<Cell, T>, UVec2, HashMap<Cell, Entity>),
+    /// A layer where ***EVERY***  position on the chunk must have data
     Dense(Vec<Vec<T>>, HashMap<Cell, Entity>),
 }
 

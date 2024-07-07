@@ -4,7 +4,9 @@ use map_data::HexMapData;
 
 use crate::{map::chunk::Chunk, tilemap_builder::TilemapBuilder, tilemap_manager::TilemapManager};
 
+/// Implements [`ChunkLayer`] for a hexagonal map
 pub mod map_chunk_layer;
+/// Implements [`MapData`] for a hexagonal map
 pub mod map_data;
 
 /// Type alias for [`TilemapManager`] for the built in hexagon map types.
@@ -21,8 +23,8 @@ pub type HexTilemapBuilder<TileData, MapLayers> =
 /// Converts a [`HexOrientation`] into a [`OffsetHexMode`]. This sets it to Odd Rows and Odd Columns respectively which are the only two that this crate supports
 pub fn hex_offset_from_orientation(orientation: HexOrientation) -> OffsetHexMode {
     match orientation {
-        HexOrientation::Pointy => lettuces::OffsetHexMode::OddRows,
-        HexOrientation::Flat => lettuces::OffsetHexMode::OddColumns,
+        HexOrientation::Pointy => OffsetHexMode::OddRows,
+        HexOrientation::Flat => OffsetHexMode::OddColumns,
     }
 }
 
