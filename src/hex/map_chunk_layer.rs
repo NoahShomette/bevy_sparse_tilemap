@@ -76,9 +76,9 @@ where
         Hash::hash(&self.layer_type_data, h);
     }
 }
-impl<T> ChunkLayer<T> for HexChunkLayer<T>
+impl<TileData> ChunkLayer<TileData> for HexChunkLayer<TileData>
 where
-    T: Hash + Clone + Copy + Sized + Default + Send + Sync,
+    TileData: Hash + Clone + Copy + Sized + Default + Send + Sync,
 {
     type ConversionInfo = HexChunkLayerConversionSettings;
 
@@ -97,7 +97,7 @@ where
     }
 
     fn new(
-        layer_type: LayerType<T>,
+        layer_type: LayerType<TileData>,
         chunk_dimensions: UVec2,
         settings: &HexagonMapSettings,
     ) -> Self {
@@ -128,15 +128,15 @@ where
         self.layer_type_data.get_dimensions()
     }
 
-    fn get_tile_data_mut(&mut self, chunk_tile_pos: ChunkCell) -> Option<&mut T> {
+    fn get_tile_data_mut(&mut self, chunk_tile_pos: ChunkCell) -> Option<&mut TileData> {
         self.layer_type_data.get_tile_data_mut(chunk_tile_pos)
     }
 
-    fn get_tile_data(&self, chunk_tile_pos: ChunkCell) -> Option<&T> {
+    fn get_tile_data(&self, chunk_tile_pos: ChunkCell) -> Option<&TileData> {
         self.layer_type_data.get_tile_data(chunk_tile_pos)
     }
 
-    fn set_tile_data(&mut self, chunk_tile_pos: ChunkCell, tile_data: T) {
+    fn set_tile_data(&mut self, chunk_tile_pos: ChunkCell, tile_data: TileData) {
         self.layer_type_data
             .set_tile_data(chunk_tile_pos, tile_data);
     }
