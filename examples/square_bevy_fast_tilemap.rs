@@ -62,7 +62,7 @@ pub struct ChunkMapSpawned;
 fn startup(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
     let map_size = UVec2::new(15000, 15000);
-    let max_chunk_size = UVec2::new(100, 100);
+    let max_chunk_size = UVec2::new(250, 250);
 
     let tilemap_builder =
         TilemapBuilder::<TileData, MapLayers, SquareChunkLayer<TileData>, SquareMapData>::new(
