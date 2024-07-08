@@ -7,7 +7,7 @@ use lettuces::storage::grid::Grid;
 use std::hash::{Hash, Hasher};
 
 #[cfg(feature = "reflect")]
-use bevy::prelude::{Reflect, ReflectComponent};
+use bevy::prelude::{Reflect, MapEntities, ReflectComponent};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
