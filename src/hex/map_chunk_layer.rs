@@ -19,7 +19,7 @@ use bevy::prelude::{Reflect, ReflectComponent};
 #[derive(Clone, Copy, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "reflect", derive(Reflect))]
-#[cfg_attr(feature = "reflect", reflect(Hash, Component))]
+#[cfg_attr(feature = "reflect", reflect(Hash))]
 /// Settings for a hexagonal map
 pub struct HexagonChunkSettings {
     /// The hex orientation of the map

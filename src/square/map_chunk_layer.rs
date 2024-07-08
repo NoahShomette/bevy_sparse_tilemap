@@ -1,8 +1,7 @@
 use crate::map::chunk::{ChunkCell, ChunkLayer, ChunkLayerType};
 use bevy::ecs::entity::{EntityMapper, MapEntities};
-use bevy::ecs::reflect::ReflectMapEntities;
 use bevy::math::UVec2;
-use bevy::prelude::{Component, Entity, Reflect};
+use bevy::prelude::{Component, Entity};
 use bevy::utils::HashMap;
 use lettuces::storage::grid::Grid;
 use std::hash::{Hash, Hasher};
@@ -14,8 +13,10 @@ use bevy::prelude::{Reflect, ReflectComponent};
 use serde::{Deserialize, Serialize};
 
 /// Settings needed for a square chunk.
-#[derive(Reflect, Clone, Copy, Hash)]
+#[derive(Clone, Copy, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "reflect", derive(Reflect))]
+#[cfg_attr(feature = "reflect", reflect(Hash))]
 pub struct SquareChunkSettings {
     /// The maximum size that a chunk in the map can be
     pub max_chunk_size: UVec2,
@@ -30,9 +31,10 @@ impl Default for SquareChunkSettings {
 }
 
 /// A struct that holds the chunk map data for the given layer
-#[derive(Clone, Component, Default, Reflect)]
+#[derive(Clone, Component, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[reflect(Hash, MapEntities)]
+#[cfg_attr(feature = "reflect", derive(Reflect))]
+#[cfg_attr(feature = "reflect", reflect(Hash, MapEntities, Component))]
 pub struct SquareChunkLayer<T>
 where
     T: Hash + Clone + Copy + Sized + Default + Send + Sync,
