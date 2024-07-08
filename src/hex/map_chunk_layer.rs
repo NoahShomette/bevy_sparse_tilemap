@@ -1,7 +1,7 @@
 use crate::map::chunk::{ChunkCell, ChunkLayer, ChunkLayerType};
 use bevy::ecs::entity::{EntityMapper, MapEntities};
 use bevy::math::UVec2;
-use bevy::prelude::{Component, Entity, Reflect};
+use bevy::prelude::{Component, Entity};
 use bevy::utils::HashMap;
 use lettuces::cell::Cell;
 use lettuces::storage::hex::HexRectangleStorage;
@@ -144,9 +144,10 @@ where
 }
 
 /// The data of a hex chunk layer
-#[derive(Clone, Reflect)]
+#[derive(Clone)]
+#[cfg_attr(feature = "reflect", derive(Reflect))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[reflect(Hash)]
+#[cfg_attr(feature = "reflect", reflect(Hash))]
 pub enum HexChunkLayerData<T>
 where
     T: Hash + Clone + Copy + Sized + Default + Send + Sync,

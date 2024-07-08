@@ -137,9 +137,10 @@ where
 }
 
 /// The data of a square chunk layer
-#[derive(Clone, Reflect)]
+#[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[reflect(Hash)]
+#[cfg_attr(feature = "reflect", derive(Reflect))]
+#[cfg_attr(feature = "reflect", reflect(Hash))]
 pub enum SquareChunkLayerData<T>
 where
     T: Hash + Clone + Copy + Sized + Default + Send + Sync,
