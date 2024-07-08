@@ -860,7 +860,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_sparse_tilemap"
-version = "0.2.4"
+version = "0.2.5"
 dependencies = [
  "bevy",
  "bevy_fast_tilemap",
