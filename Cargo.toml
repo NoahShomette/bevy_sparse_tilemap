@@ -33,10 +33,10 @@ opt-level = 1
 opt-level = 3
 
 [dependencies]
-bevy = { version = "0.13", default-features = false, features = [] }
+bevy = { version = "0.14.0", default-features = false, features = [] }
 bst_map_layer_derive = { version = "0.1.0" }
 thiserror = "1.0.44"
-lettuces = { version = "0.0.6" }
+lettuces = { git = "https://github.com/NoahShomette/lettuces.git", branch = "0.14" }
 
 # Optional feature based dependencies
 # Rendering with bevy_fast_tilemap - Removed for now since we dont actually do anything with it
@@ -45,8 +45,8 @@ serde = { version = "1.0.183", optional = true }
 
 
 [dev-dependencies]
-bevy_fast_tilemap = { version = "0.7.0" }
-bevy = { version = "0.13.0" }
+bevy_fast_tilemap = { git = "https://github.com/NoahShomette/bevy-fast-tilemap.git" }
+bevy = { version = "0.14.0" }
 rand = { version = "0.8.5" }
 serde = "1.0.183"
 ron = "0.8.0"

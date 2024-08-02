@@ -1,12 +1,12 @@
 use bevy::app::FixedUpdate;
 use bevy::asset::{Assets, Handle};
+use bevy::color::Color;
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::math::UVec2;
 use bevy::prelude::{
     apply_deferred, default, App, Camera2dBundle, Commands, Entity, IntoSystemConfigs, PluginGroup,
     Reflect, RegularPolygon, Res, ResMut, Resource, Startup, Window, WindowPlugin,
 };
-use bevy::render::color::Color;
 use bevy::render::mesh::Mesh;
 use bevy::sprite::{ColorMaterial, MaterialMesh2dBundle, Mesh2dHandle};
 use bevy::time::{Fixed, Time};

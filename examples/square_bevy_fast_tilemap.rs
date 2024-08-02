@@ -4,7 +4,9 @@ use bevy::math::{uvec2, vec2, vec3};
 use bevy::prelude::*;
 use bevy::window::PresentMode;
 use bevy::DefaultPlugins;
-use bevy_fast_tilemap::{FastTileMapPlugin, Map, MapBundleManaged};
+use bevy_fast_tilemap::bundle::MapBundleManaged;
+use bevy_fast_tilemap::map::Map;
+use bevy_fast_tilemap::plugin::FastTileMapPlugin;
 use bevy_sparse_tilemap::map::chunk::Chunk;
 use bevy_sparse_tilemap::square::map_chunk_layer::{SquareChunkLayer, SquareChunkSettings};
 use bevy_sparse_tilemap::square::map_data::SquareMapData;
@@ -124,8 +126,8 @@ fn spawn_or_update_fast_tilemaps(
         let map = Map::builder(
             // Map size (tiles)
             uvec2(
-                chunk.get_chunk_dimensions().x,
-                chunk.get_chunk_dimensions().y,
+                chunk.get_chunk_dimensions().x.into(),
+                chunk.get_chunk_dimensions().y.into(),
             ),
             // Tile atlas
             asset_server.load("tiles_16.png"),
