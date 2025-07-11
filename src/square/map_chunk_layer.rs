@@ -1,8 +1,8 @@
 use crate::map::chunk::{ChunkCell, ChunkLayer, ChunkLayerType};
 use bevy::ecs::entity::{EntityMapper, MapEntities};
 use bevy::math::UVec2;
+use bevy::platform::collections::hash_map::HashMap;
 use bevy::prelude::{Component, Entity};
-use bevy::utils::HashMap;
 use lettuces::storage::grid::Grid;
 use std::hash::{Hash, Hasher};
 
@@ -51,7 +51,7 @@ where
 {
     fn map_entities<M: EntityMapper>(&mut self, entity_mapper: &mut M) {
         for tile_entity in self.tile_entities.iter_mut() {
-            *tile_entity.1 = entity_mapper.map_entity(*tile_entity.1);
+            *tile_entity.1 = entity_mapper.get_mapped(*tile_entity.1);
         }
     }
 }

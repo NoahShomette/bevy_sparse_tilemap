@@ -8,8 +8,8 @@ pub use crate::map::chunk::chunk_cell::ChunkCell;
 pub use crate::map::chunk::chunk_pos::ChunkPos;
 use crate::map::MapLayer;
 use bevy::ecs::entity::{EntityMapper, MapEntities};
+use bevy::platform::collections::HashMap;
 use bevy::prelude::{Component, Entity, UVec2};
-use bevy::utils::hashbrown::HashMap;
 pub use layer_data::{ChunkLayer, ChunkLayerType};
 use lettuces::cell::Cell;
 use lettuces::storage::grid::Grid;
@@ -39,7 +39,7 @@ pub struct Chunks {
 impl MapEntities for Chunks {
     fn map_entities<M: EntityMapper>(&mut self, entity_mapper: &mut M) {
         for tile_entity in self.chunk_entities.iter_mut() {
-            *tile_entity = entity_mapper.map_entity(*tile_entity);
+            *tile_entity = entity_mapper.get_mapped(*tile_entity);
         }
     }
 }
@@ -336,7 +336,7 @@ mod tests {
         map::chunk::chunk_cell::ChunkCell, map::chunk::chunk_pos::ChunkPos, map::chunk::Chunk,
     };
     use bevy::math::UVec2;
-    use bevy::utils::hashbrown::HashMap;
+    use bevy::platform::collections::hash_map::HashMap;
     use bst_map_layer_derive::MapLayer;
 
     #[derive(Clone, Copy, Default, PartialEq, Eq, Debug, Hash)]

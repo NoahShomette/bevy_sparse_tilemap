@@ -1,6 +1,9 @@
 use std::hash::Hash;
 
-use bevy::{ecs::entity::MapEntities, math::UVec2, prelude::Entity, utils::HashMap};
+use bevy::{
+    ecs::entity::MapEntities, math::UVec2, platform::collections::hash_map::HashMap,
+    prelude::Entity,
+};
 use lettuces::cell::Cell;
 
 use super::ChunkCell;

@@ -3,8 +3,8 @@ pub mod tilemap_layer_builder;
 use crate::map::chunk::{Chunk, ChunkLayer, ChunkLayerType, Chunks};
 use crate::map::{MapData, MapLayer, Tilemap};
 use crate::tilemap_builder::tilemap_layer_builder::TilemapLayer;
-use bevy::prelude::{BuildChildren, Commands, Entity, UVec2};
-use bevy::utils::HashMap;
+use bevy::platform::collections::HashMap;
+use bevy::prelude::{Commands, Entity, UVec2};
 use std::hash::Hash;
 use std::marker::PhantomData;
 

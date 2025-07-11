@@ -20,8 +20,8 @@ pub enum TilemapManagerError {
     TileDataDoesNotExist,
 }
 
-impl<'w> From<QueryEntityError<'w>> for TilemapManagerError {
-    fn from(_: QueryEntityError<'w>) -> Self {
+impl<'w> From<QueryEntityError> for TilemapManagerError {
+    fn from(_: QueryEntityError) -> Self {
         TilemapManagerError::ChunkEntityDoesNotExist
     }
 }

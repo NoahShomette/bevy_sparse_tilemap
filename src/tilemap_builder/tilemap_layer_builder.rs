@@ -2,8 +2,8 @@
 //! and then convert those into chunks
 
 use bevy::math::UVec2;
+use bevy::platform::collections::hash_map::HashMap;
 use bevy::prelude::{Bundle, Commands, Entity};
-use bevy::utils::hashbrown::HashMap;
 use lettuces::cell::Cell;
 
 /// An enum that holds all the data for a tilemap layer. This layer is only used in the [`TilemapBuilder`](crate::tilemap_builder::TilemapBuilder)
