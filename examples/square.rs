@@ -26,7 +26,10 @@ fn main() {
             }),
             ..default()
         }))
-        .add_plugins((LogDiagnosticsPlugin::default(), FrameTimeDiagnosticsPlugin))
+        .add_plugins((
+            LogDiagnosticsPlugin::default(),
+            FrameTimeDiagnosticsPlugin::default(),
+        ))
         .add_systems(Startup, (spawn_map, spawn_tiles).chain())
         .init_resource::<ColorHandles>()
         .run();

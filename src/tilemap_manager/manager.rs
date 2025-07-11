@@ -4,7 +4,7 @@ use crate::tilemap_manager::TilemapManagerError;
 use crate::tilemap_manager::{LayerIndex, MapEntity};
 use bevy::ecs::system::SystemParam;
 use bevy::math::UVec2;
-use bevy::prelude::{Children, Commands, DespawnRecursiveExt, Entity, Local, Query};
+use bevy::prelude::{Children, Commands, Entity, Local, Query};
 use lettuces::cell::Cell;
 use std::hash::Hash;
 use std::ops::Deref;
@@ -267,7 +267,7 @@ where
             self.layer_index.0,
             MapChunk::into_chunk_cell(cell, &chunk.chunk_settings),
         ) {
-            self.commands.entity(entity).despawn_recursive();
+            self.commands.entity(entity).despawn();
         };
 
         Ok(())
@@ -305,8 +305,8 @@ mod tests {
     use crate::tilemap_manager::manager::TilemapManager;
     use bevy::ecs::system::{Commands, SystemState};
     use bevy::math::UVec2;
+    use bevy::platform::collections::hash_map::HashMap;
     use bevy::prelude::World;
-    use bevy::utils::hashbrown::HashMap;
     use bst_map_layer_derive::MapLayer;
     use lettuces::cell::Cell;
 

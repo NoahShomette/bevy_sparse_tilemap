@@ -1,7 +1,7 @@
 use bevy::{
     math::{vec2, UVec2},
+    platform::collections::hash_map::HashMap,
     prelude::Component,
-    utils::hashbrown::HashMap,
 };
 
 #[cfg(feature = "reflect")]
@@ -108,7 +108,7 @@ impl MapData for SquareMapData {
     fn break_hashmap_into_chunks<TileData, MapChunk>(
         &self,
         map_layer: impl MapLayer,
-        data: &bevy::utils::HashMap<lettuces::cell::Cell, TileData>,
+        data: &HashMap<lettuces::cell::Cell, TileData>,
         map_size: UVec2,
         max_chunk_size: UVec2,
         chunk_settings: MapChunk::ChunkSettings,
@@ -176,7 +176,7 @@ mod tests {
 
     use crate::tilemap_builder::tilemap_layer_builder::TilemapLayer;
     use bevy::math::UVec2;
-    use bevy::utils::HashMap;
+    use bevy::platform::collections::hash_map::HashMap;
     use bst_map_layer_derive::MapLayer;
     use lettuces::cell::Cell;
 

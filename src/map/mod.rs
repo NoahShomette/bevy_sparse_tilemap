@@ -16,8 +16,8 @@ mod tilemap;
 
 use bevy::{
     math::UVec2,
+    platform::collections::hash_map::HashMap,
     prelude::{Component, Entity},
-    utils::HashMap,
 };
 use chunk::{Chunk, ChunkLayer, ChunkPos};
 use lettuces::cell::Cell;
